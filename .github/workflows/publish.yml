@@ -1,0 +1,44 @@
+name: Publish
+
+on:
+  push:
+    tags:
+      - '**'
+    
+jobs:
+  release-macros:
+    timeout-minutes: 604800
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/macros')
+    steps:
+      - uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ github.TOKEN }}
+          approvers: rigetti
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PAT }}
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - run: cargo publish -p pyo3-opentelemetry-macros --token ${{ secrets.CRATES_IO_TOKEN }}
+  release-lib:
+    timeout-minutes: 604800
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/lib')
+    steps:
+      - uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ github.TOKEN }}
+          approvers: rigetti
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PAT }}
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - run: cargo publish -p pyo3-opentelemetry --token ${{ secrets.CRATES_IO_TOKEN }}
