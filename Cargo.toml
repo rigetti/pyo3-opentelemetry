@@ -1,0 +1,6 @@
+[workspace]
+members = ["crates/*", "examples/*"]
+# reference: https://github.com/gakonst/ethers-rs/blob/master/Cargo.toml
+resolver = "2"
+
+[workspace.dependencies]

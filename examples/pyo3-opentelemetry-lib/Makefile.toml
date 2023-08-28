@@ -1,0 +1,36 @@
+[tasks.python-install-dependencies]
+  private = true
+  script = "poetry install"
+
+[tasks.python-build]
+  private = true
+  dependencies = ["python-install-dependencies"]
+  script = '''
+  poetry run maturin develop
+  '''
+    
+[tasks.python-format]
+  private = true
+  dependencies = ["python-build"]
+  script = '''
+  poetry run black .
+  poetry run ruff . --fix
+  '''
+
+[tasks.python-check]
+  private = true
+  dependencies = ["python-build"]
+  script = '''
+  poetry run black . --check
+  poetry run ruff .
+  poetry run pyright .
+  '''
+
+[tasks.python-test]
+  private = true
+  dependencies = ["python-build"]
+  script = "poetry run pytest ."
+
+[tasks.python-check-all]
+  dependencies = ["python-check", "python-test"]
+

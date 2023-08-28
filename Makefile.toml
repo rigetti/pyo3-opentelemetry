@@ -1,0 +1,230 @@
+[env]
+    # We exclude --no-default-features because pyo3 will not be able to link to python.
+    CARGO_HACK_COMMON_FLAGS = "--feature-powerset --optional-deps --exclude-no-default-features"
+    CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true
+
+[tasks.clean]
+    clear = true
+    script = """
+    rm -f *.profraw
+    cargo clean
+    """
+
+[tasks.install-coverage-tools]
+    install_crate = { rustup_component_name = "llvm-tools-preview" }
+
+[tasks.install-cargo-binstall]
+    # Directly from https://github.com/cargo-bins/cargo-binstall/tree/d2c337738815485b0e0286003f099a6536df1b10
+    script = "command -v cargo-binstall || curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash"
+
+[tasks.install-cargo-hack]
+    dependencies = ["install-cargo-binstall"]
+    script = "cargo-binstall cargo-hack@0.5.26 --no-confirm"
+
+[tasks.install-cargo-deny]
+    dependencies = ["install-cargo-binstall"]
+    script = "cargo-binstall cargo-deny --no-confirm"
+
+[tasks.install-cargo-deadlinks]
+    dependencies = ["install-cargo-binstall"]
+    script = "cargo-binstall cargo-deadlinks --no-confirm"
+
+[tasks.install-cargo-geiger]
+    dependencies = ["install-cargo-binstall"]
+    script = "cargo-binstall cargo-geiger --no-confirm"
+
+[tasks.install-cargo-license]
+    dependencies = ["install-cargo-binstall"]
+    script = "cargo-binstall cargo-license --no-confirm"
+
+[tasks.install-cargo-msrv]
+    dependencies = ["install-cargo-binstall"]
+    script = "cargo-binstall cargo-msrv --no-confirm"
+
+[tasks.install-cargo-outdated]
+    dependencies = ["install-cargo-binstall"]
+    script = "cargo-binstall cargo-outdated --no-confirm"
+
+[tasks.install-grcov]
+    dependencies = ["install-coverage-tools", "install-cargo-binstall"]
+    script = "cargo-binstall grcov --no-confirm"
+
+[tasks.install-gitlab-clippy]
+    dependencies = ["install-cargo-binstall"]
+    script = "cargo-binstall gitlab_clippy --no-confirm"
+
+[tasks.install-cargo-nextest]
+    dependencies = ["install-cargo-binstall"]
+    script = "cargo-binstall cargo-nextest  --no-confirm"
+
+[tasks.check]
+    clear = true
+    dependencies = ["install-cargo-hack"]
+    script = "cargo hack check $CARGO_HACK_COMMON_FLAGS --all-targets"
+
+[tasks.clippy-fix]
+    clear = true
+    dependencies = ["install-clippy-any", "install-cargo-hack"]
+    script = "cargo hack clippy $CARGO_HACK_COMMON_FLAGS --all-targets --fix"
+
+[tasks.clippy]
+    clear = true
+    dependencies = ["install-clippy-any", "install-cargo-hack"]
+    script = "cargo hack clippy $CARGO_HACK_COMMON_FLAGS --all-targets"
+
+[tasks.clippy-ci]
+    dependencies = ["install-clippy-any", "install-cargo-hack", "install-gitlab-clippy"]
+    script = "cargo hack clippy $CARGO_HACK_COMMON_FLAGS --all-targets --message-format=json | gitlab-clippy > gl-code-quality-report.json"
+
+[tasks.coverage-tests]
+    dependencies = ["install-coverage-tools", "install-cargo-hack"]
+    script = "cargo hack test $CARGO_HACK_COMMON_FLAGS"
+
+[tasks.coverage-tests.env]
+    RUSTFLAGS = "-Cinstrument-coverage"
+    LLVM_PROFILE_FILE = ".coverage/coverage-%p-%m.profraw"
+
+[tasks.coverage-base]
+    dependencies = ["install-grcov", "coverage-tests"]
+    command = "grcov"
+    args = [
+        ".",
+        "-s", ".",
+        "--keep-only", "**/src/**", # Ignore files not in a src/ folder
+        "-p", "src",
+        "--binary-path", "./target/debug/",
+        "--ignore", "./tests",
+        "--ignore", "/*", # Ignore dependencies, whose source are in absolute path $HOME/.cargo/...
+        "-t", "${COVERAGE_OUTPUT_TYPE}",
+        "--branch",
+        "--llvm",
+        "--ignore-not-existing",
+        "-o", "${COVERAGE_OUTPUT_FILE}"
+    ]
+
+[tasks.coverage-ci]
+    run_task = "coverage-base"
+[tasks.coverage-ci.env]
+    COVERAGE_OUTPUT_TYPE = "cobertura"
+    COVERAGE_OUTPUT_FILE = "./target/debug/cobertura.xml"
+
+[tasks.coverage-html]
+    run_task = "coverage-base"
+[tasks.coverage-html.env]
+    COVERAGE_OUTPUT_TYPE = "html"
+    COVERAGE_OUTPUT_FILE = "./target/debug/coverage/"
+
+[tasks.view-coverage]
+    linux_alias = "view-coverage-linux"
+    mac_alias = "view-coverage-macos"
+    windows_alias = "view-coverage-windows"
+
+[tasks.view-coverage-linux]
+    dependencies = ["coverage-html"]
+    command = "xdg-open"
+    args = ["./target/debug/coverage/index.html"]
+
+[tasks.view-coverage-macos]
+    dependencies = ["coverage-html"]
+    command = "open"
+    args = ["./target/debug/coverage/index.html"]
+
+[tasks.view-coverage-windows]
+    dependencies = ["coverage-html"]
+    command = "cmd.exe"
+    args = ["/c", "start", "./target/debug/coverage/index.html"]
+
+[tasks.deadlinks]
+    dependencies = ["install-cargo-deadlinks"]
+    command = "cargo"
+    args = ["deadlinks", "--check-http", "--check-intra-doc-links", "--ignore-fragments"]
+
+[tasks.deny]
+    workspace = false
+    dependencies = ["install-cargo-deny"]
+    command = "cargo"
+    args = ["deny", "check", "-c", "${CARGO_MAKE_WORKSPACE_WORKING_DIRECTORY}/deny.toml", "all"]
+
+[tasks.deny-advisories]
+    workspace = false
+    dependencies = ["install-cargo-deny"]
+    command = "cargo"
+    args = ["deny", "check", "-c", "${CARGO_MAKE_WORKSPACE_WORKING_DIRECTORY}/deny.toml", "advisories"]
+
+[tasks.deny-ban]
+    workspace = false
+    dependencies = ["install-cargo-deny"]
+    command = "cargo"
+    args = ["deny", "check", "-c", "${CARGO_MAKE_WORKSPACE_WORKING_DIRECTORY}/deny.toml", "ban"]
+
+[tasks.deny-bans]
+    workspace = false
+    dependencies = ["install-cargo-deny"] 
+    command = "cargo"
+    args = ["deny", "check", "-c", "${CARGO_MAKE_WORKSPACE_WORKING_DIRECTORY}/deny.toml", "bans"]
+
+[tasks.deny-license]
+    workspace = false
+    dependencies = ["install-cargo-deny"]
+    command = "cargo"
+    args = ["deny", "check", "-c", "${CARGO_MAKE_WORKSPACE_WORKING_DIRECTORY}/deny.toml", "license"]
+
+[tasks.deny-licenses]
+    dependencies = ["install-cargo-deny"]
+    command = "cargo"
+    args = ["deny", "check", "-c", "${CARGO_MAKE_WORKSPACE_WORKING_DIRECTORY}/deny.toml", "licenses"]
+
+[tasks.deny-sources]
+    workspace = false
+    dependencies = ["install-cargo-deny"]
+    command = "cargo"
+    args = ["deny", "check", "-c", "${CARGO_MAKE_WORKSPACE_WORKING_DIRECTORY}/deny.toml", "sources"]
+
+[tasks.geiger]
+    dependencies = ["install-cargo-geiger"]
+    command = "cargo"
+    args = ["geiger"]
+
+[tasks.license]
+    dependencies = ["install-cargo-license"]
+    command = "cargo"
+    args = ["license", "--all-features", "--avoid-dev-deps"]
+
+[tasks.msrv]
+    dependencies = ["install-cargo-msrv"]
+    command = "cargo"
+    args = ["msrv"]
+
+[tasks.msrv-verify]
+    dependencies = ["install-cargo-msrv"]
+    command = "cargo"
+    args = ["msrv", "verify"]
+
+[tasks.outdated]
+    dependencies = ["install-cargo-outdated"]
+    command = "cargo"
+    args = ["outdated"]
+
+[tasks.test]
+    clear = true
+    dependencies = ["install-cargo-hack"]
+    env = { CARGO_MAKE_WORKSPACE_SKIP_MEMBERS = "examples/*"}
+    script = "cargo hack test $CARGO_HACK_COMMON_FLAGS"
+
+[tasks.test-nextest]
+    dependencies = ["install-cargo-hack", "install-cargo-nextest"]
+    script = "cargo hack nextest run $CARGO_HACK_COMMON_FLAGS"
+
+[tasks.example-lib-python]
+    cwd = "${CARGO_MAKE_WORKSPACE_WORKING_DIRECTORY}/examples/pyo3-opentelemetry-lib"
+    script = "cargo make python-check-all"
+
+[tasks.examples]
+    dependencies = ["example-lib-python"]
+
+[tasks.check-all]
+    dependencies = ["check", "clippy", "deny", "deadlinks", "msrv-verify", "examples", "test"]
+
+[tasks.pre-ci-flow]
+    dependencies = ["check", "clippy", "deny", "deadlinks", "msrv-verify"]
+

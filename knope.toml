@@ -1,0 +1,26 @@
+[packages.lib]
+versioned_files = ["crates/lib/Cargo.toml"]
+changelog = "crates/lib/CHANGELOG.md"
+scopes = ["lib", "pyo3-opentelemetry"]
+
+[packages.macros]
+versioned_files = ["crates/macros/Cargo.toml"]
+changelog = "crates/macros/CHANGELOG.md"
+scopes = ["macros", "pyo3-opentelemetry-macros"]
+
+[[workflows]]
+name = "release"
+
+[[workflows.steps]]
+type = "PrepareRelease"
+
+[[workflows.steps]]
+type = "Release"
+
+[[workflows.steps]]
+type = "Command"
+command = "git commit -m \"chore: prepare release\""
+
+[[workflows.steps]]
+type = "Command"
+command = "./scripts/ci/release.sh"

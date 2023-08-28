@@ -1,0 +1,55 @@
+# Based on https://github.com/actions-rs/meta/blob/master/recipes/msrv.md
+
+on: 
+  push:
+    branches: [main]
+  pull_request: {}
+
+name: Checks 
+
+jobs:
+  checks:
+    name: Run Checks
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ '3.8', '3.9', '3.10', '3.11' ]
+        rust:
+          - stable
+          # the scripts seem to inevitably involve building something that requires a newer version
+          # or rust, so we just run against stable for now.
+          # - 1.60.0
+    steps:
+      # Checkout, setup Rust tools, etc.
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          override: true
+      - uses: Swatinem/rust-cache@v2
+      # install cargo make with cargo-binstall to avoid its build dependencies
+      - run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+      - run: cargo-binstall cargo-make@0.36.6 --no-confirm
+
+      # For ci-flow, see the following:
+      # https://github.com/sagiegurari/cargo-make/tree/master#predefined-flows
+      # https://github.com/sagiegurari/cargo-make/blob/master/docs/cargo_make_task_list.md#ci
+      - name: Run Rust CI
+        uses: actions-rs/cargo@v1
+        with:
+          command: make
+          args: --makefile Makefile.toml ci-flow
+
+      # Setup Python and run Python example
+      - name: Setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install poetry
+        uses: snok/install-poetry@v1
+      - name: Run Python Example
+        uses: actions-rs/cargo@v1
+        with:
+          command: make
+          args: --makefile Makefile.toml example-lib-python 
+
