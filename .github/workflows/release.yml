@@ -1,11 +1,11 @@
 name: Release
 
 on:
-  push:
-    branches: [main]
+  workflow_dispatch: {} 
 
 jobs:
   release:
+    if: github.ref == 'refs/head/main' 
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.PAT }}
