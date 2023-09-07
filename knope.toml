@@ -15,11 +15,11 @@ name = "release"
 type = "PrepareRelease"
 
 [[workflows.steps]]
-type = "Release"
-
-[[workflows.steps]]
 type = "Command"
 command = "git commit -m \"chore: prepare release\""
+
+[[workflows.steps]]
+type = "Release"
 
 [[workflows.steps]]
 type = "Command"
