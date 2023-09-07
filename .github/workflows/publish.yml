@@ -7,14 +7,9 @@ on:
     
 jobs:
   release-macros:
-    timeout-minutes: 604800
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/macros')
     steps:
-      - uses: trstringer/manual-approval@v1
-        with:
-          secret: ${{ github.TOKEN }}
-          approvers: rigetti
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
@@ -25,14 +20,9 @@ jobs:
           override: true
       - run: cargo publish -p pyo3-opentelemetry-macros --token ${{ secrets.CRATES_IO_TOKEN }}
   release-lib:
-    timeout-minutes: 604800
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/lib')
     steps:
-      - uses: trstringer/manual-approval@v1
-        with:
-          secret: ${{ github.TOKEN }}
-          approvers: rigetti
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
@@ -41,4 +31,12 @@ jobs:
         with:
           toolchain: stable
           override: true
+      - run: |
+          sudo apt update -y && sudo apt install curl -y
+          sudo curl -fsSL https://github.com/mikefarah/yq/releases/download/v4.35.1/yq_linux_amd64 -o /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
+        name: Install yq
+      # Below we give some time to make sure that the macros crate is published before the lib crate
+      # in the case that the new lib crate depends on the new, yet to be published macros crate.
+      - run: timeout 15m bash -c 'until ./scripts/ci/assert-macros-crate-published.sh; do sleep 10; done'
       - run: cargo publish -p pyo3-opentelemetry --token ${{ secrets.CRATES_IO_TOKEN }}
