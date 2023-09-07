@@ -13,49 +13,35 @@
 [tasks.install-coverage-tools]
     install_crate = { rustup_component_name = "llvm-tools-preview" }
 
-[tasks.install-cargo-binstall]
-    # Directly from https://github.com/cargo-bins/cargo-binstall/tree/d2c337738815485b0e0286003f099a6536df1b10
-    script = "command -v cargo-binstall || curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash"
-
 [tasks.install-cargo-hack]
-    dependencies = ["install-cargo-binstall"]
-    script = "cargo-binstall cargo-hack@0.5.26 --no-confirm"
+    install_crate = { crate_name = "cargo-hack", version = "0.5.26" }
 
 [tasks.install-cargo-deny]
-    dependencies = ["install-cargo-binstall"]
-    script = "cargo-binstall cargo-deny --no-confirm"
+    install_crate = { crate_name = "cargo-deny", version = "0.14.2" }
 
 [tasks.install-cargo-deadlinks]
-    dependencies = ["install-cargo-binstall"]
-    script = "cargo-binstall cargo-deadlinks --no-confirm"
+    install_crate = { crate_name = "cargo-deadlinks", version = "0.8.1" }
 
 [tasks.install-cargo-geiger]
-    dependencies = ["install-cargo-binstall"]
-    script = "cargo-binstall cargo-geiger --no-confirm"
+    install_crate = { crate_name = "cargo-geiger", version = "0.11.6" }
 
 [tasks.install-cargo-license]
-    dependencies = ["install-cargo-binstall"]
-    script = "cargo-binstall cargo-license --no-confirm"
+    install_crate = { crate_name = "cargo-license", version= "0.5.1" }
 
 [tasks.install-cargo-msrv]
-    dependencies = ["install-cargo-binstall"]
-    script = "cargo-binstall cargo-msrv --no-confirm"
+    install_crate = { crate_name = "cargo-msrv", version = "0.15.1" }
 
 [tasks.install-cargo-outdated]
-    dependencies = ["install-cargo-binstall"]
-    script = "cargo-binstall cargo-outdated --no-confirm"
+    install_crate = { crate_name = "cargo-outdated", version = "0.13.1" }
 
 [tasks.install-grcov]
-    dependencies = ["install-coverage-tools", "install-cargo-binstall"]
-    script = "cargo-binstall grcov --no-confirm"
+    install_crate = { crate_name = "grcov", version = "v0.8.19" }
 
 [tasks.install-gitlab-clippy]
-    dependencies = ["install-cargo-binstall"]
-    script = "cargo-binstall gitlab_clippy --no-confirm"
+    install_crate = { crate_name = "gitlab_clippy", version = "1.0.3" }
 
 [tasks.install-cargo-nextest]
-    dependencies = ["install-cargo-binstall"]
-    script = "cargo-binstall cargo-nextest  --no-confirm"
+    install_crate = { crate_name = "cargo-nextest", version = "0.9.57" }
 
 [tasks.check]
     clear = true
