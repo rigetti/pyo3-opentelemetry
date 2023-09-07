@@ -27,10 +27,12 @@ jobs:
           toolchain: ${{ matrix.rust }}
           override: true
       - uses: Swatinem/rust-cache@v2
-      # install cargo make with cargo-binstall to avoid its build dependencies
       - run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-      - run: cargo-binstall cargo-make@0.36.6 --no-confirm
-
+      - name: Install cargo-make
+        uses: actions-rs/cargo@v1
+        with:
+          command: install
+          args: --debug cargo-make
       # For ci-flow, see the following:
       # https://github.com/sagiegurari/cargo-make/tree/master#predefined-flows
       # https://github.com/sagiegurari/cargo-make/blob/master/docs/cargo_make_task_list.md#ci
