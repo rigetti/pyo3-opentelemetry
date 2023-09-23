@@ -16,21 +16,46 @@ name = "pyo3_opentelemetry"
 crate-type = ["lib", "cdylib"]
 
 [dependencies]
-opentelemetry = "0.18.0"
-opentelemetry_api = "0.18.0"
-opentelemetry_sdk = "0.18.0"
+futures-core = { version = "0.3.28", optional = true }
+once_cell = { version = "1.18.0", optional = true }
+opentelemetry = { version = "0.20.0", features = ["rt-tokio"], optional = true }
+opentelemetry-otlp = { version = "0.13.0", optional = true }
+opentelemetry-proto = { version = "0.3.0", optional = true, features = ["tonic"] }
+opentelemetry-stdout = { version = "0.1.0", optional = true, features = ["trace"] }
+opentelemetry_api = { version = "0.20.0", optional = true }
+opentelemetry_sdk = { version = "0.20.0", optional = true, features = ["rt-tokio-current-thread"] }
+prost = { version = "0.11.0", optional = true }
 pyo3 = { version = "0.19.0", features = [] }
+pyo3-asyncio = { version = "0.19.0", optional = true, features = ["tokio-runtime"] }
 pyo3-opentelemetry-macros = { path = "../macros", version = "0.1.0" }
+tokio = { version = "1.27.0", features = ["rt-multi-thread"] }
+tonic = { version = "0.10.1", optional = true }
+tracing = { version = "0.1.37", optional = true }
+tracing-opentelemetry = { version = "0.21.0", optional = true }
+tracing-subscriber = { version = "0.3.17", optional = true }
 
 [dev-dependencies]
 futures-util = "0.3.28"
 once_cell = "1.17.1"
-opentelemetry = { version = "0.18.0", features = ["trace", "rt-tokio"] }
+opentelemetry = { version = "0.20.0", features = ["trace", "rt-tokio"] }
 tokio = { version = "1.27.0", features = ["sync", "parking_lot", "macros"] }
 tracing = "0.1.37"
-tracing-opentelemetry = "0.18.0"
+tracing-opentelemetry = "0.21.0"
 tracing-subscriber = "0.3.16"
 
 [features]
 extension-module = ["pyo3/extension-module"]
-default = ["extension-module"]
+default = ["extension-module", "opentelemetry"]
+export = [
+  "opentelemetry_api",
+  "opentelemetry_sdk/rt-tokio-current-thread",
+  "pyo3-asyncio/tokio-runtime",
+  "tokio/rt-multi-thread",
+  "tracing",
+  "tracing-opentelemetry",
+  "tracing-subscriber",
+  "opentelemetry/rt-tokio"
+]
+export-otlp = ["export", "opentelemetry-otlp", "opentelemetry-proto", "tonic"]
+export-py-otlp = ["export", "opentelemetry-otlp", "opentelemetry-proto", "prost", "futures-core"]
+export-stdout = ["export", "opentelemetry-stdout/trace"]
