@@ -26,6 +26,9 @@ pub(crate) enum TracerInitializationError {
     #[cfg(feature = "export-otlp")]
     #[error("failed to initialize OTLP tracer provider")]
     Otlp(#[from] crate::export::otlp::TracerInitializationError),
+    #[cfg(feature = "export-stdout")]
+    #[error("failed to initialize stdout tracer provider")]
+    Stdout(#[from] crate::export::stdout::TracerInitializationError),
 }
 
 pub(crate) struct BatchExportProcess {
