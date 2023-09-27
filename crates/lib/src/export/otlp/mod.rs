@@ -73,6 +73,24 @@ struct PySpanLimits {
     max_attributes_per_link: u32,
 }
 
+impl Default for PySpanLimits {
+    fn default() -> Self {
+        Self::from(SpanLimits::default())
+    }
+}
+
+impl From<SpanLimits> for PySpanLimits {
+    fn from(span_limits: SpanLimits) -> Self {
+        Self {
+            max_events_per_span: span_limits.max_events_per_span,
+            max_attributes_per_span: span_limits.max_attributes_per_span,
+            max_links_per_span: span_limits.max_links_per_span,
+            max_attributes_per_event: span_limits.max_attributes_per_event,
+            max_attributes_per_link: span_limits.max_attributes_per_link,
+        }
+    }
+}
+
 impl From<PySpanLimits> for SpanLimits {
     fn from(span_limits: PySpanLimits) -> Self {
         Self {
@@ -86,7 +104,7 @@ impl From<PySpanLimits> for SpanLimits {
 }
 
 #[pyclass]
-#[derive(Clone)]
+#[derive(Clone, Default)]
 struct PyConfig {
     span_limits: PySpanLimits,
     resource: PyResource,
@@ -96,7 +114,7 @@ struct PyConfig {
     timeout_millis: Option<u64>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 struct PyResource {
     attrs: HashMap<String, PyResourceValue>,
     schema_url: Option<String>,
@@ -174,6 +192,12 @@ enum PySampler {
     TraceIdParentRatioBased(f64),
 }
 
+impl Default for PySampler {
+    fn default() -> Self {
+        Self::AlwaysOn(false)
+    }
+}
+
 impl From<PySampler> for Sampler {
     fn from(sampler: PySampler) -> Self {
         match sampler {
@@ -224,19 +248,26 @@ pub(crate) enum TracerInitializationError {
 #[pyclass]
 pub(super) struct OTLPAsyncContextManager {
     config: Config,
+    timeout_millis: u64,
 }
 
 #[pymethods]
 impl OTLPAsyncContextManager {
     #[new]
-    fn new(config: PyConfig) -> PyResult<Self> {
+    #[pyo3(signature = (config = None, timeout_millis = 300))]
+    fn new(config: Option<PyConfig>, timeout_millis: u64) -> PyResult<Self> {
         Ok(Self {
-            config: config.try_into().map_err(ToPythonError::to_py_err)?,
+            config: config
+                .unwrap_or_default()
+                .try_into()
+                .map_err(ToPythonError::to_py_err)?,
+            timeout_millis,
         })
     }
 
     fn __aenter__(&self) -> PyResult<()> {
         let config = self.config.clone();
+        let timeout = Duration::from_millis(self.timeout_millis);
         super::util::start_tracer(
             move || -> Result<_, super::util::trace::TracerInitializationError> {
                 let otlp_exporter = config.build_oltp_exporter();
@@ -257,6 +288,7 @@ impl OTLPAsyncContextManager {
                     .ok_or(TracerInitializationError::ProviderNotSetOnTracer)?;
                 Ok((provider, tracer))
             },
+            timeout,
         )
         .map_err(ToPythonError::to_py_err)
     }
