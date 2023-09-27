@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use opentelemetry_api::trace::{TraceError, TracerProvider};
 use opentelemetry_api::ExportError;
 use opentelemetry_proto::tonic::trace::v1::ResourceSpans;
@@ -92,24 +94,33 @@ impl opentelemetry_sdk::export::trace::SpanExporter for PythonOTLPSpanExporter {
 #[derive(Debug)]
 pub(super) struct PythonOTLPAsyncContextManager {
     exporter: Py<PyAny>,
+    timeout_millis: u64,
 }
 
 #[pymethods]
 impl PythonOTLPAsyncContextManager {
     #[new]
-    fn new(exporter: Py<PyAny>) -> Self {
-        Self { exporter }
+    #[pyo3(signature = (exporter, timeout_millis = 300))]
+    fn new(exporter: Py<PyAny>, timeout_millis: u64) -> Self {
+        Self {
+            exporter,
+            timeout_millis,
+        }
     }
 
     fn __aenter__(&self) -> PyResult<()> {
         let exporter = PythonOTLPSpanExporter::new(self.exporter.clone());
-        super::util::start_tracer(|| {
-            let provider = opentelemetry_sdk::trace::TracerProvider::builder()
-                .with_batch_exporter(exporter, opentelemetry::runtime::TokioCurrentThread)
-                .build();
-            let tracer = provider.tracer("py-otlp");
-            Ok((provider, tracer))
-        })
+        let timeout = Duration::from_millis(self.timeout_millis);
+        super::util::start_tracer(
+            || {
+                let provider = opentelemetry_sdk::trace::TracerProvider::builder()
+                    .with_batch_exporter(exporter, opentelemetry::runtime::TokioCurrentThread)
+                    .build();
+                let tracer = provider.tracer("py-otlp");
+                Ok((provider, tracer))
+            },
+            timeout,
+        )
         .map_err(super::util::trace::TracerInitializationError::to_py_err)
     }
 

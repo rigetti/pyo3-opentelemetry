@@ -42,7 +42,7 @@ pub(super) fn stop(py: Python<'_>) -> PyResult<&PyAny> {
 ///
 /// Note, this cannot be called within an existing `tokio::Runtime` (ie no nested
 /// runtimes).
-pub(super) fn start_tracer<F>(f: F) -> trace::TracerInitializationResult<()>
+pub(super) fn start_tracer<F>(f: F, timeout: Duration) -> trace::TracerInitializationResult<()>
 where
     F: FnOnce() -> Result<
             (TracerProvider, opentelemetry_sdk::trace::Tracer),
@@ -58,7 +58,7 @@ where
             tracing::subscriber::set_global_default(subscriber)
                 .map_err(trace::TracerInitializationError::from)
         },
-        Duration::from_secs(10),
+        timeout,
     )?;
 
     BATCH_EXPORT_PROCESS

@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use opentelemetry_api::trace::TracerProvider;
 use pyo3::prelude::*;
 use rigetti_pyo3::{create_init_submodule, ToPythonError};
@@ -11,17 +13,23 @@ pub(crate) enum TracerInitializationError {
 #[pyclass]
 pub(super) struct StdoutAsyncContextManager {
     file_path: Option<String>,
+    timeout_millis: u64,
 }
 
 #[pymethods]
 impl StdoutAsyncContextManager {
     #[new]
-    const fn new(file_path: Option<String>) -> Self {
-        Self { file_path }
+    #[pyo3(signature = (file_path = None, timeout_millis = 300))]
+    const fn new(file_path: Option<String>, timeout_millis: u64) -> Self {
+        Self {
+            file_path,
+            timeout_millis,
+        }
     }
 
     fn __aenter__(&self) -> PyResult<()> {
         let file_path = self.file_path.clone();
+        let timeout = Duration::from_millis(self.timeout_millis);
         super::util::start_tracer(
             move || -> Result<_, super::util::trace::TracerInitializationError> {
                 let exporter_builder = opentelemetry_stdout::SpanExporter::builder();
@@ -42,6 +50,7 @@ impl StdoutAsyncContextManager {
                 let tracer = provider.tracer("stdout");
                 Ok((provider, tracer))
             },
+            timeout,
         )
         .map_err(super::util::trace::TracerInitializationError::to_py_err)
     }
