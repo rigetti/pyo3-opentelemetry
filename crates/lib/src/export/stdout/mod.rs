@@ -30,8 +30,8 @@ impl StdoutAsyncContextManager {
     fn __aenter__(&self) -> PyResult<()> {
         let file_path = self.file_path.clone();
         let timeout = Duration::from_millis(self.timeout_millis);
-        super::util::start_tracer(
-            move || -> Result<_, super::util::trace::TracerInitializationError> {
+        super::common::start_tracer(
+            move || -> Result<_, super::common::trace::TracerInitializationError> {
                 let exporter_builder = opentelemetry_stdout::SpanExporter::builder();
                 let exporter_builder = match file_path {
                     Some(file_path) => {
@@ -52,7 +52,7 @@ impl StdoutAsyncContextManager {
             },
             timeout,
         )
-        .map_err(super::util::trace::TracerInitializationError::to_py_err)
+        .map_err(super::common::trace::TracerInitializationError::to_py_err)
     }
 
     #[staticmethod]
@@ -62,7 +62,7 @@ impl StdoutAsyncContextManager {
         _exc_value: Option<&PyAny>,
         _traceback: Option<&PyAny>,
     ) -> PyResult<&'a PyAny> {
-        super::util::stop(py)
+        super::common::stop(py)
     }
 }
 

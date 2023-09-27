@@ -26,14 +26,14 @@ impl ExportError for PythonExportError {
 #[derive(Debug)]
 struct PythonOTLPSpanExporter {
     exporter: Py<PyAny>,
-    wg: super::util::wg::WaitGroup,
+    wg: super::common::wg::WaitGroup,
 }
 
 impl PythonOTLPSpanExporter {
     fn new(exporter: Py<PyAny>) -> Self {
         Self {
             exporter,
-            wg: super::util::wg::WaitGroup::new(0),
+            wg: super::common::wg::WaitGroup::new(0),
         }
     }
 }
@@ -41,7 +41,7 @@ impl PythonOTLPSpanExporter {
 fn export_to_python(
     batch: Vec<SpanData>,
     exporter: &Py<PyAny>,
-    wg: &super::util::wg::WaitGroup,
+    wg: &super::common::wg::WaitGroup,
 ) -> Result<(), PythonExportError> {
     use prost::Message;
     let resource_spans = batch.into_iter().map(ResourceSpans::from);
@@ -111,7 +111,7 @@ impl PythonOTLPAsyncContextManager {
     fn __aenter__(&self) -> PyResult<()> {
         let exporter = PythonOTLPSpanExporter::new(self.exporter.clone());
         let timeout = Duration::from_millis(self.timeout_millis);
-        super::util::start_tracer(
+        super::common::start_tracer(
             || {
                 let provider = opentelemetry_sdk::trace::TracerProvider::builder()
                     .with_batch_exporter(exporter, opentelemetry::runtime::TokioCurrentThread)
@@ -121,7 +121,7 @@ impl PythonOTLPAsyncContextManager {
             },
             timeout,
         )
-        .map_err(super::util::trace::TracerInitializationError::to_py_err)
+        .map_err(super::common::trace::TracerInitializationError::to_py_err)
     }
 
     #[staticmethod]
@@ -131,7 +131,7 @@ impl PythonOTLPAsyncContextManager {
         _exc_value: Option<&PyAny>,
         _traceback: Option<&PyAny>,
     ) -> PyResult<&'a PyAny> {
-        super::util::stop(py)
+        super::common::stop(py)
     }
 }
 
