@@ -22,12 +22,12 @@ impl ExportError for PythonExportError {
 }
 
 #[derive(Debug)]
-struct PythonOTLPExporterWrapper {
+struct PythonOTLPSpanExporter {
     exporter: Py<PyAny>,
     wg: super::util::wg::WaitGroup,
 }
 
-impl PythonOTLPExporterWrapper {
+impl PythonOTLPSpanExporter {
     fn new(exporter: Py<PyAny>) -> Self {
         Self {
             exporter,
@@ -65,7 +65,7 @@ fn export_to_python(
     })
 }
 
-impl opentelemetry_sdk::export::trace::SpanExporter for PythonOTLPExporterWrapper {
+impl opentelemetry_sdk::export::trace::SpanExporter for PythonOTLPSpanExporter {
     fn force_flush(&mut self) -> futures_core::future::BoxFuture<'static, ExportResult> {
         let wg = self.wg.clone();
         Box::pin(async move {
@@ -90,19 +90,19 @@ impl opentelemetry_sdk::export::trace::SpanExporter for PythonOTLPExporterWrappe
 
 #[pyclass]
 #[derive(Debug)]
-pub(super) struct PythonOTLPExporter {
+pub(super) struct PythonOTLPAsyncContextManager {
     exporter: Py<PyAny>,
 }
 
 #[pymethods]
-impl PythonOTLPExporter {
+impl PythonOTLPAsyncContextManager {
     #[new]
     fn new(exporter: Py<PyAny>) -> Self {
         Self { exporter }
     }
 
     fn __aenter__(&self) -> PyResult<()> {
-        let exporter = PythonOTLPExporterWrapper::new(self.exporter.clone());
+        let exporter = PythonOTLPSpanExporter::new(self.exporter.clone());
         super::util::start_tracer(|| {
             let provider = opentelemetry_sdk::trace::TracerProvider::builder()
                 .with_batch_exporter(exporter, opentelemetry::runtime::TokioCurrentThread)
@@ -125,5 +125,5 @@ impl PythonOTLPExporter {
 }
 
 create_init_submodule! {
-    classes: [ PythonOTLPExporter ],
+    classes: [ PythonOTLPAsyncContextManager ],
 }

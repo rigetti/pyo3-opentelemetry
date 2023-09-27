@@ -9,12 +9,12 @@ pub(crate) enum TracerInitializationError {
 }
 
 #[pyclass]
-pub(super) struct StdoutExporter {
+pub(super) struct StdoutAsyncContextManager {
     file_path: Option<String>,
 }
 
 #[pymethods]
-impl StdoutExporter {
+impl StdoutAsyncContextManager {
     #[new]
     const fn new(file_path: Option<String>) -> Self {
         Self { file_path }
@@ -58,5 +58,5 @@ impl StdoutExporter {
 }
 
 create_init_submodule! {
-    classes: [ StdoutExporter ],
+    classes: [ StdoutAsyncContextManager ],
 }
