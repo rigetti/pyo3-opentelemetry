@@ -50,19 +50,21 @@ where
         > + Send
         + 'static,
 {
-    let batch_export_process = BatchExportProcess::new()?;
+    if BATCH_EXPORT_PROCESS.get().is_some() {
+        return Err(trace::TracerInitializationError::AlreadyInitialized);
+    }
+    BATCH_EXPORT_PROCESS.get_or_try_init(|| -> trace::TracerInitializationResult<_> {
+        let batch_export_process = BatchExportProcess::new()?;
 
-    batch_export_process.start_tracer(
-        f,
-        |subscriber| {
-            tracing::subscriber::set_global_default(subscriber)
-                .map_err(trace::TracerInitializationError::from)
-        },
-        timeout,
-    )?;
-
-    BATCH_EXPORT_PROCESS
-        .set(batch_export_process)
-        .map_err(|_| trace::TracerInitializationError::AlreadyInitialized)?;
+        batch_export_process.start_tracer(
+            f,
+            |subscriber| {
+                tracing::subscriber::set_global_default(subscriber)
+                    .map_err(trace::TracerInitializationError::from)
+            },
+            timeout,
+        )?;
+        Ok(batch_export_process)
+    })?;
     Ok(())
 }
