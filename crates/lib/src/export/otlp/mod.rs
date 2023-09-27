@@ -268,8 +268,8 @@ impl OTLPAsyncContextManager {
     fn __aenter__(&self) -> PyResult<()> {
         let config = self.config.clone();
         let timeout = Duration::from_millis(self.timeout_millis);
-        super::util::start_tracer(
-            move || -> Result<_, super::util::trace::TracerInitializationError> {
+        super::common::start_tracer(
+            move || -> Result<_, super::common::trace::TracerInitializationError> {
                 let otlp_exporter = config.build_oltp_exporter();
                 // Then pass it into pipeline builder
                 let tracer = opentelemetry_otlp::new_pipeline()
@@ -300,7 +300,7 @@ impl OTLPAsyncContextManager {
         _exc_value: Option<&PyAny>,
         _traceback: Option<&PyAny>,
     ) -> PyResult<&'a PyAny> {
-        super::util::stop(py)
+        super::common::stop(py)
     }
 }
 

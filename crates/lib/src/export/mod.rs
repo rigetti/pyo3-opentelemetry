@@ -16,13 +16,13 @@
 //! from Rust.
 use pyo3::prelude::*;
 
+mod common;
 #[cfg(feature = "export-otlp")]
 mod otlp;
 #[cfg(feature = "export-py-otlp")]
 mod py_otlp;
 #[cfg(feature = "export-stdout")]
 mod stdout;
-mod util;
 
 /// Adds the pyo3-opentelemetry export module to your parent module. The upshot here
 /// is that the Python package will contain `{name}.export.{stdout/otlp/py_otlp}`,
