@@ -1,53 +1,72 @@
-use opentelemetry_api::trace::TracerProvider;
+use opentelemetry_api::trace::{TraceError, TracerProvider};
+use opentelemetry_api::ExportError;
 use opentelemetry_proto::tonic::trace::v1::ResourceSpans;
 use opentelemetry_sdk::export::trace::{ExportResult, SpanData};
 use pyo3::prelude::*;
 
 use pyo3::types::PyBytes;
+use rigetti_pyo3::{create_init_submodule, ToPythonError};
+
+#[derive(thiserror::Error, Debug)]
+enum PythonExportError {
+    #[error("export to Python serialization failed: {0}")]
+    SerializationError(PyErr),
+    #[error("error while exporting to Python: {0}")]
+    ExportError(PyErr),
+}
+
+impl ExportError for PythonExportError {
+    fn exporter_name(&self) -> &'static str {
+        "PythonOTLPExporter"
+    }
+}
 
 #[derive(Debug)]
 struct PythonOTLPExporterWrapper {
     exporter: Py<PyAny>,
-    wg: super::util::WaitGroup,
+    wg: super::util::wg::WaitGroup,
 }
 
 impl PythonOTLPExporterWrapper {
     fn new(exporter: Py<PyAny>) -> Self {
         Self {
             exporter,
-            wg: super::util::WaitGroup::new(0),
+            wg: super::util::wg::WaitGroup::new(0),
         }
     }
 }
 
-fn export_to_python(batch: Vec<SpanData>, exporter: Py<PyAny>, wg: super::util::WaitGroup) {
+fn export_to_python(
+    batch: Vec<SpanData>,
+    exporter: &Py<PyAny>,
+    wg: &super::util::wg::WaitGroup,
+) -> Result<(), PythonExportError> {
     use prost::Message;
     let resource_spans = batch.into_iter().map(ResourceSpans::from);
 
-    Python::with_gil(|py| {
-        let resource_spans = resource_spans
+    Python::with_gil(|py| -> Result<(), PythonExportError> {
+        let resource_spans: Result<Vec<_>, PyErr> = resource_spans
             .map(|span| {
                 let span_bytes = span.encode_to_vec();
-                let py_bytes = PyBytes::new_with(py, span_bytes.len(), |bytes: &mut [u8]| {
+                PyBytes::new_with(py, span_bytes.len(), |bytes: &mut [u8]| {
                     bytes.copy_from_slice(span_bytes.as_slice());
                     Ok(())
-                });
-                py_bytes.unwrap()
+                })
             })
-            .collect::<Vec<_>>()
-            .into_py(py);
+            .collect();
 
+        let resource_spans = resource_spans.map_err(PythonExportError::SerializationError)?;
         exporter
             .as_ref(py)
             .call_method1("export", (resource_spans,))
-            .unwrap();
+            .map_err(PythonExportError::ExportError)?;
         wg.done();
-    });
+        Ok(())
+    })
 }
 
 impl opentelemetry_sdk::export::trace::SpanExporter for PythonOTLPExporterWrapper {
     fn force_flush(&mut self) -> futures_core::future::BoxFuture<'static, ExportResult> {
-        println!("force flush");
         let wg = self.wg.clone();
         Box::pin(async move {
             wg.wait().await;
@@ -63,15 +82,15 @@ impl opentelemetry_sdk::export::trace::SpanExporter for PythonOTLPExporterWrappe
         let exporter = self.exporter.clone();
         let wg = self.wg.clone();
         Box::pin(async move {
-            export_to_python(batch, exporter.clone(), wg.clone());
-            Ok(())
+            export_to_python(batch, &exporter, &wg)
+                .map_err(|e| TraceError::ExportFailed(Box::new(e)))
         })
     }
 }
 
 #[pyclass]
 #[derive(Debug)]
-pub struct PythonOTLPExporter {
+pub(super) struct PythonOTLPExporter {
     exporter: Py<PyAny>,
 }
 
@@ -82,27 +101,29 @@ impl PythonOTLPExporter {
         Self { exporter }
     }
 
-    fn __aenter__<'a>(&'a self, py: Python<'a>) -> PyResult<&PyAny> {
+    fn __aenter__(&self) -> PyResult<()> {
         let exporter = PythonOTLPExporterWrapper::new(self.exporter.clone());
-        pyo3_asyncio::tokio::future_into_py(py, async move {
-            super::util::start_tracer(|| {
-                let provider = opentelemetry_sdk::trace::TracerProvider::builder()
-                    .with_batch_exporter(exporter, opentelemetry::runtime::TokioCurrentThread)
-                    .build();
-                let tracer = provider.tracer("py-otlp");
-                (provider, tracer)
-            });
-            Ok(())
+        super::util::start_tracer(|| {
+            let provider = opentelemetry_sdk::trace::TracerProvider::builder()
+                .with_batch_exporter(exporter, opentelemetry::runtime::TokioCurrentThread)
+                .build();
+            let tracer = provider.tracer("py-otlp");
+            Ok((provider, tracer))
         })
+        .map_err(super::util::trace::TracerInitializationError::to_py_err)
     }
 
+    #[staticmethod]
     fn __aexit__<'a>(
-        &'a mut self,
         py: Python<'a>,
         _exc_type: Option<&PyAny>,
         _exc_value: Option<&PyAny>,
         _traceback: Option<&PyAny>,
-    ) -> PyResult<&PyAny> {
+    ) -> PyResult<&'a PyAny> {
         super::util::stop(py)
     }
+}
+
+create_init_submodule! {
+    classes: [ PythonOTLPExporter ],
 }
