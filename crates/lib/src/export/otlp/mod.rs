@@ -222,12 +222,12 @@ pub(crate) enum TracerInitializationError {
 }
 
 #[pyclass]
-pub(super) struct OTLPExporter {
+pub(super) struct OTLPAsyncContextManager {
     config: Config,
 }
 
 #[pymethods]
-impl OTLPExporter {
+impl OTLPAsyncContextManager {
     #[new]
     fn new(config: PyConfig) -> PyResult<Self> {
         Ok(Self {
@@ -273,5 +273,5 @@ impl OTLPExporter {
 }
 
 create_init_submodule! {
-    classes: [ OTLPExporter ],
+    classes: [ OTLPAsyncContextManager ],
 }
