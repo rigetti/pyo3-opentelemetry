@@ -1,49 +1,24 @@
 use std::{collections::HashMap, time::Duration};
 
 use opentelemetry_api::{trace::TraceError, KeyValue};
-use opentelemetry_otlp::{TonicExporterBuilder, WithExportConfig};
+use opentelemetry_otlp::WithExportConfig;
 use opentelemetry_sdk::{
     trace::{Sampler, SpanLimits},
     Resource,
 };
-use pyo3::{exceptions::PyValueError, prelude::*};
+use pyo3::prelude::*;
 
 use opentelemetry_sdk::trace;
-use rigetti_pyo3::{create_init_submodule, ToPythonError};
+use rigetti_pyo3::create_init_submodule;
 use tonic::metadata::{
     errors::{InvalidMetadataKey, InvalidMetadataValue},
     MetadataKey,
 };
 
-#[derive(thiserror::Error, Debug)]
-enum ConfigError {
-    #[error("invalid metadata map value: {0}")]
-    InvalidMetadataValue(#[from] InvalidMetadataValue),
-    #[error("invalid metadata map key: {0}")]
-    InvalidMetadataKey(#[from] InvalidMetadataKey),
-}
+use super::{force_flush_provider_as_shutdown, LayerBuildResult, LayerWithShutdown};
 
-impl ToPythonError for ConfigError {
-    fn to_py_err(self) -> PyErr {
-        match self {
-            Self::InvalidMetadataValue(e) => PyValueError::new_err(e.to_string()),
-            Self::InvalidMetadataKey(e) => PyValueError::new_err(e.to_string()),
-        }
-    }
-}
-
-#[derive(Clone)]
-struct Config {
-    span_limits: SpanLimits,
-    resource: Resource,
-    metadata_map: Option<tonic::metadata::MetadataMap>,
-    sampler: Sampler,
-    endpoint: Option<String>,
-    timeout: Option<Duration>,
-}
-
-impl Config {
-    fn build_oltp_exporter(&self) -> TonicExporterBuilder {
+impl crate::export::layer::Config for Config {
+    fn build(&self, batch: bool) -> LayerBuildResult<LayerWithShutdown> {
         let mut otlp_exporter = opentelemetry_otlp::new_exporter().tonic().with_env();
         if let Some(endpoint) = self.endpoint.clone() {
             otlp_exporter = otlp_exporter.with_endpoint(endpoint);
@@ -54,8 +29,65 @@ impl Config {
         if let Some(metadata_map) = self.metadata_map.clone() {
             otlp_exporter = otlp_exporter.with_metadata(metadata_map);
         }
-        otlp_exporter
+        let pipeline = opentelemetry_otlp::new_pipeline()
+            .tracing()
+            .with_exporter(otlp_exporter)
+            .with_trace_config(
+                trace::config()
+                    .with_sampler(self.sampler.clone())
+                    .with_span_limits(self.span_limits)
+                    .with_resource(self.resource.clone()),
+            );
+
+        let tracer = if batch {
+            pipeline.install_batch(opentelemetry::runtime::TokioCurrentThread)
+        } else {
+            pipeline.install_simple()
+        }
+        .map_err(BuildError::from)?;
+        let provider = tracer
+            .provider()
+            .ok_or(BuildError::ProviderNotSetOnTracer)?;
+        let layer = tracing_opentelemetry::layer().with_tracer(tracer.clone());
+        Ok(LayerWithShutdown {
+            layer: Box::new(layer),
+            shutdown: force_flush_provider_as_shutdown(provider),
+        })
     }
+}
+
+#[derive(thiserror::Error, Debug)]
+pub(super) enum Error {
+    #[error("error in the configuration: {0}")]
+    Config(#[from] ConfigError),
+}
+
+#[derive(thiserror::Error, Debug)]
+pub(super) enum BuildError {
+    #[error("failed to build opentelemetry-otlp pipeline: {0}")]
+    BatchInstall(#[from] TraceError),
+    #[error("provider not set on returned opentelemetry-otlp tracer")]
+    ProviderNotSetOnTracer,
+    #[error("error in the configuration: {0}")]
+    Config(#[from] ConfigError),
+}
+
+#[derive(thiserror::Error, Debug)]
+enum ConfigError {
+    #[error("invalid metadata map value: {0}")]
+    InvalidMetadataValue(#[from] InvalidMetadataValue),
+    #[error("invalid metadata map key: {0}")]
+    InvalidMetadataKey(#[from] InvalidMetadataKey),
+}
+
+#[derive(Clone)]
+pub struct Config {
+    span_limits: SpanLimits,
+    resource: Resource,
+    metadata_map: Option<tonic::metadata::MetadataMap>,
+    sampler: Sampler,
+    endpoint: Option<String>,
+    timeout: Option<Duration>,
 }
 
 #[pyclass]
@@ -105,7 +137,7 @@ impl From<PySpanLimits> for SpanLimits {
 
 #[pyclass]
 #[derive(Clone, Default)]
-struct PyConfig {
+pub(super) struct PyConfig {
     span_limits: PySpanLimits,
     resource: PyResource,
     metadata_map: Option<HashMap<String, String>>,
@@ -209,7 +241,7 @@ impl From<PySampler> for Sampler {
 }
 
 impl TryFrom<PyConfig> for Config {
-    type Error = ConfigError;
+    type Error = BuildError;
 
     fn try_from(config: PyConfig) -> Result<Self, Self::Error> {
         let metadata_map = match config.metadata_map {
@@ -237,73 +269,6 @@ impl TryFrom<PyConfig> for Config {
     }
 }
 
-#[derive(thiserror::Error, Debug)]
-pub(crate) enum TracerInitializationError {
-    #[error("provider not set on returned opentelemetry-otlp tracer")]
-    ProviderNotSetOnTracer,
-    #[error("failed to install batch exporter on opentelemetry-otlp pipeline")]
-    BatchInstall(#[from] TraceError),
-}
-
-#[pyclass]
-pub(super) struct OTLPAsyncContextManager {
-    config: Config,
-    timeout_millis: u64,
-}
-
-#[pymethods]
-impl OTLPAsyncContextManager {
-    #[new]
-    #[pyo3(signature = (config = None, timeout_millis = 300))]
-    fn new(config: Option<PyConfig>, timeout_millis: u64) -> PyResult<Self> {
-        Ok(Self {
-            config: config
-                .unwrap_or_default()
-                .try_into()
-                .map_err(ToPythonError::to_py_err)?,
-            timeout_millis,
-        })
-    }
-
-    fn __aenter__(&self) -> PyResult<()> {
-        let config = self.config.clone();
-        let timeout = Duration::from_millis(self.timeout_millis);
-        super::common::start_tracer(
-            move || -> Result<_, super::common::trace::TracerInitializationError> {
-                let otlp_exporter = config.build_oltp_exporter();
-                // Then pass it into pipeline builder
-                let tracer = opentelemetry_otlp::new_pipeline()
-                    .tracing()
-                    .with_exporter(otlp_exporter)
-                    .with_trace_config(
-                        trace::config()
-                            .with_sampler(config.sampler)
-                            .with_span_limits(config.span_limits)
-                            .with_resource(config.resource),
-                    )
-                    .install_batch(opentelemetry::runtime::TokioCurrentThread)
-                    .map_err(TracerInitializationError::from)?;
-                let provider = tracer
-                    .provider()
-                    .ok_or(TracerInitializationError::ProviderNotSetOnTracer)?;
-                Ok((provider, tracer))
-            },
-            timeout,
-        )
-        .map_err(ToPythonError::to_py_err)
-    }
-
-    #[staticmethod]
-    fn __aexit__<'a>(
-        py: Python<'a>,
-        _exc_type: Option<&PyAny>,
-        _exc_value: Option<&PyAny>,
-        _traceback: Option<&PyAny>,
-    ) -> PyResult<&'a PyAny> {
-        super::common::stop(py)
-    }
-}
-
 create_init_submodule! {
-    classes: [ OTLPAsyncContextManager ],
+    classes: [ PyConfig ],
 }
