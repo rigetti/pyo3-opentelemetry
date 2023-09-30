@@ -18,7 +18,7 @@
 pub(super) mod common;
 mod contextmanager;
 mod export_process;
-pub(crate) mod layer;
+pub(crate) mod layers;
 pub(crate) mod subscriber;
 
 // / Adds the pyo3-opentelemetry export module to your parent module. The upshot here

@@ -5,14 +5,14 @@ use tokio::{
     sync::Notify,
 };
 
-use crate::export::subscriber::Config as SubscriberConfig;
+use crate::tracing_subscriber::subscriber::Config as SubscriberConfig;
 
 use tracing::subscriber::SetGlobalDefaultError;
 
 #[derive(thiserror::Error, Debug)]
 pub(crate) enum StartError {
     #[error("failed to build subscriber")]
-    SubscriberBuild(#[from] crate::export::subscriber::BuildError),
+    SubscriberBuild(#[from] crate::tracing_subscriber::subscriber::BuildError),
 
     #[error("failed to set global default tracing subscriber")]
     SetSubscriber(#[from] SetGlobalDefaultError),

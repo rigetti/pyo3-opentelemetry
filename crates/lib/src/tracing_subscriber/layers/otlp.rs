@@ -33,7 +33,7 @@ impl Config {
     }
 }
 
-impl crate::export::layer::Config for Config {
+impl crate::tracing_subscriber::layers::Config for Config {
     fn build(&self, batch: bool) -> LayerBuildResult<WithShutdown> {
         let pipeline = opentelemetry_otlp::new_pipeline()
             .tracing()

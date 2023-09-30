@@ -19,7 +19,7 @@ impl Config {
     }
 }
 
-impl crate::export::layer::Config for Config {
+impl crate::tracing_subscriber::layers::Config for Config {
     fn build(&self, batch: bool) -> LayerBuildResult<WithShutdown> {
         let exporter_builder = opentelemetry_stdout::SpanExporter::builder();
         let exporter_builder = match self.file_path.as_ref() {

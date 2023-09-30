@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::export::subscriber::PyConfig;
+use crate::tracing_subscriber::subscriber::PyConfig;
 use pyo3::{exceptions::PyRuntimeError, prelude::*};
 use rigetti_pyo3::{create_init_submodule, py_wrap_error, wrap_error};
 use tokio::runtime::Runtime;
@@ -42,7 +42,7 @@ pub(crate) enum ConfigError {
     #[error("global batch export: {0}")]
     GlobalBatchInitialization(#[from] global_batch::InitializationError),
     #[error("failed to build subscriber: {0}")]
-    SubscriberBuild(#[from] crate::export::subscriber::BuildError),
+    SubscriberBuild(#[from] crate::tracing_subscriber::subscriber::BuildError),
 }
 
 wrap_error!(RustTracingConfigError(ConfigError));
@@ -74,7 +74,7 @@ type StartResult<T> = Result<T, StartError>;
 #[derive(thiserror::Error, Debug)]
 pub(crate) enum ShutdownError {
     #[error("the subscriber failed to shutdown")]
-    Subscriber(#[from] crate::export::subscriber::ShutdownError),
+    Subscriber(#[from] crate::tracing_subscriber::subscriber::ShutdownError),
 }
 
 wrap_error!(RustTracingShutdownError(ShutdownError));

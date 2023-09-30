@@ -1,6 +1,6 @@
 use tracing::subscriber::DefaultGuard;
 
-use crate::export::subscriber::WithShutdown;
+use crate::tracing_subscriber::subscriber::WithShutdown;
 
 use super::ShutdownResult;
 
