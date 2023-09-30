@@ -4,7 +4,7 @@ use tracing_subscriber::{layer::Layered, prelude::__tracing_subscriber_Subscribe
 #[derive(thiserror::Error, Debug)]
 pub(crate) enum ShutdownError {
     #[error("failed to shutdown configured layer: {0}")]
-    LayerShutdown(#[from] crate::export::layer::LayerError),
+    LayerShutdown(#[from] crate::export::layer::ShutdownError),
 }
 
 type ShutdownResult<T> = Result<T, ShutdownError>;
@@ -15,19 +15,19 @@ pub(crate) enum BuildError {
     LayerBuild(#[from] crate::export::layer::BuildError),
 }
 
-#[derive(thiserror::Error, Debug)]
-pub(crate) enum Error {
-    #[error("failed to build layer: {0}")]
-    BuildLayer(#[from] super::layer::LayerError),
-    #[error(transparent)]
-    Custom(#[from] CustomError),
-    #[error("failed to shutdown subscriber: {0}")]
-    SubscriberShutdown(#[from] ShutdownError),
-}
+// #[derive(thiserror::Error, Debug)]
+// pub(crate) enum Error {
+//     #[error("failed to build layer: {0}")]
+//     BuildLayer(#[from] super::layer::BuildError),
+//     #[error(transparent)]
+//     Custom(#[from] CustomError),
+//     #[error("failed to shutdown subscriber: {0}")]
+//     SubscriberShutdown(#[from] ShutdownError),
+// }
 
 #[derive(thiserror::Error, Debug)]
 #[error("{message}")]
-pub struct CustomError {
+pub(crate) struct CustomError {
     message: String,
     #[source]
     source: Option<Box<dyn std::error::Error + Send + Sync>>,
@@ -40,20 +40,25 @@ pub(crate) type Shutdown = Box<
         + Sync,
 >;
 
-pub type SubscriberResult<T> = Result<T, Error>;
 type SubscriberBuildResult<T> = Result<T, BuildError>;
 
-pub trait Config: BoxDynConfigClone + Send + Sync {
-    fn build(&self, batch: bool) -> SubscriberBuildResult<SubscriberWithShutdown>;
+pub(crate) trait Config: BoxDynConfigClone + Send + Sync {
+    fn build(&self, batch: bool) -> SubscriberBuildResult<WithShutdown>;
 }
 
 #[pyclass(name = "Config")]
 #[derive(Clone)]
-pub struct PyConfig {
+pub(crate) struct PyConfig {
     pub(crate) subscriber_config: Box<dyn Config>,
 }
 
-trait BoxDynConfigClone {
+impl core::fmt::Debug for PyConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "PyConfig {{ subscriber_config: Box<dyn Config> }}")
+    }
+}
+
+pub(crate) trait BoxDynConfigClone {
     fn clone_box(&self) -> Box<dyn Config>;
 }
 
@@ -81,22 +86,35 @@ where
 {
 }
 
-pub struct SubscriberWithShutdown {
+pub(crate) struct WithShutdown {
     pub(crate) subscriber: Option<Box<dyn SendSyncSubscriber>>,
     pub(crate) shutdown: Shutdown,
 }
 
+impl core::fmt::Debug for WithShutdown {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "WithShutdown subscriber: {}, shutdown: Shutdown",
+            &self
+                .subscriber
+                .as_ref()
+                .map_or("None", |_| "Some(Box<dyn SendSyncSubscriber>)"),
+        )
+    }
+}
+
 #[derive(Clone)]
 pub(crate) struct TracingSubscriberRegistryConfig {
-    layer_config: Box<dyn super::layer::Config>,
+    pub(super) layer_config: Box<dyn super::layer::Config>,
 }
 
 impl Config for TracingSubscriberRegistryConfig {
-    fn build(&self, batch: bool) -> SubscriberBuildResult<SubscriberWithShutdown> {
+    fn build(&self, batch: bool) -> SubscriberBuildResult<WithShutdown> {
         let layer = self.layer_config.clone().build(batch)?;
         let subscriber = Registry::default().with(layer.layer);
         let shutdown = layer.shutdown;
-        Ok(SubscriberWithShutdown {
+        Ok(WithShutdown {
             subscriber: Some(Box::new(subscriber)),
             shutdown: Box::new(move || {
                 Box::pin(async move {

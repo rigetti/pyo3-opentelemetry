@@ -9,10 +9,10 @@ use pyo3::prelude::*;
 use pyo3::types::PyBytes;
 use rigetti_pyo3::create_init_submodule;
 
-use super::{force_flush_provider_as_shutdown, LayerBuildResult, LayerWithShutdown};
+use super::{force_flush_provider_as_shutdown, LayerBuildResult, WithShutdown};
 
 #[pyclass]
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub(crate) struct Config {
     exporter: Py<PyAny>,
 }
@@ -27,7 +27,7 @@ impl Config {
 }
 
 impl crate::export::layer::Config for Config {
-    fn build(&self, batch: bool) -> LayerBuildResult<LayerWithShutdown> {
+    fn build(&self, batch: bool) -> LayerBuildResult<WithShutdown> {
         let provider = if batch {
             opentelemetry_sdk::trace::TracerProvider::builder()
                 .with_batch_exporter(
@@ -42,7 +42,7 @@ impl crate::export::layer::Config for Config {
         };
         let tracer = provider.tracer("py-otlp");
         let layer = tracing_opentelemetry::layer().with_tracer(tracer);
-        Ok(LayerWithShutdown {
+        Ok(WithShutdown {
             layer: Box::new(layer),
             shutdown: force_flush_provider_as_shutdown(provider),
         })

@@ -1,6 +1,11 @@
+#[cfg(feature = "export-file")]
 pub(crate) mod file;
+#[cfg(feature = "export-otlp")]
 pub(crate) mod otlp;
+#[cfg(feature = "export-py-otlp")]
 pub(crate) mod py_otlp;
+
+use std::fmt::Debug;
 
 use opentelemetry_sdk::trace::TracerProvider;
 use pyo3::prelude::*;
@@ -8,19 +13,25 @@ use tracing_subscriber::{Layer, Registry};
 
 pub(super) type Shutdown = Box<
     dyn (FnOnce() -> std::pin::Pin<
-            Box<dyn std::future::Future<Output = LayerResult<()>> + Send + Sync>,
+            Box<dyn std::future::Future<Output = ShutdownResult<()>> + Send + Sync>,
         >) + Send
         + Sync,
 >;
 
-pub struct LayerWithShutdown {
-    pub layer: Box<dyn Layer<Registry> + Send + Sync>,
-    pub shutdown: Shutdown,
+pub(crate) struct WithShutdown {
+    pub(crate) layer: Box<dyn Layer<Registry> + Send + Sync>,
+    pub(crate) shutdown: Shutdown,
+}
+
+impl core::fmt::Debug for WithShutdown {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "LayerWithShutdown {{ layer: Box<dyn Layer<Registry> + Send + Sync>, shutdown: Shutdown }}")
+    }
 }
 
 #[derive(thiserror::Error, Debug)]
 #[error("{message}")]
-pub struct CustomError {
+pub(crate) struct CustomError {
     message: String,
     #[source]
     source: Box<dyn std::error::Error + Send + Sync>,
@@ -28,10 +39,13 @@ pub struct CustomError {
 
 #[derive(thiserror::Error, Debug)]
 pub(crate) enum BuildError {
+    #[cfg(feature = "export-file")]
     #[error("file layer: {0}")]
     File(#[from] file::BuildError),
+    #[cfg(feature = "export-otlp")]
     #[error("otlp layer: {0}")]
     Otlp(#[from] otlp::BuildError),
+    #[cfg(feature = "export-py-otlp")]
     #[error("custom layer: {0}")]
     Custom(#[from] CustomError),
 }
@@ -42,27 +56,15 @@ pub(crate) enum ShutdownError {
     Custom(#[from] CustomError),
 }
 
-#[derive(thiserror::Error, Debug)]
-pub(crate) enum LayerError {
-    #[error("otlp layer: {0}")]
-    Otlp(#[from] otlp::Error),
-    #[error("py otlp layer: {0}")]
-    PyOtlp(#[from] py_otlp::Error),
-    #[error("file layer: {0}")]
-    File(#[from] file::BuildError),
-    #[error(transparent)]
-    Custom(#[from] CustomError),
-}
-
-pub type LayerResult<T> = Result<T, LayerError>;
+pub(crate) type ShutdownResult<T> = Result<T, ShutdownError>;
 
 pub(super) type LayerBuildResult<T> = Result<T, BuildError>;
 
-pub trait Config: Send + Sync + BoxDynConfigClone {
-    fn build(&self, batch: bool) -> LayerBuildResult<LayerWithShutdown>;
+pub(crate) trait Config: Send + Sync + BoxDynConfigClone + Debug {
+    fn build(&self, batch: bool) -> LayerBuildResult<WithShutdown>;
 }
 
-trait BoxDynConfigClone {
+pub(crate) trait BoxDynConfigClone {
     fn clone_box(&self) -> Box<dyn Config>;
 }
 
@@ -76,14 +78,14 @@ where
 }
 
 impl Clone for Box<dyn Config> {
-    fn clone(&self) -> Box<dyn Config> {
+    fn clone(&self) -> Self {
         self.clone_box()
     }
 }
 
 pub(super) fn force_flush_provider_as_shutdown(provider: TracerProvider) -> Shutdown {
     Box::new(
-        move || -> std::pin::Pin<Box<dyn std::future::Future<Output = LayerResult<()>> + Send + Sync>> {
+        move || -> std::pin::Pin<Box<dyn std::future::Future<Output = ShutdownResult<()>> + Send + Sync>> {
             Box::pin(async move {
                 provider.force_flush();
                 Ok(())
@@ -92,26 +94,26 @@ pub(super) fn force_flush_provider_as_shutdown(provider: TracerProvider) -> Shut
     )
 }
 
-#[pyclass]
-#[pyo3(name = "Config")]
-pub struct PyConfig {
-    layer_config: Box<dyn Config>,
-}
-
-#[derive(FromPyObject, Clone)]
+#[derive(FromPyObject, Clone, Debug)]
 pub(crate) enum OtelExportLayerConfig {
+    #[cfg(feature = "export-file")]
     File(file::Config),
+    #[cfg(feature = "export-otlp")]
     Otlp(otlp::PyConfig),
+    #[cfg(feature = "export-py-otlp")]
     PyOtlp(py_otlp::Config),
 }
 
 impl Config for OtelExportLayerConfig {
-    fn build(&self, batch: bool) -> LayerBuildResult<LayerWithShutdown> {
+    fn build(&self, batch: bool) -> LayerBuildResult<WithShutdown> {
         match self {
+            #[cfg(feature = "export-file")]
             Self::File(config) => config.build(batch),
+            #[cfg(feature = "export-otlp")]
             Self::Otlp(config) => otlp::Config::try_from(config.clone())
                 .map_err(BuildError::from)?
                 .build(batch),
+            #[cfg(feature = "export-py-otlp")]
             Self::PyOtlp(config) => config.build(batch),
         }
     }
