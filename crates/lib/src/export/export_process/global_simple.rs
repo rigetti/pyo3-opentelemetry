@@ -1,13 +1,13 @@
-use crate::export::subscriber::SubscriberWithShutdown;
+use crate::export::subscriber::WithShutdown;
 
 use super::{ShutdownResult, StartResult};
 
-pub struct ExportProcess {
-    subscriber: SubscriberWithShutdown,
+pub(crate) struct ExportProcess {
+    subscriber: WithShutdown,
 }
 
 impl ExportProcess {
-    pub(crate) fn new(subscriber: SubscriberWithShutdown) -> Self {
+    pub(crate) const fn new(subscriber: WithShutdown) -> Self {
         Self { subscriber }
     }
 
@@ -19,6 +19,7 @@ impl ExportProcess {
 
     pub(crate) async fn shutdown(self) -> ShutdownResult<()> {
         let shutdown = self.subscriber.shutdown;
-        Ok(shutdown().await?)
+        shutdown().await?;
+        Ok(())
     }
 }

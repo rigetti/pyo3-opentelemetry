@@ -66,4 +66,4 @@ export = [
 ]
 export-otlp = ["export", "opentelemetry-otlp", "opentelemetry-proto", "tonic"]
 export-py-otlp = ["export", "opentelemetry-otlp", "opentelemetry-proto", "prost", "futures-core"]
-export-stdout = ["export", "opentelemetry-stdout/trace"]
+export-file = ["export", "opentelemetry-stdout/trace"]

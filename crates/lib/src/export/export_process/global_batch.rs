@@ -10,9 +10,7 @@ use crate::export::subscriber::Config as SubscriberConfig;
 use tracing::subscriber::SetGlobalDefaultError;
 
 #[derive(thiserror::Error, Debug)]
-pub(super) enum StartError {
-    #[error("only one exporter can be initialized per process")]
-    AlreadyInitialized,
+pub(crate) enum StartError {
     #[error("failed to build subscriber")]
     SubscriberBuild(#[from] crate::export::subscriber::BuildError),
 
@@ -22,21 +20,19 @@ pub(super) enum StartError {
     ExportInitializationTimeout(#[from] tokio::time::error::Elapsed),
     #[error("failed to receive export initialization signal")]
     ExportInitializationRecv(#[from] tokio::sync::oneshot::error::RecvError),
-    #[error("exporter is not initialized")]
-    Uninitialized,
     #[error("failed to initialize export background tokio runtime")]
     RuntimeInitialization(#[from] std::io::Error),
 }
 
 pub(crate) struct ExportProcess {
     shutdown_notify: Arc<Notify>,
-    runtime: Runtime,
+    pub(super) runtime: Runtime,
     subscriber_config: Box<dyn SubscriberConfig>,
     timeout: Duration,
 }
 
 #[derive(thiserror::Error, Debug)]
-pub(super) enum InitializationError {
+pub(crate) enum InitializationError {
     #[error("failed to initialize export background tokio runtime")]
     RuntimeInitialization(#[from] std::io::Error),
 }
@@ -44,7 +40,7 @@ pub(super) enum InitializationError {
 type InitializationResult<T> = Result<T, InitializationError>;
 
 impl ExportProcess {
-    pub(crate) fn new(
+    pub(super) fn new(
         subscriber_config: Box<dyn SubscriberConfig>,
         timeout: Duration,
     ) -> InitializationResult<Self> {
@@ -58,7 +54,7 @@ impl ExportProcess {
         })
     }
 
-    pub(crate) fn start_tracer(&self) -> Result<(), StartError> {
+    pub(super) fn start_tracer(&self) -> Result<(), StartError> {
         let (set_subscriber_result_tx, set_subscriber_result_rx) = tokio::sync::oneshot::channel();
         let shutdown_notify = self.shutdown_notify.clone();
         let subscriber_config = self.subscriber_config.clone();
@@ -99,6 +95,8 @@ impl ExportProcess {
             }
         });
 
+        // let handle = Handle::try_current().unwrap();
+        // let _guard = handle.enter();
         // We should not be in an existing tokio runtime, so we create a new one
         // and block on the result of the `set_subscriber` function. This ensures
         // the function does not return until the subscriber is set and we are ready
@@ -109,6 +107,7 @@ impl ExportProcess {
             .map_err(StartError::RuntimeInitialization)?;
         let _guard = wait_for_startup_runtime.enter();
         wait_for_startup_runtime
+            .handle()
             .block_on(tokio::time::timeout(self.timeout, set_subscriber_result_rx))
             .map_err(StartError::from)
             .and_then(|r| {
@@ -117,11 +116,12 @@ impl ExportProcess {
             })
     }
 
-    pub(crate) async fn shutdown(self) {
+    pub(super) async fn shutdown(self) -> Runtime {
         // notify the background process to shutdown
         self.shutdown_notify.notify_one();
         // wait to be notified that the shutdown is complete
         self.shutdown_notify.notified().await;
+        self.runtime
     }
 }
 

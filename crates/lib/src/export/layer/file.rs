@@ -2,12 +2,12 @@ use opentelemetry_api::trace::TracerProvider;
 use pyo3::prelude::*;
 use rigetti_pyo3::create_init_submodule;
 
-use super::{force_flush_provider_as_shutdown, LayerBuildResult, LayerWithShutdown};
+use super::{force_flush_provider_as_shutdown, LayerBuildResult, WithShutdown};
 
 #[pyclass]
-#[derive(Clone)]
+#[derive(Clone, Debug, Default)]
 pub(crate) struct Config {
-    file_path: Option<String>,
+    pub(crate) file_path: Option<String>,
 }
 
 #[pymethods]
@@ -20,7 +20,7 @@ impl Config {
 }
 
 impl crate::export::layer::Config for Config {
-    fn build(&self, batch: bool) -> LayerBuildResult<LayerWithShutdown> {
+    fn build(&self, batch: bool) -> LayerBuildResult<WithShutdown> {
         let exporter_builder = opentelemetry_stdout::SpanExporter::builder();
         let exporter_builder = match self.file_path.as_ref() {
             Some(file_path) => {
@@ -43,7 +43,7 @@ impl crate::export::layer::Config for Config {
         };
         let tracer = provider.tracer("stdout");
         let layer = tracing_opentelemetry::layer().with_tracer(tracer);
-        Ok(LayerWithShutdown {
+        Ok(WithShutdown {
             layer: Box::new(layer),
             shutdown: force_flush_provider_as_shutdown(provider),
         })

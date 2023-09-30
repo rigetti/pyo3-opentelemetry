@@ -18,8 +18,8 @@
 pub(super) mod common;
 mod contextmanager;
 mod export_process;
-mod layer;
-mod subscriber;
+pub(crate) mod layer;
+pub(crate) mod subscriber;
 
 // / Adds the pyo3-opentelemetry export module to your parent module. The upshot here
 // / is that the Python package will contain `{name}.export.{stdout/otlp/py_otlp}`,
@@ -37,7 +37,7 @@ mod subscriber;
 // / # Errors
 // / * If the submodule cannot be added to the parent module.
 // /
-// pub fn init_submodule(name: &str, py: Python, m: &PyModule) -> PyResult<()> {
+// pub(crate) fn init_submodule(name: &str, py: Python, m: &PyModule) -> PyResult<()> {
 //     let modules = py.import("sys")?.getattr("modules")?;
 //
 //     #[cfg(feature = "export-stdout")]

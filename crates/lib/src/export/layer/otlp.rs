@@ -1,7 +1,7 @@
 use std::{collections::HashMap, time::Duration};
 
 use opentelemetry_api::{trace::TraceError, KeyValue};
-use opentelemetry_otlp::WithExportConfig;
+use opentelemetry_otlp::{TonicExporterBuilder, WithExportConfig};
 use opentelemetry_sdk::{
     trace::{Sampler, SpanLimits},
     Resource,
@@ -15,10 +15,10 @@ use tonic::metadata::{
     MetadataKey,
 };
 
-use super::{force_flush_provider_as_shutdown, LayerBuildResult, LayerWithShutdown};
+use super::{force_flush_provider_as_shutdown, LayerBuildResult, WithShutdown};
 
-impl crate::export::layer::Config for Config {
-    fn build(&self, batch: bool) -> LayerBuildResult<LayerWithShutdown> {
+impl Config {
+    fn initialize_otlp_exporter(&self) -> TonicExporterBuilder {
         let mut otlp_exporter = opentelemetry_otlp::new_exporter().tonic().with_env();
         if let Some(endpoint) = self.endpoint.clone() {
             otlp_exporter = otlp_exporter.with_endpoint(endpoint);
@@ -29,9 +29,15 @@ impl crate::export::layer::Config for Config {
         if let Some(metadata_map) = self.metadata_map.clone() {
             otlp_exporter = otlp_exporter.with_metadata(metadata_map);
         }
+        otlp_exporter
+    }
+}
+
+impl crate::export::layer::Config for Config {
+    fn build(&self, batch: bool) -> LayerBuildResult<WithShutdown> {
         let pipeline = opentelemetry_otlp::new_pipeline()
             .tracing()
-            .with_exporter(otlp_exporter)
+            .with_exporter(self.initialize_otlp_exporter())
             .with_trace_config(
                 trace::config()
                     .with_sampler(self.sampler.clone())
@@ -48,8 +54,8 @@ impl crate::export::layer::Config for Config {
         let provider = tracer
             .provider()
             .ok_or(BuildError::ProviderNotSetOnTracer)?;
-        let layer = tracing_opentelemetry::layer().with_tracer(tracer.clone());
-        Ok(LayerWithShutdown {
+        let layer = tracing_opentelemetry::layer().with_tracer(tracer);
+        Ok(WithShutdown {
             layer: Box::new(layer),
             shutdown: force_flush_provider_as_shutdown(provider),
         })
@@ -63,7 +69,7 @@ pub(super) enum Error {
 }
 
 #[derive(thiserror::Error, Debug)]
-pub(super) enum BuildError {
+pub(crate) enum BuildError {
     #[error("failed to build opentelemetry-otlp pipeline: {0}")]
     BatchInstall(#[from] TraceError),
     #[error("provider not set on returned opentelemetry-otlp tracer")]
@@ -73,15 +79,15 @@ pub(super) enum BuildError {
 }
 
 #[derive(thiserror::Error, Debug)]
-enum ConfigError {
+pub(crate) enum ConfigError {
     #[error("invalid metadata map value: {0}")]
     InvalidMetadataValue(#[from] InvalidMetadataValue),
     #[error("invalid metadata map key: {0}")]
     InvalidMetadataKey(#[from] InvalidMetadataKey),
 }
 
-#[derive(Clone)]
-pub struct Config {
+#[derive(Clone, Debug)]
+pub(crate) struct Config {
     span_limits: SpanLimits,
     resource: Resource,
     metadata_map: Option<tonic::metadata::MetadataMap>,
@@ -91,7 +97,7 @@ pub struct Config {
 }
 
 #[pyclass]
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct PySpanLimits {
     /// The max events that can be added to a `Span`.
     max_events_per_span: u32,
@@ -136,8 +142,8 @@ impl From<PySpanLimits> for SpanLimits {
 }
 
 #[pyclass]
-#[derive(Clone, Default)]
-pub(super) struct PyConfig {
+#[derive(Clone, Default, Debug)]
+pub(crate) struct PyConfig {
     span_limits: PySpanLimits,
     resource: PyResource,
     metadata_map: Option<HashMap<String, String>>,
@@ -146,7 +152,7 @@ pub(super) struct PyConfig {
     timeout_millis: Option<u64>,
 }
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 struct PyResource {
     attrs: HashMap<String, PyResourceValue>,
     schema_url: Option<String>,
@@ -167,7 +173,7 @@ impl From<PyResource> for Resource {
 }
 
 #[derive(FromPyObject, Clone, Debug, PartialEq)]
-pub enum PyResourceValue {
+pub(crate) enum PyResourceValue {
     /// bool values
     Bool(bool),
     /// i64 values
@@ -181,7 +187,7 @@ pub enum PyResourceValue {
 }
 
 #[derive(FromPyObject, Debug, Clone, PartialEq)]
-pub enum PyResourceValueArray {
+pub(crate) enum PyResourceValueArray {
     /// Array of bools
     Bool(Vec<bool>),
     /// Array of integers
