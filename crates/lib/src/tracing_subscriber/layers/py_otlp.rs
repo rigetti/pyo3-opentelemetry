@@ -1,4 +1,4 @@
-use crate::export::common::wg;
+use crate::tracing_subscriber::common::wg;
 use opentelemetry_api::{
     trace::{TraceError, TracerProvider},
     ExportError,
@@ -26,7 +26,7 @@ impl Config {
     }
 }
 
-impl crate::export::layer::Config for Config {
+impl crate::tracing_subscriber::layers::Config for Config {
     fn build(&self, batch: bool) -> LayerBuildResult<WithShutdown> {
         let provider = if batch {
             opentelemetry_sdk::trace::TracerProvider::builder()

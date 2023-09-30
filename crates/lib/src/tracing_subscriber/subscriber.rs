@@ -4,7 +4,7 @@ use tracing_subscriber::{layer::Layered, prelude::__tracing_subscriber_Subscribe
 #[derive(thiserror::Error, Debug)]
 pub(crate) enum ShutdownError {
     #[error("failed to shutdown configured layer: {0}")]
-    LayerShutdown(#[from] crate::export::layer::ShutdownError),
+    LayerShutdown(#[from] crate::tracing_subscriber::layers::ShutdownError),
 }
 
 type ShutdownResult<T> = Result<T, ShutdownError>;
@@ -12,7 +12,7 @@ type ShutdownResult<T> = Result<T, ShutdownError>;
 #[derive(thiserror::Error, Debug)]
 pub(crate) enum BuildError {
     #[error("failed to build layer: {0}")]
-    LayerBuild(#[from] crate::export::layer::BuildError),
+    LayerBuild(#[from] crate::tracing_subscriber::layers::BuildError),
 }
 
 // #[derive(thiserror::Error, Debug)]
@@ -106,7 +106,7 @@ impl core::fmt::Debug for WithShutdown {
 
 #[derive(Clone)]
 pub(crate) struct TracingSubscriberRegistryConfig {
-    pub(super) layer_config: Box<dyn super::layer::Config>,
+    pub(super) layer_config: Box<dyn super::layers::Config>,
 }
 
 impl Config for TracingSubscriberRegistryConfig {
