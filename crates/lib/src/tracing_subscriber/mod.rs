@@ -15,52 +15,35 @@
 //! This module provides utilities for exporting spans to various backends
 //! from Rust.
 
+use rigetti_pyo3::create_init_submodule;
+
+use self::{
+    contextmanager::{
+        CurrentThreadTracingConfig, GlobalTracingConfig, Tracing, TracingContextManagerError,
+    },
+    export_process::{
+        BatchConfig, SimpleConfig, TracingConfigurationError, TracingShutdownError,
+        TracingStartError,
+    },
+};
+
 pub(super) mod common;
 mod contextmanager;
 mod export_process;
 pub(crate) mod layers;
 pub(crate) mod subscriber;
 
-// / Adds the pyo3-opentelemetry export module to your parent module. The upshot here
-// / is that the Python package will contain `{name}.export.{stdout/otlp/py_otlp}`,
-// / each with an async context manager that can be used on the Python side to
-// / export spans.
-// /
-// / # Arguments
-// / * `name` - The name of the parent module.
-// / * `py` - The Python interpreter.
-// / * `m` - The parent module.
-// /
-// / # Returns
-// / * `PyResult<()>` - The result of adding the submodule to the parent module.
-// /
-// / # Errors
-// / * If the submodule cannot be added to the parent module.
-// /
-// pub(crate) fn init_submodule(name: &str, py: Python, m: &PyModule) -> PyResult<()> {
-//     let modules = py.import("sys")?.getattr("modules")?;
-//
-//     #[cfg(feature = "export-stdout")]
-//     {
-//         let submod = pyo3::types::PyModule::new(py, "stdout")?;
-//         stdout::init_submodule("stdout", py, submod)?;
-//         modules.set_item(format!("{name}.export.stdout"), submod)?;
-//         m.add_submodule(submod)?;
-//     }
-//     #[cfg(feature = "export-otlp")]
-//     {
-//         let submod = pyo3::types::PyModule::new(py, "otlp")?;
-//         otlp::init_submodule("otlp", py, submod)?;
-//         modules.set_item(format!("{name}.export.otlp"), submod)?;
-//         m.add_submodule(submod)?;
-//     }
-//     #[cfg(feature = "export-py-otlp")]
-//     {
-//         let submod = pyo3::types::PyModule::new(py, "py_otlp")?;
-//         py_otlp::init_submodule("py_otlp", py, submod)?;
-//         modules.set_item(format!("{name}.export.py_otlp"), submod)?;
-//         m.add_submodule(submod)?;
-//     }
-//
-//     Ok(())
-// }
+create_init_submodule! {
+    classes: [
+        Tracing,
+        GlobalTracingConfig,
+        CurrentThreadTracingConfig,
+        BatchConfig,
+        SimpleConfig
+    ],
+    errors: [TracingContextManagerError, TracingConfigurationError, TracingStartError, TracingShutdownError],
+    submodules: [
+        "layers": layers::init_submodule,
+        "subscriber": subscriber::init_submodule
+    ],
+}

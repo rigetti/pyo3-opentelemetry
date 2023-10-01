@@ -152,6 +152,29 @@ pub(crate) struct PyConfig {
     timeout_millis: Option<u64>,
 }
 
+#[pymethods]
+impl PyConfig {
+    #[new]
+    fn new(
+        span_limits: Option<PySpanLimits>,
+        resource: Option<PyResource>,
+        metadata_map: Option<&PyAny>,
+        sampler: Option<&PyAny>,
+        endpoint: Option<&str>,
+        timeout_millis: Option<u64>,
+    ) -> PyResult<Self> {
+        Ok(Self {
+            span_limits: span_limits.unwrap_or_default(),
+            resource: resource.unwrap_or_default(),
+            metadata_map: metadata_map.map(PyAny::extract).transpose()?,
+            sampler: sampler.map(PyAny::extract).transpose()?.unwrap_or_default(),
+            endpoint: endpoint.map(String::from),
+            timeout_millis,
+        })
+    }
+}
+
+#[pyclass]
 #[derive(Clone, Default, Debug)]
 struct PyResource {
     attrs: HashMap<String, PyResourceValue>,
@@ -276,5 +299,5 @@ impl TryFrom<PyConfig> for Config {
 }
 
 create_init_submodule! {
-    classes: [ PyConfig ],
+    classes: [ PyConfig, PySpanLimits, PyResource ],
 }
