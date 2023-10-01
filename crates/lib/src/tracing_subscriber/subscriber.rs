@@ -1,4 +1,5 @@
 use pyo3::prelude::*;
+use rigetti_pyo3::create_init_submodule;
 use tracing_subscriber::{layer::Layered, prelude::__tracing_subscriber_SubscriberExt, Registry};
 
 #[derive(thiserror::Error, Debug)]
@@ -14,16 +15,6 @@ pub(crate) enum BuildError {
     #[error("failed to build layer: {0}")]
     LayerBuild(#[from] crate::tracing_subscriber::layers::BuildError),
 }
-
-// #[derive(thiserror::Error, Debug)]
-// pub(crate) enum Error {
-//     #[error("failed to build layer: {0}")]
-//     BuildLayer(#[from] super::layer::BuildError),
-//     #[error(transparent)]
-//     Custom(#[from] CustomError),
-//     #[error("failed to shutdown subscriber: {0}")]
-//     SubscriberShutdown(#[from] ShutdownError),
-// }
 
 #[derive(thiserror::Error, Debug)]
 #[error("{message}")]
@@ -44,18 +35,6 @@ type SubscriberBuildResult<T> = Result<T, BuildError>;
 
 pub(crate) trait Config: BoxDynConfigClone + Send + Sync {
     fn build(&self, batch: bool) -> SubscriberBuildResult<WithShutdown>;
-}
-
-#[pyclass(name = "Config")]
-#[derive(Clone)]
-pub(crate) struct PyConfig {
-    pub(crate) subscriber_config: Box<dyn Config>,
-}
-
-impl core::fmt::Debug for PyConfig {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "PyConfig {{ subscriber_config: Box<dyn Config> }}")
-    }
 }
 
 pub(crate) trait BoxDynConfigClone {
@@ -104,8 +83,32 @@ impl core::fmt::Debug for WithShutdown {
     }
 }
 
+#[pyclass(name = "Config")]
 #[derive(Clone)]
-pub(crate) struct TracingSubscriberRegistryConfig {
+pub(crate) struct PyConfig {
+    pub(crate) subscriber_config: Box<dyn Config>,
+}
+
+impl core::fmt::Debug for PyConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "PyConfig {{ subscriber_config: Box<dyn Config> }}")
+    }
+}
+
+#[pymethods]
+impl PyConfig {
+    #[new]
+    fn new(layer: super::layers::PyConfig) -> Self {
+        Self {
+            subscriber_config: Box::new(TracingSubscriberRegistryConfig {
+                layer_config: layer.layer_config,
+            }),
+        }
+    }
+}
+
+#[derive(Clone)]
+pub(super) struct TracingSubscriberRegistryConfig {
     pub(super) layer_config: Box<dyn super::layers::Config>,
 }
 
@@ -124,4 +127,10 @@ impl Config for TracingSubscriberRegistryConfig {
             }),
         })
     }
+}
+
+create_init_submodule! {
+    classes: [
+        PyConfig
+    ],
 }

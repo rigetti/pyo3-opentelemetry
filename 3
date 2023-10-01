@@ -9,7 +9,6 @@ use std::fmt::Debug;
 
 use opentelemetry_sdk::trace::TracerProvider;
 use pyo3::prelude::*;
-use rigetti_pyo3::create_init_submodule;
 use tracing_subscriber::{Layer, Registry};
 
 pub(super) type Shutdown = Box<
@@ -96,7 +95,7 @@ pub(super) fn force_flush_provider_as_shutdown(provider: TracerProvider) -> Shut
 }
 
 #[derive(FromPyObject, Clone, Debug)]
-enum OtelExportLayerConfig {
+pub(crate) enum OtelExportLayerConfig {
     #[cfg(feature = "export-file")]
     File(file::Config),
     #[cfg(feature = "export-otlp")]
@@ -136,55 +135,9 @@ impl core::fmt::Debug for PyConfig {
 impl PyConfig {
     #[new]
     pub(crate) fn new(layer_config: &PyAny) -> PyResult<Self> {
-        let layer_config = layer_config.extract::<OtelExportLayerConfig>()?;
+        let layer_config = layer_config.extract::<OtelExportLayerConfig>(layer_config)?;
         Ok(Self {
             layer_config: Box::new(layer_config),
         })
     }
-}
-
-/// Adds the pyo3-opentelemetry export module to your parent module. The upshot here
-/// is that the Python package will contain `{name}.export.{stdout/otlp/py_otlp}`,
-/// each with an async context manager that can be used on the Python side to
-/// export spans.
-///
-/// # Arguments
-/// * `name` - The name of the parent module.
-/// * `py` - The Python interpreter.
-/// * `m` - The parent module.
-///
-/// # Returns
-/// * `PyResult<()>` - The result of adding the submodule to the parent module.
-///
-/// # Errors
-/// * If the submodule cannot be added to the parent module.
-///
-pub(crate) fn init_submodule(name: &str, py: Python, m: &PyModule) -> PyResult<()> {
-    let modules = py.import("sys")?.getattr("modules")?;
-
-    #[cfg(feature = "export-file")]
-    {
-        let submod = pyo3::types::PyModule::new(py, "file")?;
-        file::init_submodule("file", py, submod)?;
-        modules.set_item(format!("{name}.open_telemetry.file"), submod)?;
-        m.add_submodule(submod)?;
-    }
-    #[cfg(feature = "export-otlp")]
-    {
-        let submod = pyo3::types::PyModule::new(py, "otlp")?;
-        otlp::init_submodule("otlp", py, submod)?;
-        modules.set_item(format!("{name}.open_telemetry.otlp"), submod)?;
-        m.add_submodule(submod)?;
-    }
-    #[cfg(feature = "export-py-otlp")]
-    {
-        let submod = pyo3::types::PyModule::new(py, "py_otlp")?;
-        py_otlp::init_submodule("py_otlp", py, submod)?;
-        modules.set_item(format!("{name}.open_telemetry.py_otlp"), submod)?;
-        m.add_submodule(submod)?;
-    }
-
-    m.add_class::<PyConfig>()?;
-
-    Ok(())
 }
