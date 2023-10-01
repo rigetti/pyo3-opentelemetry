@@ -19,10 +19,29 @@ pub(crate) struct BatchConfig {
     pub(super) timeout_millis: u64,
 }
 
+#[pymethods]
+impl BatchConfig {
+    #[new]
+    const fn new(subscriber: PyConfig, timeout_millis: u64) -> Self {
+        Self {
+            subscriber,
+            timeout_millis,
+        }
+    }
+}
+
 #[pyclass]
 #[derive(Clone, Debug)]
 pub(crate) struct SimpleConfig {
     pub(super) subscriber: PyConfig,
+}
+
+#[pymethods]
+impl SimpleConfig {
+    #[new]
+    const fn new(subscriber: PyConfig) -> Self {
+        Self { subscriber }
+    }
 }
 
 #[derive(FromPyObject, Clone, Debug)]
@@ -38,18 +57,18 @@ pub(crate) enum ExportProcess {
 }
 
 #[derive(thiserror::Error, Debug)]
-pub(crate) enum ConfigError {
+pub(crate) enum InitializationError {
     #[error("global batch export: {0}")]
-    GlobalBatchInitialization(#[from] global_batch::InitializationError),
+    GlobalBatch(#[from] global_batch::InitializationError),
     #[error("failed to build subscriber: {0}")]
     SubscriberBuild(#[from] crate::tracing_subscriber::subscriber::BuildError),
 }
 
-wrap_error!(RustTracingConfigError(ConfigError));
+wrap_error!(RustTracingInitializationError(InitializationError));
 py_wrap_error!(
     export_process,
-    RustTracingConfigError,
-    TracingConfigurationError,
+    RustTracingInitializationError,
+    TracingInitializationError,
     PyRuntimeError
 );
 
@@ -88,9 +107,9 @@ py_wrap_error!(
 type ShutdownResult<T> = Result<T, ShutdownError>;
 
 impl TryFrom<TracingConfig> for ExportProcess {
-    type Error = ConfigError;
+    type Error = InitializationError;
 
-    fn try_from(config: TracingConfig) -> Result<Self, ConfigError> {
+    fn try_from(config: TracingConfig) -> Result<Self, InitializationError> {
         match config {
             TracingConfig::Global(config) => match config.export_process {
                 ExportProcessConfig::Batch(config) => {
@@ -142,5 +161,5 @@ impl ExportProcess {
 }
 
 create_init_submodule! {
-    errors: [TracingStartError, TracingShutdownError, TracingConfigurationError],
+    errors: [TracingStartError, TracingShutdownError, TracingInitializationError],
 }

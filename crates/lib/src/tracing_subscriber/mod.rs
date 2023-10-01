@@ -22,7 +22,7 @@ use self::{
         CurrentThreadTracingConfig, GlobalTracingConfig, Tracing, TracingContextManagerError,
     },
     export_process::{
-        BatchConfig, SimpleConfig, TracingConfigurationError, TracingShutdownError,
+        BatchConfig, SimpleConfig, TracingInitializationError, TracingShutdownError,
         TracingStartError,
     },
 };
@@ -41,7 +41,7 @@ create_init_submodule! {
         BatchConfig,
         SimpleConfig
     ],
-    errors: [TracingContextManagerError, TracingConfigurationError, TracingStartError, TracingShutdownError],
+    errors: [TracingContextManagerError, TracingInitializationError, TracingStartError, TracingShutdownError],
     submodules: [
         "layers": layers::init_submodule,
         "subscriber": subscriber::init_submodule

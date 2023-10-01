@@ -4,8 +4,8 @@ use rigetti_pyo3::{py_wrap_error, wrap_error, ToPythonError};
 
 use super::{
     export_process::{
-        ExportProcess, ExportProcessConfig, RustTracingConfigError, RustTracingShutdownError,
-        RustTracingStartError,
+        ExportProcess, ExportProcessConfig, RustTracingInitializationError,
+        RustTracingShutdownError, RustTracingStartError,
     },
     subscriber::PyConfig,
 };
@@ -16,10 +16,28 @@ pub(crate) struct GlobalTracingConfig {
     pub(crate) export_process: ExportProcessConfig,
 }
 
+#[pymethods]
+impl GlobalTracingConfig {
+    #[new]
+    #[pyo3(signature = (export_process))]
+    const fn new(export_process: ExportProcessConfig) -> Self {
+        Self { export_process }
+    }
+}
+
 #[pyclass]
 #[derive(Clone)]
 pub(crate) struct CurrentThreadTracingConfig {
     pub(crate) subscriber: PyConfig,
+}
+
+#[pymethods]
+impl CurrentThreadTracingConfig {
+    #[new]
+    #[pyo3(signature = (subscriber))]
+    const fn new(subscriber: PyConfig) -> Self {
+        Self { subscriber }
+    }
 }
 
 #[derive(FromPyObject)]
@@ -57,7 +75,7 @@ impl Tracing {
         let export_process = Some(
             config
                 .try_into()
-                .map_err(RustTracingConfigError::from)
+                .map_err(RustTracingInitializationError::from)
                 .map_err(ToPythonError::to_py_err)?,
         );
         Ok(Self { export_process })
