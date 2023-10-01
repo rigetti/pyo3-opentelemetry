@@ -141,6 +141,30 @@ impl From<PySpanLimits> for SpanLimits {
     }
 }
 
+#[pymethods]
+impl PySpanLimits {
+    #[new]
+    fn new(
+        max_events_per_span: Option<u32>,
+        max_attributes_per_span: Option<u32>,
+        max_links_per_span: Option<u32>,
+        max_attributes_per_event: Option<u32>,
+        max_attributes_per_link: Option<u32>,
+    ) -> Self {
+        let span_limits = Self::default();
+        Self {
+            max_events_per_span: max_events_per_span.unwrap_or(span_limits.max_events_per_span),
+            max_attributes_per_span: max_attributes_per_span
+                .unwrap_or(span_limits.max_attributes_per_span),
+            max_links_per_span: max_links_per_span.unwrap_or(span_limits.max_links_per_span),
+            max_attributes_per_event: max_attributes_per_event
+                .unwrap_or(span_limits.max_attributes_per_event),
+            max_attributes_per_link: max_attributes_per_link
+                .unwrap_or(span_limits.max_attributes_per_link),
+        }
+    }
+}
+
 #[pyclass]
 #[derive(Clone, Default, Debug)]
 pub(crate) struct PyConfig {
@@ -179,6 +203,17 @@ impl PyConfig {
 struct PyResource {
     attrs: HashMap<String, PyResourceValue>,
     schema_url: Option<String>,
+}
+
+#[pymethods]
+impl PyResource {
+    #[new]
+    fn new(attrs: Option<HashMap<String, PyResourceValue>>, schema_url: Option<&str>) -> Self {
+        Self {
+            attrs: attrs.unwrap_or_default(),
+            schema_url: schema_url.map(String::from),
+        }
+    }
 }
 
 impl From<PyResource> for Resource {

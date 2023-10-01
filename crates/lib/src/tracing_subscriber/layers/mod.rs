@@ -9,7 +9,6 @@ use std::fmt::Debug;
 
 use opentelemetry_sdk::trace::TracerProvider;
 use pyo3::prelude::*;
-use rigetti_pyo3::create_init_submodule;
 use tracing_subscriber::{Layer, Registry};
 
 pub(super) type Shutdown = Box<
