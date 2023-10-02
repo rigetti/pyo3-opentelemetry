@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use opentelemetry_api::trace::TracerProvider;
 use pyo3::prelude::*;
 use rigetti_pyo3::create_init_submodule;
@@ -58,4 +60,11 @@ pub(crate) enum BuildError {
 
 create_init_submodule! {
     classes: [ Config ],
+}
+
+pub(super) fn build_stub_files(directory: &Path) -> Result<(), std::io::Error> {
+    let data = include_bytes!("../../../assets/python/pyo3_opentelemetry/layers/file/__init__.pyi");
+    std::fs::create_dir_all(directory)?;
+    let init_file = directory.join("__init__.pyi");
+    std::fs::write(init_file, data)
 }

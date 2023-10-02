@@ -5,7 +5,7 @@ pub(crate) mod otlp;
 #[cfg(feature = "export-py-otlp")]
 pub(crate) mod py_otlp;
 
-use std::fmt::Debug;
+use std::{fmt::Debug, path::Path};
 
 use opentelemetry_sdk::trace::TracerProvider;
 use pyo3::prelude::*;
@@ -158,6 +158,7 @@ impl PyConfig {
 /// # Errors
 /// * If the submodule cannot be added to the parent module.
 ///
+#[allow(dead_code)]
 pub(crate) fn init_submodule(name: &str, py: Python, m: &PyModule) -> PyResult<()> {
     let modules = py.import("sys")?.getattr("modules")?;
 
@@ -186,4 +187,20 @@ pub(crate) fn init_submodule(name: &str, py: Python, m: &PyModule) -> PyResult<(
     m.add_class::<PyConfig>()?;
 
     Ok(())
+}
+
+#[allow(dead_code)]
+pub(super) fn build_stub_files(directory: &Path) -> Result<(), std::io::Error> {
+    let data = include_bytes!("../../../assets/python/pyo3_opentelemetry/layers/__init__.pyi");
+    std::fs::create_dir_all(directory)?;
+
+    #[cfg(feature = "export-file")]
+    file::build_stub_files(&directory.join("file"))?;
+    #[cfg(feature = "export-otlp")]
+    file::build_stub_files(&directory.join("otlp"))?;
+    #[cfg(feature = "export-py-otlp")]
+    file::build_stub_files(&directory.join("py_otlp"))?;
+
+    let init_file = directory.join("__init__.pyi");
+    std::fs::write(init_file, data)
 }
