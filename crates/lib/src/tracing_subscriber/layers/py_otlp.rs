@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use crate::tracing_subscriber::common::wg;
 use opentelemetry_api::{
     trace::{TraceError, TracerProvider},
@@ -132,4 +134,13 @@ impl opentelemetry_sdk::export::trace::SpanExporter for PythonOTLPSpanExporter {
 
 create_init_submodule! {
     classes: [ Config ],
+}
+
+#[allow(dead_code)]
+pub(super) fn build_stub_files(directory: &Path) -> Result<(), std::io::Error> {
+    let data =
+        include_bytes!("../../../assets/python/pyo3_opentelemetry/layers/py_otlp/__init__.pyi");
+    std::fs::create_dir_all(directory)?;
+    let init_file = directory.join("__init__.pyi");
+    std::fs::write(init_file, data)
 }

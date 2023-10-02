@@ -15,6 +15,8 @@
 //! This module provides utilities for exporting spans to various backends
 //! from Rust.
 
+use std::path::Path;
+
 use rigetti_pyo3::create_init_submodule;
 
 use self::{
@@ -46,4 +48,22 @@ create_init_submodule! {
         "layers": layers::init_submodule,
         "subscriber": subscriber::init_submodule
     ],
+}
+
+pub fn build_stub_files(directory: &Path) -> Result<(), std::io::Error> {
+    subscriber::build_stub_files(&directory.join("subscriber"))?;
+    layers::build_stub_files(&directory.join("layers"))?;
+
+    let data = include_bytes!("../../assets/python/pyo3_opentelemetry/__init__.pyi");
+    std::fs::create_dir_all(directory)?;
+    let init_file = directory.join("__init__.pyi");
+    std::fs::write(init_file, data)
+}
+
+#[cfg(test)]
+mod test {
+    #[test]
+    fn test_build_stub_files() {
+        super::build_stub_files(std::path::Path::new("target/stubs")).unwrap();
+    }
 }

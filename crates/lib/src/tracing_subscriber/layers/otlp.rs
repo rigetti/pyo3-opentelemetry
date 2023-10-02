@@ -1,4 +1,4 @@
-use std::{collections::HashMap, time::Duration};
+use std::{collections::HashMap, path::Path, time::Duration};
 
 use opentelemetry_api::{trace::TraceError, KeyValue};
 use opentelemetry_otlp::{TonicExporterBuilder, WithExportConfig};
@@ -335,4 +335,12 @@ impl TryFrom<PyConfig> for Config {
 
 create_init_submodule! {
     classes: [ PyConfig, PySpanLimits, PyResource ],
+}
+
+#[allow(dead_code)]
+pub(super) fn build_stub_files(directory: &Path) -> Result<(), std::io::Error> {
+    let data = include_bytes!("../../../assets/python/pyo3_opentelemetry/layers/otlp/__init__.pyi");
+    std::fs::create_dir_all(directory)?;
+    let init_file = directory.join("__init__.pyi");
+    std::fs::write(init_file, data)
 }
