@@ -21,3 +21,5 @@ scratch/
 
 # ignore to support developer-specific configuration 
 bacon.toml
+
+.DS_Store
