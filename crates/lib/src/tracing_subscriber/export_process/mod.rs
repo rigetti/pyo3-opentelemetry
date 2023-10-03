@@ -12,6 +12,8 @@ mod current_thread_simple;
 mod global_batch;
 mod global_simple;
 
+const DEFAULT_TIMEOUT_MILLIS: u64 = 3000;
+
 #[pyclass]
 #[derive(Clone, Debug)]
 pub(crate) struct BatchConfig {
@@ -19,19 +21,34 @@ pub(crate) struct BatchConfig {
     pub(super) timeout_millis: u64,
 }
 
-#[pymethods]
-impl BatchConfig {
-    #[new]
-    const fn new(subscriber: PyConfig, timeout_millis: u64) -> Self {
+impl Default for BatchConfig {
+    fn default() -> Self {
         Self {
-            subscriber,
-            timeout_millis,
+            subscriber: PyConfig::default(),
+            timeout_millis: DEFAULT_TIMEOUT_MILLIS,
         }
     }
 }
 
+#[pymethods]
+impl BatchConfig {
+    #[new]
+    #[pyo3(signature = (subscriber = None, timeout_millis = DEFAULT_TIMEOUT_MILLIS))]
+    #[allow(clippy::pedantic)]
+    fn new(subscriber: Option<PyConfig>, timeout_millis: u64) -> PyResult<Self> {
+        #[cfg(any(feature = "export-file", feature = "export-otlp"))]
+        let subscriber = subscriber.unwrap_or_default();
+        #[cfg(all(not(feature = "export-file"), not(feature = "export-otlp")))]
+        let subscriber = crate::tracing_subscriber::unsupported_default_initialization(subscriber)?;
+        Ok(Self {
+            subscriber,
+            timeout_millis,
+        })
+    }
+}
+
 #[pyclass]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub(crate) struct SimpleConfig {
     pub(super) subscriber: PyConfig,
 }
@@ -39,8 +56,14 @@ pub(crate) struct SimpleConfig {
 #[pymethods]
 impl SimpleConfig {
     #[new]
-    const fn new(subscriber: PyConfig) -> Self {
-        Self { subscriber }
+    #[pyo3(signature = (subscriber = None))]
+    #[allow(clippy::pedantic)]
+    fn new(subscriber: Option<PyConfig>) -> PyResult<Self> {
+        #[cfg(any(feature = "export-file", feature = "export-otlp"))]
+        let subscriber = subscriber.unwrap_or_default();
+        #[cfg(all(not(feature = "export-file"), not(feature = "export-otlp")))]
+        let subscriber = crate::tracing_subscriber::unsupported_default_initialization(subscriber)?;
+        Ok(Self { subscriber })
     }
 }
 
@@ -48,6 +71,13 @@ impl SimpleConfig {
 pub(crate) enum ExportProcessConfig {
     Batch(BatchConfig),
     Simple(SimpleConfig),
+}
+
+#[cfg(any(feature = "export-file", feature = "export-otlp"))]
+impl Default for ExportProcessConfig {
+    fn default() -> Self {
+        Self::Batch(BatchConfig::default())
+    }
 }
 
 pub(crate) enum ExportProcess {
@@ -74,9 +104,9 @@ py_wrap_error!(
 
 #[derive(thiserror::Error, Debug)]
 pub(crate) enum StartError {
-    #[error("failed to start global batch")]
+    #[error("failed to start global batch: {0}")]
     GlobalBatch(#[from] global_batch::StartError),
-    #[error("failed to set global default tracing subscriber")]
+    #[error("failed to set global default tracing subscriber: {0}")]
     SetSubscriber(#[from] SetGlobalDefaultError),
 }
 
@@ -92,7 +122,7 @@ type StartResult<T> = Result<T, StartError>;
 
 #[derive(thiserror::Error, Debug)]
 pub(crate) enum ShutdownError {
-    #[error("the subscriber failed to shutdown")]
+    #[error("the subscriber failed to shutdown: {0}")]
     Subscriber(#[from] crate::tracing_subscriber::subscriber::ShutdownError),
 }
 
@@ -124,11 +154,16 @@ impl TryFrom<TracingConfig> for ExportProcess {
                     Ok(Self::GlobalSimple(process))
                 }
             },
-            TracingConfig::CurrentThread(config) => {
-                let subscriber = config.subscriber.subscriber_config.build(false)?;
-                let process = current_thread_simple::ExportProcess::new(subscriber);
-                Ok(Self::CurrentThreadSimple(process))
-            }
+            TracingConfig::CurrentThread(config) => match config.export_process {
+                ExportProcessConfig::Batch(_) => {
+                    todo!("current thread batch export is not yet implemented")
+                }
+                ExportProcessConfig::Simple(config) => {
+                    let subscriber = config.subscriber.subscriber_config.build(false)?;
+                    let process = current_thread_simple::ExportProcess::new(subscriber);
+                    Ok(Self::CurrentThreadSimple(process))
+                }
+            },
         }
     }
 }

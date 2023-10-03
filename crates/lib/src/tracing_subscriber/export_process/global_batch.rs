@@ -11,16 +11,16 @@ use tracing::subscriber::SetGlobalDefaultError;
 
 #[derive(thiserror::Error, Debug)]
 pub(crate) enum StartError {
-    #[error("failed to build subscriber")]
+    #[error("failed to build subscriber: {0}")]
     SubscriberBuild(#[from] crate::tracing_subscriber::subscriber::BuildError),
 
-    #[error("failed to set global default tracing subscriber")]
+    #[error("failed to set global default tracing subscriber: {0}")]
     SetSubscriber(#[from] SetGlobalDefaultError),
-    #[error("exporter initialization timed out")]
+    #[error("exporter initialization timed out: {0}")]
     ExportInitializationTimeout(#[from] tokio::time::error::Elapsed),
-    #[error("failed to receive export initialization signal")]
+    #[error("failed to receive export initialization signal: {0}")]
     ExportInitializationRecv(#[from] tokio::sync::oneshot::error::RecvError),
-    #[error("failed to initialize export background tokio runtime")]
+    #[error("failed to initialize export background tokio runtime: {0}")]
     RuntimeInitialization(#[from] std::io::Error),
 }
 

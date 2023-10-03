@@ -23,10 +23,11 @@ opentelemetry_api = "0.18.0"
 opentelemetry_sdk = "0.18.0"
 pyo3 = { version = "0.19.0" }
 pyo3-asyncio = { version = "0.19.0", features = ["tokio", "tokio-runtime"] }
-pyo3-opentelemetry = { path = "../../crates/lib" }
+pyo3-opentelemetry = { path = "../../crates/lib", features = ["export-file", "export-otlp", "export-py-otlp"], default-features = false }
 tokio = { version = "1.27.0", features = ["sync", "parking_lot", "macros"] }
 tracing = "0.1.37"
 
 [features]
 extension-module = ["pyo3/extension-module"]
 default = ["extension-module"]
+

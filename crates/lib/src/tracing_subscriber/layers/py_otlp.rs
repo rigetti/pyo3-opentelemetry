@@ -22,7 +22,7 @@ pub(crate) struct Config {
 #[pymethods]
 impl Config {
     #[new]
-    #[pyo3(signature = (exporter))]
+    #[pyo3(signature = (/, exporter))]
     fn new(exporter: Py<PyAny>) -> Self {
         Self { exporter }
     }
@@ -138,8 +138,7 @@ create_init_submodule! {
 
 #[allow(dead_code)]
 pub(super) fn build_stub_files(directory: &Path) -> Result<(), std::io::Error> {
-    let data =
-        include_bytes!("../../../assets/python/pyo3_opentelemetry/layers/py_otlp/__init__.pyi");
+    let data = include_bytes!("../../../assets/python_stubs/layers/py_otlp/__init__.pyi");
     std::fs::create_dir_all(directory)?;
     let init_file = directory.join("__init__.pyi");
     std::fs::write(init_file, data)

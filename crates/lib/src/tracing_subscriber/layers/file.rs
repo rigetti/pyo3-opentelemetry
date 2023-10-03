@@ -15,7 +15,7 @@ pub(crate) struct Config {
 #[pymethods]
 impl Config {
     #[new]
-    #[pyo3(signature = (file_path = None))]
+    #[pyo3(signature = (/, file_path = None))]
     const fn new(file_path: Option<String>) -> Self {
         Self { file_path }
     }
@@ -63,7 +63,7 @@ create_init_submodule! {
 }
 
 pub(super) fn build_stub_files(directory: &Path) -> Result<(), std::io::Error> {
-    let data = include_bytes!("../../../assets/python/pyo3_opentelemetry/layers/file/__init__.pyi");
+    let data = include_bytes!("../../../assets/python_stubs/layers/file/__init__.pyi");
     std::fs::create_dir_all(directory)?;
     let init_file = directory.join("__init__.pyi");
     std::fs::write(init_file, data)

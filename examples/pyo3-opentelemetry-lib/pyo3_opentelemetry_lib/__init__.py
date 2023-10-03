@@ -14,4 +14,8 @@
 #    limitations under the License.
 ##############################################################################
 
-from .pyo3_opentelemetry_lib import *  # noqa: F403
+from .pyo3_opentelemetry_lib import * 
+
+
+__doc__ = pyo3_opentelemetry_lib.__doc__
+__all__ = getattr(pyo3_opentelemetry_lib, "__all__", [])
