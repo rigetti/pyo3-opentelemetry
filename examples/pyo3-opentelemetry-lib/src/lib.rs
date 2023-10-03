@@ -52,7 +52,7 @@
     unused_import_braces,
     unused_lifetimes,
     unused_parens,
-    unused_qualifications,
+    // unused_qualifications,
     variant_size_differences,
     while_true
 )]
@@ -132,9 +132,17 @@ impl ExampleStruct {
 }
 
 #[pymodule]
-fn pyo3_opentelemetry_lib(_py: Python, m: &PyModule) -> PyResult<()> {
+fn pyo3_opentelemetry_lib(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<ExampleStruct>()?;
     m.add_function(wrap_pyfunction!(example_function, m)?)?;
     m.add_function(wrap_pyfunction!(example_function_async, m)?)?;
+
+    let tracing_subscriber = PyModule::new(py, "_tracing_subscriber")?;
+    pyo3_opentelemetry::tracing_subscriber::add_submodule(
+        "pyo3_opentelemetry_lib._tracing_subscriber",
+        py,
+        tracing_subscriber,
+    )?;
+    m.add_submodule(tracing_subscriber)?;
     Ok(())
 }

@@ -95,7 +95,7 @@ pub(super) fn force_flush_provider_as_shutdown(provider: TracerProvider) -> Shut
 }
 
 #[derive(FromPyObject, Clone, Debug)]
-enum OtelExportLayerConfig {
+pub(crate) enum PyConfig {
     #[cfg(feature = "export-file")]
     File(file::Config),
     #[cfg(feature = "export-otlp")]
@@ -104,7 +104,21 @@ enum OtelExportLayerConfig {
     PyOtlp(py_otlp::Config),
 }
 
-impl Config for OtelExportLayerConfig {
+#[cfg(any(feature = "export-file", feature = "export-otlp"))]
+impl Default for PyConfig {
+    fn default() -> Self {
+        #[cfg(feature = "export-file")]
+        {
+            Self::File(file::Config::default())
+        }
+        #[cfg(all(feature = "export-otlp", not(feature = "export-file")))]
+        {
+            Self::Otlp(otlp::PyConfig::default())
+        }
+    }
+}
+
+impl Config for PyConfig {
     fn build(&self, batch: bool) -> LayerBuildResult<WithShutdown> {
         match self {
             #[cfg(feature = "export-file")]
@@ -119,28 +133,37 @@ impl Config for OtelExportLayerConfig {
     }
 }
 
-#[pyclass(name = "Config")]
-#[derive(Clone)]
-pub(crate) struct PyConfig {
-    pub(crate) layer_config: Box<dyn Config>,
-}
-
-impl core::fmt::Debug for PyConfig {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "PyConfig {{ layer_config: Box<dyn Config> }}")
-    }
-}
-
-#[pymethods]
-impl PyConfig {
-    #[new]
-    pub(crate) fn new(layer_config: &PyAny) -> PyResult<Self> {
-        let layer_config = layer_config.extract::<OtelExportLayerConfig>()?;
-        Ok(Self {
-            layer_config: Box::new(layer_config),
-        })
-    }
-}
+// #[pyclass(name = "Config")]
+// #[derive(Clone)]
+// pub(crate) struct CustomLayer {
+//     pub(crate) layer_config: Box<dyn Config>,
+// }
+//
+// #[cfg(any(feature = "export-file", feature = "export-otlp"))]
+// impl Default for CustomLayer {
+//     fn default() -> Self {
+//         Self {
+//             layer_config: Box::<PyConfig>::default(),
+//         }
+//     }
+// }
+//
+// impl core::fmt::Debug for CustomLayer {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         write!(f, "PyConfig {{ layer_config: Box<dyn Config> }}")
+//     }
+// }
+//
+// #[pymethods]
+// impl CustomLayer {
+//     #[new]
+//     #[pyo3(signature = (/, layer))]
+//     pub(crate) fn new(layer: PyConfig) -> Self {
+//         Self {
+//             layer_config: Box::new(layer),
+//         }
+//     }
+// }
 
 /// Adds the pyo3-opentelemetry export module to your parent module. The upshot here
 /// is that the Python package will contain `{name}.export.{stdout/otlp/py_otlp}`,
@@ -165,33 +188,36 @@ pub(crate) fn init_submodule(name: &str, py: Python, m: &PyModule) -> PyResult<(
     #[cfg(feature = "export-file")]
     {
         let submod = pyo3::types::PyModule::new(py, "file")?;
-        file::init_submodule("file", py, submod)?;
-        modules.set_item(format!("{name}.open_telemetry.file"), submod)?;
+        let qualified_name = format!("{name}.file");
+        file::init_submodule(qualified_name.as_str(), py, submod)?;
+        modules.set_item(qualified_name, submod)?;
         m.add_submodule(submod)?;
     }
     #[cfg(feature = "export-otlp")]
     {
         let submod = pyo3::types::PyModule::new(py, "otlp")?;
-        otlp::init_submodule("otlp", py, submod)?;
-        modules.set_item(format!("{name}.open_telemetry.otlp"), submod)?;
+        let qualified_name = format!("{name}.otlp");
+        otlp::init_submodule(qualified_name.as_str(), py, submod)?;
+        modules.set_item(qualified_name, submod)?;
         m.add_submodule(submod)?;
     }
     #[cfg(feature = "export-py-otlp")]
     {
         let submod = pyo3::types::PyModule::new(py, "py_otlp")?;
-        py_otlp::init_submodule("py_otlp", py, submod)?;
-        modules.set_item(format!("{name}.open_telemetry.py_otlp"), submod)?;
+        let qualified_name = format!("{name}.py_otlp");
+        py_otlp::init_submodule(qualified_name.as_str(), py, submod)?;
+        modules.set_item(qualified_name, submod)?;
         m.add_submodule(submod)?;
     }
 
-    m.add_class::<PyConfig>()?;
+    // m.add_class::<CustomLayer>()?;
 
     Ok(())
 }
 
 #[allow(dead_code)]
 pub(super) fn build_stub_files(directory: &Path) -> Result<(), std::io::Error> {
-    let data = include_bytes!("../../../assets/python/pyo3_opentelemetry/layers/__init__.pyi");
+    let data = include_bytes!("../../../assets/python_stubs/layers/__init__.pyi");
     std::fs::create_dir_all(directory)?;
 
     #[cfg(feature = "export-file")]

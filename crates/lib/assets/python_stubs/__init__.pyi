@@ -20,16 +20,10 @@ class TracingShutdownError(RuntimeError):
     ...
 
 
-class Tracing:
-    async def __aenter__(self):
-        ... 
-
-    async def __aexit__(self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]):
-        ...
-
 class BatchConfig:
     def __init__(self, *, subscriber: subscriber.Config):
         ... 
+
 
 class SimpleConfig:
     def __init__(self, *, subscriber: subscriber.Config):
@@ -52,4 +46,13 @@ class GlobalTracingConfig:
 TracingConfig = Union[CurrentThreadTracingConfig, GlobalTracingConfig]
 
 
+class Tracing:
+    def __init__(self, *, config: TracingConfig):
+        ...
+
+    async def __aenter__(self):
+        ... 
+
+    async def __aexit__(self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]):
+        ...
 

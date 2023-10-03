@@ -96,7 +96,7 @@ pub(crate) struct Config {
     timeout: Option<Duration>,
 }
 
-#[pyclass]
+#[pyclass(name = "SpanLimits")]
 #[derive(Clone, Debug)]
 struct PySpanLimits {
     /// The max events that can be added to a `Span`.
@@ -144,6 +144,14 @@ impl From<PySpanLimits> for SpanLimits {
 #[pymethods]
 impl PySpanLimits {
     #[new]
+    #[pyo3(signature = (
+        /,
+        max_events_per_span = None,
+        max_attributes_per_span = None,
+        max_links_per_span = None,
+        max_attributes_per_event = None,
+        max_attributes_per_link = None
+    ))]
     fn new(
         max_events_per_span: Option<u32>,
         max_attributes_per_span: Option<u32>,
@@ -165,7 +173,7 @@ impl PySpanLimits {
     }
 }
 
-#[pyclass]
+#[pyclass(name = "Config")]
 #[derive(Clone, Default, Debug)]
 pub(crate) struct PyConfig {
     span_limits: PySpanLimits,
@@ -179,6 +187,15 @@ pub(crate) struct PyConfig {
 #[pymethods]
 impl PyConfig {
     #[new]
+    #[pyo3(signature = (
+        /,
+        span_limits = None,
+        resource = None,
+        metadata_map = None,
+        sampler = None,
+        endpoint = None,
+        timeout_millis = None 
+    ))]
     fn new(
         span_limits: Option<PySpanLimits>,
         resource: Option<PyResource>,
@@ -198,7 +215,7 @@ impl PyConfig {
     }
 }
 
-#[pyclass]
+#[pyclass(name = "Resource")]
 #[derive(Clone, Default, Debug)]
 struct PyResource {
     attrs: HashMap<String, PyResourceValue>,
@@ -208,6 +225,7 @@ struct PyResource {
 #[pymethods]
 impl PyResource {
     #[new]
+    #[pyo3(signature = (/, attrs = None, schema_url = None))]
     fn new(attrs: Option<HashMap<String, PyResourceValue>>, schema_url: Option<&str>) -> Self {
         Self {
             attrs: attrs.unwrap_or_default(),
@@ -339,7 +357,7 @@ create_init_submodule! {
 
 #[allow(dead_code)]
 pub(super) fn build_stub_files(directory: &Path) -> Result<(), std::io::Error> {
-    let data = include_bytes!("../../../assets/python/pyo3_opentelemetry/layers/otlp/__init__.pyi");
+    let data = include_bytes!("../../../assets/python_stubs/layers/otlp/__init__.pyi");
     std::fs::create_dir_all(directory)?;
     let init_file = directory.join("__init__.pyi");
     std::fs::write(init_file, data)

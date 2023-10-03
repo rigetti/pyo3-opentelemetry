@@ -1,17 +1,17 @@
+use std::fmt::Debug;
+
 use pyo3::{exceptions::PyRuntimeError, prelude::*};
 
 use rigetti_pyo3::{py_wrap_error, wrap_error, ToPythonError};
 
-use super::{
-    export_process::{
-        ExportProcess, ExportProcessConfig, RustTracingInitializationError,
-        RustTracingShutdownError, RustTracingStartError,
-    },
-    subscriber::PyConfig,
+use super::export_process::{
+    ExportProcess, ExportProcessConfig, RustTracingInitializationError, RustTracingShutdownError,
+    RustTracingStartError,
 };
 
 #[pyclass]
 #[derive(Clone)]
+#[cfg_attr(any(feature = "export-file", feature = "export-otlp"), derive(Default))]
 pub(crate) struct GlobalTracingConfig {
     pub(crate) export_process: ExportProcessConfig,
 }
@@ -19,24 +19,38 @@ pub(crate) struct GlobalTracingConfig {
 #[pymethods]
 impl GlobalTracingConfig {
     #[new]
-    #[pyo3(signature = (export_process))]
-    const fn new(export_process: ExportProcessConfig) -> Self {
-        Self { export_process }
+    #[pyo3(signature = (/, export_process = None))]
+    #[allow(clippy::pedantic)]
+    fn new(export_process: Option<ExportProcessConfig>) -> PyResult<Self> {
+        #[cfg(any(feature = "export-file", feature = "export-otlp"))]
+        let export_process = export_process.unwrap_or_default();
+        #[cfg(all(not(feature = "export-file"), not(feature = "export-otlp")))]
+        let export_process =
+            crate::tracing_subscriber::unsupported_default_initialization(export_process)?;
+        Ok(Self { export_process })
     }
 }
 
 #[pyclass]
 #[derive(Clone)]
 pub(crate) struct CurrentThreadTracingConfig {
-    pub(crate) subscriber: PyConfig,
+    pub(crate) export_process: ExportProcessConfig,
 }
 
 #[pymethods]
 impl CurrentThreadTracingConfig {
     #[new]
-    #[pyo3(signature = (subscriber))]
-    const fn new(subscriber: PyConfig) -> Self {
-        Self { subscriber }
+    #[pyo3(signature = (/, export_process = None))]
+    #[allow(clippy::pedantic)]
+    fn new(export_process: Option<ExportProcessConfig>) -> PyResult<Self> {
+        #[cfg(any(feature = "export-file", feature = "export-otlp"))]
+        let export_process = export_process.unwrap_or_default();
+        #[cfg(all(not(feature = "export-file"), not(feature = "export-otlp")))]
+        let export_process = export_process
+            .ok_or(crate::tracing_subscriber::export_process::InitializationError::NoDefaultInitialization)
+            .map_err(crate::tracing_subscriber::export_process::RustTracingInitializationError::from)
+            .map_err(rigetti_pyo3::ToPythonError::to_py_err)?;
+        Ok(Self { export_process })
     }
 }
 
@@ -46,9 +60,26 @@ pub(crate) enum TracingConfig {
     CurrentThread(CurrentThreadTracingConfig),
 }
 
+#[cfg(any(feature = "export-file", feature = "export-otlp"))]
+impl Default for TracingConfig {
+    fn default() -> Self {
+        Self::Global(GlobalTracingConfig::default())
+    }
+}
+
 #[pyclass]
-pub(super) struct Tracing {
+pub struct Tracing {
     export_process: Option<ExportProcess>,
+}
+
+impl Debug for Tracing {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Tracing {{ export_process: {} }}",
+            self.export_process.as_ref().map_or("None", |_| "Some(_)")
+        )
+    }
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -70,8 +101,12 @@ py_wrap_error!(
 #[pymethods]
 impl Tracing {
     #[new]
-    #[pyo3(signature = (config))]
-    fn new(config: TracingConfig) -> PyResult<Self> {
+    #[pyo3(signature = (/, config = None))]
+    fn new(config: Option<TracingConfig>) -> PyResult<Self> {
+        #[cfg(any(feature = "export-file", feature = "export-otlp"))]
+        let config = config.unwrap_or_default();
+        #[cfg(all(not(feature = "export-file"), not(feature = "export-otlp")))]
+        let config = crate::tracing_subscriber::unsupported_default_initialization(config)?;
         let export_process = Some(
             config
                 .try_into()
@@ -183,7 +218,7 @@ mod test {
                 timeout_millis: 1000,
             }),
         });
-        let mut tracing = Tracing::new(config).unwrap();
+        let mut tracing = Tracing::new(Some(config)).unwrap();
         tracing.__aenter__().unwrap();
 
         let export_process = tracing.export_process.unwrap();
@@ -249,7 +284,7 @@ mod test {
                 },
             }),
         });
-        let mut tracing = Tracing::new(config).unwrap();
+        let mut tracing = Tracing::new(Some(config)).unwrap();
         tracing.__aenter__().unwrap();
 
         let export_process = tracing.export_process.unwrap();
@@ -308,11 +343,15 @@ mod test {
         });
         let subscriber = Box::new(TracingSubscriberRegistryConfig { layer_config });
         let config = TracingConfig::CurrentThread(CurrentThreadTracingConfig {
-            subscriber: crate::tracing_subscriber::subscriber::PyConfig {
-                subscriber_config: subscriber,
-            },
+            export_process: crate::tracing_subscriber::export_process::ExportProcessConfig::Simple(
+                SimpleConfig {
+                    subscriber: crate::tracing_subscriber::subscriber::PyConfig {
+                        subscriber_config: subscriber,
+                    },
+                },
+            ),
         });
-        let mut tracing = Tracing::new(config).unwrap();
+        let mut tracing = Tracing::new(Some(config)).unwrap();
         tracing.__aenter__().unwrap();
 
         for _ in 0..N_SPANS {

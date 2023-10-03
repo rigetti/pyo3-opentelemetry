@@ -1,4 +1,3 @@
-
 from typing import Dict, List, Optional, Union
 
 
@@ -6,11 +5,11 @@ class SpanLimits:
     def __init__(
         self,
         *,
-        max_events_per_span: int,
-        max_attributes_per_span: int,
-        max_links_per_span: int,
-        max_attributes_per_event: int,
-        max_attributes_per_link: int,
+        max_events_per_span: Optional[int] = None,
+        max_attributes_per_span: Optional[int] = None,
+        max_links_per_span: Optional[int] = None,
+        max_attributes_per_event: Optional[int] = None,
+        max_attributes_per_link: Optional[int] = None,
     ) -> None: ...
     """
     
@@ -29,6 +28,7 @@ ResourceValue = Union[bool, int, float, str, ResourceValueArray]
 class Resource:
     def __init__(
         self,
+        *,
         attrs: Optional[Dict[str, ResourceValue]] = None,
         schema_url: Optional[str] = None,
     ) -> None: ... 
@@ -41,10 +41,10 @@ class Config:
     def __init__(
         self,
         *,
-        span_limits: Optional[SpanLimits],
-        resource: Optional[Resource],
-        metadata_map: Optional[Dict[str, str]],
-        sampler: Optional[Sampler],
-        endpoint: Optional[str],
-        timeout_millis: Optional[int],
+        span_limits: Optional[SpanLimits] = None,
+        resource: Optional[Resource] = None,
+        metadata_map: Optional[Dict[str, str]] = None,
+        sampler: Optional[Sampler] = None,
+        endpoint: Optional[str] = None,
+        timeout_millis: Optional[int] = None,
     ) -> None: ...
