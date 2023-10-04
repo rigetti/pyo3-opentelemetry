@@ -59,6 +59,7 @@ impl ExportProcess {
         let shutdown_notify = self.shutdown_notify.clone();
         let subscriber_config = self.subscriber_config.clone();
         self.runtime.spawn(async move {
+            println!("SPAWN");
             let subscriber = subscriber_config
                 .build(true)
                 .map_err(StartError::from)
@@ -117,6 +118,7 @@ impl ExportProcess {
     }
 
     pub(super) async fn shutdown(self) -> Runtime {
+        opentelemetry::global::shutdown_tracer_provider();
         // notify the background process to shutdown
         self.shutdown_notify.notify_one();
         // wait to be notified that the shutdown is complete

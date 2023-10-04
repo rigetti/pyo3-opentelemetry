@@ -113,7 +113,9 @@ impl opentelemetry_sdk::export::trace::SpanExporter for PythonOTLPSpanExporter {
     fn force_flush(&mut self) -> futures_core::future::BoxFuture<'static, ExportResult> {
         let wg = self.wg.clone();
         Box::pin(async move {
+            println!("SHUTTING DOWN");
             wg.wait().await;
+            println!("SHUT DOWN");
             Ok(())
         })
     }
@@ -122,6 +124,7 @@ impl opentelemetry_sdk::export::trace::SpanExporter for PythonOTLPSpanExporter {
         &mut self,
         batch: Vec<SpanData>,
     ) -> futures_core::future::BoxFuture<'static, ExportResult> {
+        println!("EXPORTING");
         self.wg.add(1);
         let exporter = self.exporter.clone();
         let wg = self.wg.clone();

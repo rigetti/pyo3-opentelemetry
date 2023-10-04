@@ -223,9 +223,9 @@ pub(super) fn build_stub_files(directory: &Path) -> Result<(), std::io::Error> {
     #[cfg(feature = "export-file")]
     file::build_stub_files(&directory.join("file"))?;
     #[cfg(feature = "export-otlp")]
-    file::build_stub_files(&directory.join("otlp"))?;
+    otlp::build_stub_files(&directory.join("otlp"))?;
     #[cfg(feature = "export-py-otlp")]
-    file::build_stub_files(&directory.join("py_otlp"))?;
+    py_otlp::build_stub_files(&directory.join("py_otlp"))?;
 
     let init_file = directory.join("__init__.pyi");
     std::fs::write(init_file, data)

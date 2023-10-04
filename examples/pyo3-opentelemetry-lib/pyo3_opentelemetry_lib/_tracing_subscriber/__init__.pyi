@@ -31,19 +31,17 @@ class SimpleConfig:
 
 
 ExportConfig = Union[BatchConfig, SimpleConfig]
+TracingConfig = Union[CurrentThreadTracingConfig, GlobalTracingConfig]
 
 
 class CurrentThreadTracingConfig:
-    def __init__(self, *, subscriber: subscriber.Config):
+    def __init__(self, *, export_process: ExportConfig):
         ... 
 
 
 class GlobalTracingConfig:
     def __init__(self, *, export_process: ExportConfig):
         ... 
-
-
-TracingConfig = Union[CurrentThreadTracingConfig, GlobalTracingConfig]
 
 
 class Tracing:
