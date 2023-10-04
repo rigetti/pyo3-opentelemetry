@@ -2,8 +2,6 @@
 pub(crate) mod file;
 #[cfg(feature = "export-otlp")]
 pub(crate) mod otlp;
-#[cfg(feature = "export-py-otlp")]
-pub(crate) mod py_otlp;
 
 use std::{fmt::Debug, path::Path};
 
@@ -45,7 +43,6 @@ pub(crate) enum BuildError {
     #[cfg(feature = "export-otlp")]
     #[error("otlp layer: {0}")]
     Otlp(#[from] otlp::BuildError),
-    #[cfg(feature = "export-py-otlp")]
     #[error("custom layer: {0}")]
     Custom(#[from] CustomError),
 }
@@ -100,8 +97,6 @@ pub(crate) enum PyConfig {
     File(file::Config),
     #[cfg(feature = "export-otlp")]
     Otlp(otlp::PyConfig),
-    #[cfg(feature = "export-py-otlp")]
-    PyOtlp(py_otlp::Config),
 }
 
 #[cfg(any(feature = "export-file", feature = "export-otlp"))]
@@ -127,8 +122,6 @@ impl Config for PyConfig {
             Self::Otlp(config) => otlp::Config::try_from(config.clone())
                 .map_err(BuildError::from)?
                 .build(batch),
-            #[cfg(feature = "export-py-otlp")]
-            Self::PyOtlp(config) => config.build(batch),
         }
     }
 }
@@ -201,14 +194,6 @@ pub(crate) fn init_submodule(name: &str, py: Python, m: &PyModule) -> PyResult<(
         modules.set_item(qualified_name, submod)?;
         m.add_submodule(submod)?;
     }
-    #[cfg(feature = "export-py-otlp")]
-    {
-        let submod = pyo3::types::PyModule::new(py, "py_otlp")?;
-        let qualified_name = format!("{name}.py_otlp");
-        py_otlp::init_submodule(qualified_name.as_str(), py, submod)?;
-        modules.set_item(qualified_name, submod)?;
-        m.add_submodule(submod)?;
-    }
 
     // m.add_class::<CustomLayer>()?;
 
@@ -224,8 +209,6 @@ pub(super) fn build_stub_files(directory: &Path) -> Result<(), std::io::Error> {
     file::build_stub_files(&directory.join("file"))?;
     #[cfg(feature = "export-otlp")]
     otlp::build_stub_files(&directory.join("otlp"))?;
-    #[cfg(feature = "export-py-otlp")]
-    py_otlp::build_stub_files(&directory.join("py_otlp"))?;
 
     let init_file = directory.join("__init__.pyi");
     std::fs::write(init_file, data)
