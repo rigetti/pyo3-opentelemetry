@@ -308,7 +308,7 @@ enum PySampler {
 
 impl Default for PySampler {
     fn default() -> Self {
-        Self::AlwaysOn(false)
+        Self::AlwaysOn(true)
     }
 }
 

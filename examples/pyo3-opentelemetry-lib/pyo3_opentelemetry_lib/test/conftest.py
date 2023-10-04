@@ -13,14 +13,25 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 ##############################################################################
-
+import asyncio
+from concurrent import futures
+from multiprocessing.managers import ListProxy
+import os
+from typing import Any, AsyncGenerator, List
+import grpc
 import pytest
+import tempfile
+import socket
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import (
     BatchSpanProcessor,
     ConsoleSpanExporter,
 )
+from opentelemetry.proto.collector.trace.v1 import trace_service_pb2, trace_service_pb2_grpc 
+from grpc.aio import ServicerContext, server as create_grpc_server, Server, insecure_channel
+from unittest import mock
+import multiprocessing as mp
 
 
 @pytest.fixture(scope="session")
@@ -29,3 +40,53 @@ def tracer() -> trace.Tracer:
     processor = BatchSpanProcessor(ConsoleSpanExporter())
     provider.add_span_processor(processor)
     return provider.get_tracer("integration-test")
+
+
+class TraceServiceServicer(trace_service_pb2_grpc.TraceServiceServicer):
+    def __init__(self, data: ListProxy):
+        self.lock = asyncio.Lock()
+        self.resource_spans = data
+
+    async def Export(self, request: trace_service_pb2.ExportTraceServiceRequest, context: ServicerContext) -> trace_service_pb2.ExportTraceServiceResponse:
+        async with self.lock: 
+            self.resource_spans += list(request.resource_spans)
+        context.set_code(grpc.StatusCode.OK)
+        return trace_service_pb2.ExportTraceServiceResponse(
+            partial_success=trace_service_pb2.ExportTracePartialSuccess()
+        )
+
+
+_DIRNAME = os.path.realpath(os.path.dirname(__file__))
+
+
+async def _start_otlp_service_async(data, port):
+    server = create_grpc_server(futures.ThreadPoolExecutor(max_workers=1),)
+    servicer = TraceServiceServicer(data)
+    trace_service_pb2_grpc.add_TraceServiceServicer_to_server(servicer, server)
+
+    server.add_insecure_port(f'[::]:{port}')
+    await server.start()
+    await server.wait_for_termination()
+
+
+def _start_otlp_service(data, port):
+    asyncio.run(_start_otlp_service_async(data, port))
+
+
+@pytest.fixture
+async def otlp_service() -> AsyncGenerator[ListProxy, None]:
+    manager = mp.Manager()
+    data = manager.list()
+    sock = socket.socket()
+    sock.bind(('', 0))
+    address = f'http://[::]:{sock.getsockname()[1]}'
+    process = mp.Process(target=_start_otlp_service, args=(data, sock.getsockname()[1],))
+    process.start()
+    try:
+        with mock.patch.dict(os.environ, {"OTEL_EXPORTER_OTLP_ENDPOINT": address, "OTEL_EXPORTER_OTLP_INSECURE": "true", "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT": address, "OTEL_EXPORTER_OTLP_TRACES_HEADERS": "header1=one,header2=two", "OTEL_EXPORTER_OTLP_TIMEOUT": "1s"}):
+            yield data 
+    finally:
+        print("STOPPING SERVICE")
+        process.kill() 
+
+
