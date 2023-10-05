@@ -22,10 +22,7 @@ use rigetti_pyo3::create_init_submodule;
 
 use self::{
     contextmanager::{CurrentThreadTracingConfig, GlobalTracingConfig, TracingContextManagerError},
-    export_process::{
-        BatchConfig, SimpleConfig, TracingInitializationError, TracingShutdownError,
-        TracingStartError,
-    },
+    export_process::{BatchConfig, SimpleConfig, TracingShutdownError, TracingStartError},
 };
 pub use contextmanager::Tracing;
 
@@ -42,7 +39,7 @@ create_init_submodule! {
         BatchConfig,
         SimpleConfig
     ],
-    errors: [TracingContextManagerError, TracingInitializationError, TracingStartError, TracingShutdownError],
+    errors: [TracingContextManagerError, TracingStartError, TracingShutdownError],
     submodules: [
         "layers": layers::init_submodule,
         "subscriber": subscriber::init_submodule

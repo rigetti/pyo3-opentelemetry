@@ -3,7 +3,7 @@ pub(crate) mod file;
 #[cfg(feature = "export-otlp")]
 pub(crate) mod otlp;
 
-use std::{fmt::Debug, path::Path};
+use std::{fmt::Debug, path::Path, time::Duration};
 
 use opentelemetry_sdk::trace::TracerProvider;
 use pyo3::prelude::*;
@@ -59,6 +59,7 @@ pub(super) type LayerBuildResult<T> = Result<T, BuildError>;
 
 pub(crate) trait Config: Send + Sync + BoxDynConfigClone + Debug {
     fn build(&self, batch: bool) -> LayerBuildResult<WithShutdown>;
+    fn requires_runtime(&self) -> bool;
 }
 
 pub(crate) trait BoxDynConfigClone {
@@ -80,10 +81,16 @@ impl Clone for Box<dyn Config> {
     }
 }
 
-pub(super) fn force_flush_provider_as_shutdown(provider: TracerProvider) -> Shutdown {
+pub(super) fn force_flush_provider_as_shutdown(
+    provider: TracerProvider,
+    timeout: Option<Duration>,
+) -> Shutdown {
     Box::new(
         move || -> std::pin::Pin<Box<dyn std::future::Future<Output = ShutdownResult<()>> + Send + Sync>> {
             Box::pin(async move {
+                if let Some(timeout) = timeout {
+                    tokio::time::sleep(timeout).await;
+                }
                 provider.force_flush();
                 Ok(())
             })
@@ -119,9 +126,16 @@ impl Config for PyConfig {
             #[cfg(feature = "export-file")]
             Self::File(config) => config.build(batch),
             #[cfg(feature = "export-otlp")]
-            Self::Otlp(config) => otlp::Config::try_from(config.clone())
-                .map_err(BuildError::from)?
-                .build(batch),
+            Self::Otlp(config) => config.build(batch),
+        }
+    }
+
+    fn requires_runtime(&self) -> bool {
+        match self {
+            #[cfg(feature = "export-file")]
+            Self::File(config) => config.requires_runtime(),
+            #[cfg(feature = "export-otlp")]
+            Self::Otlp(config) => config.requires_runtime(),
         }
     }
 }

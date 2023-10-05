@@ -14,6 +14,7 @@ use tonic::metadata::{
     errors::{InvalidMetadataKey, InvalidMetadataValue},
     MetadataKey,
 };
+use tracing_subscriber::{EnvFilter, Layer};
 
 use super::{force_flush_provider_as_shutdown, LayerBuildResult, WithShutdown};
 
@@ -33,7 +34,22 @@ impl Config {
     }
 }
 
-impl crate::tracing_subscriber::layers::Config for Config {
+impl crate::tracing_subscriber::layers::Config for PyConfig {
+    fn requires_runtime(&self) -> bool {
+        Config::requires_runtime()
+    }
+    fn build(&self, batch: bool) -> LayerBuildResult<WithShutdown> {
+        Config::try_from(self.clone())
+            .map_err(BuildError::from)?
+            .build(batch)
+    }
+}
+
+impl Config {
+    const fn requires_runtime() -> bool {
+        true
+    }
+
     fn build(&self, batch: bool) -> LayerBuildResult<WithShutdown> {
         let pipeline = opentelemetry_otlp::new_pipeline()
             .tracing()
@@ -54,10 +70,13 @@ impl crate::tracing_subscriber::layers::Config for Config {
         let provider = tracer
             .provider()
             .ok_or(BuildError::ProviderNotSetOnTracer)?;
-        let layer = tracing_opentelemetry::layer().with_tracer(tracer);
+        let layer = tracing_opentelemetry::layer()
+            .with_tracer(tracer)
+            // TODO: trace_filter -> PYO3_OPENTELEMETRY_LOG -> RUST_LOG
+            .with_filter(EnvFilter::from_default_env());
         Ok(WithShutdown {
             layer: Box::new(layer),
-            shutdown: force_flush_provider_as_shutdown(provider),
+            shutdown: force_flush_provider_as_shutdown(provider, Some(self.pre_shutdown_timeout)),
         })
     }
 }
@@ -94,6 +113,7 @@ pub(crate) struct Config {
     sampler: Sampler,
     endpoint: Option<String>,
     timeout: Option<Duration>,
+    pre_shutdown_timeout: Duration,
 }
 
 #[pyclass(name = "SpanLimits")]
@@ -182,6 +202,7 @@ pub(crate) struct PyConfig {
     sampler: PySampler,
     endpoint: Option<String>,
     timeout_millis: Option<u64>,
+    pre_shutdown_timeout_millis: u64,
 }
 
 #[pymethods]
@@ -194,7 +215,8 @@ impl PyConfig {
         metadata_map = None,
         sampler = None,
         endpoint = None,
-        timeout_millis = None 
+        timeout_millis = None,
+        pre_shutdown_timeout_millis = 4000
     ))]
     fn new(
         span_limits: Option<PySpanLimits>,
@@ -203,6 +225,7 @@ impl PyConfig {
         sampler: Option<&PyAny>,
         endpoint: Option<&str>,
         timeout_millis: Option<u64>,
+        pre_shutdown_timeout_millis: u64,
     ) -> PyResult<Self> {
         Ok(Self {
             span_limits: span_limits.unwrap_or_default(),
@@ -211,6 +234,7 @@ impl PyConfig {
             sampler: sampler.map(PyAny::extract).transpose()?.unwrap_or_default(),
             endpoint: endpoint.map(String::from),
             timeout_millis,
+            pre_shutdown_timeout_millis,
         })
     }
 }
@@ -322,13 +346,46 @@ impl From<PySampler> for Sampler {
     }
 }
 
+// https://opentelemetry.io/docs/specs/otel/protocol/exporter/
+const OTEL_EXPORTER_OTLP_HEADERS: &str = "OTEL_EXPORTER_OTLP_HEADERS";
+const OTEL_EXPORTER_OTLP_TRACES_HEADERS: &str = "OTEL_EXPORTER_OTLP_TRACES_HEADERS";
+
+#[allow(dead_code)]
+fn get_metadata_from_environment() -> Result<tonic::metadata::MetadataMap, ConfigError> {
+    [
+        OTEL_EXPORTER_OTLP_HEADERS,
+        OTEL_EXPORTER_OTLP_TRACES_HEADERS,
+    ]
+    .iter()
+    .filter_map(|k| std::env::var(k).ok())
+    .flat_map(|headers| {
+        headers
+            .split(',')
+            .map(String::from)
+            .filter_map(|kv| {
+                let mut x = kv.split('=').map(String::from);
+                Some((x.next()?, x.next()?))
+            })
+            .collect::<Vec<(String, String)>>()
+    })
+    .try_fold(
+        tonic::metadata::MetadataMap::new(),
+        |mut metadata, (k, v)| {
+            let key = k.parse::<MetadataKey<_>>().map_err(ConfigError::from)?;
+            metadata.insert(key, v.parse().map_err(ConfigError::from)?);
+            Ok(metadata)
+        },
+    )
+}
+
 impl TryFrom<PyConfig> for Config {
     type Error = BuildError;
 
     fn try_from(config: PyConfig) -> Result<Self, Self::Error> {
+        let env_metadata_map = get_metadata_from_environment()?;
         let metadata_map = match config.metadata_map {
             Some(m) => Some(m.into_iter().try_fold(
-                tonic::metadata::MetadataMap::new(),
+                env_metadata_map,
                 |mut metadata_map: tonic::metadata::MetadataMap,
                  (k, v)|
                  -> Result<_, Self::Error> {
@@ -337,6 +394,7 @@ impl TryFrom<PyConfig> for Config {
                     Ok(metadata_map)
                 },
             )?),
+            None if !env_metadata_map.is_empty() => Some(env_metadata_map),
             None => None,
         };
 
@@ -347,6 +405,7 @@ impl TryFrom<PyConfig> for Config {
             sampler: config.sampler.into(),
             endpoint: config.endpoint,
             timeout: config.timeout_millis.map(Duration::from_millis),
+            pre_shutdown_timeout: Duration::from_millis(config.pre_shutdown_timeout_millis),
         })
     }
 }

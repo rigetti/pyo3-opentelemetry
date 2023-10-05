@@ -5,12 +5,11 @@ use pyo3::{exceptions::PyRuntimeError, prelude::*};
 use rigetti_pyo3::{py_wrap_error, wrap_error, ToPythonError};
 
 use super::export_process::{
-    ExportProcess, ExportProcessConfig, RustTracingInitializationError, RustTracingShutdownError,
-    RustTracingStartError,
+    ExportProcess, ExportProcessConfig, RustTracingShutdownError, RustTracingStartError,
 };
 
 #[pyclass]
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 #[cfg_attr(any(feature = "export-file", feature = "export-otlp"), derive(Default))]
 pub(crate) struct GlobalTracingConfig {
     pub(crate) export_process: ExportProcessConfig,
@@ -32,7 +31,7 @@ impl GlobalTracingConfig {
 }
 
 #[pyclass]
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub(crate) struct CurrentThreadTracingConfig {
     pub(crate) export_process: ExportProcessConfig,
 }
@@ -54,7 +53,7 @@ impl CurrentThreadTracingConfig {
     }
 }
 
-#[derive(FromPyObject)]
+#[derive(FromPyObject, Debug)]
 pub(crate) enum TracingConfig {
     Global(GlobalTracingConfig),
     CurrentThread(CurrentThreadTracingConfig),
@@ -67,19 +66,18 @@ impl Default for TracingConfig {
     }
 }
 
-#[pyclass]
-pub struct Tracing {
-    export_process: Option<ExportProcess>,
+#[derive(Debug)]
+enum ContextManagerState {
+    Initialized(TracingConfig),
+    Entered(ExportProcess),
+    Starting,
+    Exited,
 }
 
-impl Debug for Tracing {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Tracing {{ export_process: {} }}",
-            self.export_process.as_ref().map_or("None", |_| "Some(_)")
-        )
-    }
+#[pyclass]
+#[derive(Debug)]
+pub struct Tracing {
+    state: ContextManagerState,
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -102,29 +100,31 @@ py_wrap_error!(
 impl Tracing {
     #[new]
     #[pyo3(signature = (/, config = None))]
+    #[allow(clippy::pedantic)]
     fn new(config: Option<TracingConfig>) -> PyResult<Self> {
         #[cfg(any(feature = "export-file", feature = "export-otlp"))]
         let config = config.unwrap_or_default();
         #[cfg(all(not(feature = "export-file"), not(feature = "export-otlp")))]
         let config = crate::tracing_subscriber::unsupported_default_initialization(config)?;
-        let export_process = Some(
-            config
-                .try_into()
-                .map_err(RustTracingInitializationError::from)
-                .map_err(ToPythonError::to_py_err)?,
-        );
-        Ok(Self { export_process })
+        Ok(Self {
+            state: ContextManagerState::Initialized(config),
+        })
     }
 
     fn __aenter__<'a>(&'a mut self, py: Python<'a>) -> PyResult<&'a PyAny> {
-        self.export_process
-            .as_mut()
-            .ok_or(ContextManagerError::Enter)
-            .map_err(RustContextManagerError::from)
-            .map_err(ToPythonError::to_py_err)?
-            .start()
-            .map_err(RustTracingStartError::from)
-            .map_err(ToPythonError::to_py_err)?;
+        let state = std::mem::replace(&mut self.state, ContextManagerState::Starting);
+        if let ContextManagerState::Initialized(config) = state {
+            self.state = ContextManagerState::Entered(
+                ExportProcess::start(config)
+                    .map_err(RustTracingStartError::from)
+                    .map_err(ToPythonError::to_py_err)?,
+            );
+        } else {
+            return Err(ContextManagerError::Enter)
+                .map_err(RustContextManagerError::from)
+                .map_err(ToPythonError::to_py_err)?;
+        }
+
         pyo3_asyncio::tokio::future_into_py(py, async { Ok(()) })
     }
 
@@ -135,22 +135,22 @@ impl Tracing {
         _exc_value: Option<&PyAny>,
         _traceback: Option<&PyAny>,
     ) -> PyResult<&'a PyAny> {
-        let export_process = self
-            .export_process
-            .take()
-            .ok_or(ContextManagerError::Exit)
-            .map_err(RustContextManagerError::from)
-            .map_err(ToPythonError::to_py_err)?;
-        let py_rt = pyo3_asyncio::tokio::get_runtime();
-        py_rt
-            .block_on(async move {
+        let state = std::mem::replace(&mut self.state, ContextManagerState::Exited);
+        if let ContextManagerState::Entered(export_process) = state {
+            let py_rt = pyo3_asyncio::tokio::get_runtime();
+            py_rt.block_on(async move {
                 export_process
                     .shutdown()
                     .await
                     .map_err(RustTracingShutdownError::from)
                     .map_err(ToPythonError::to_py_err)
-            })
-            .map(|_| py.None())?;
+            })?;
+        } else {
+            return Err(ContextManagerError::Exit)
+                .map_err(RustContextManagerError::from)
+                .map_err(ToPythonError::to_py_err)?;
+        }
+
         pyo3_asyncio::tokio::future_into_py(py, async { Ok(()) })
     }
 }
@@ -162,8 +162,8 @@ mod test {
     use tokio::runtime::Builder;
 
     use crate::tracing_subscriber::{
-        contextmanager::{CurrentThreadTracingConfig, GlobalTracingConfig, Tracing, TracingConfig},
-        export_process::{BatchConfig, ExportProcessConfig, SimpleConfig},
+        contextmanager::{CurrentThreadTracingConfig, GlobalTracingConfig, TracingConfig},
+        export_process::{BatchConfig, ExportProcess, ExportProcessConfig, SimpleConfig},
         subscriber::TracingSubscriberRegistryConfig,
     };
 
@@ -203,7 +203,6 @@ mod test {
     }
 
     #[test]
-    #[ignore]
     /// Test that the `BatchExportProcess` can be started and stopped and that it exports
     /// accurate spans as configured.
     fn test_global_batch() {
@@ -218,14 +217,9 @@ mod test {
                 subscriber: crate::tracing_subscriber::subscriber::PyConfig {
                     subscriber_config: subscriber,
                 },
-                timeout_millis: 1000,
             }),
         });
-        let tracing = Tracing::new(Some(config)).unwrap();
-        // FIXME
-        // tracing.__aenter__().unwrap();
-
-        let export_process = tracing.export_process.unwrap();
+        let export_process = ExportProcess::start(config).unwrap();
         let rt2 = Builder::new_current_thread().enable_time().build().unwrap();
         let _guard = rt2.enter();
         let export_runtime = rt2
@@ -274,7 +268,6 @@ mod test {
     }
 
     #[test]
-    #[ignore]
     fn test_global_simple() {
         let temporary_file = tempfile::NamedTempFile::new().unwrap();
         let temporary_file_path = temporary_file.path().to_owned();
@@ -289,11 +282,7 @@ mod test {
                 },
             }),
         });
-        let tracing = Tracing::new(Some(config)).unwrap();
-        // FIXME
-        // tracing.__aenter__().unwrap();
-
-        let export_process = tracing.export_process.unwrap();
+        let export_process = ExportProcess::start(config).unwrap();
         let rt2 = Builder::new_current_thread().enable_time().build().unwrap();
         let _guard = rt2.enter();
         let runtime = rt2
@@ -357,15 +346,11 @@ mod test {
                 },
             ),
         });
-        let tracing = Tracing::new(Some(config)).unwrap();
-        // FIXME
-        // tracing.__aenter__().unwrap();
+        let export_process = ExportProcess::start(config).unwrap();
 
         for _ in 0..N_SPANS {
             example();
         }
-
-        let export_process = tracing.export_process.unwrap();
 
         let rt2 = Builder::new_current_thread().enable_time().build().unwrap();
         let _guard = rt2.enter();

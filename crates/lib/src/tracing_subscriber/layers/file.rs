@@ -22,6 +22,10 @@ impl Config {
 }
 
 impl crate::tracing_subscriber::layers::Config for Config {
+    fn requires_runtime(&self) -> bool {
+        false
+    }
+
     fn build(&self, batch: bool) -> LayerBuildResult<WithShutdown> {
         let exporter_builder = opentelemetry_stdout::SpanExporter::builder();
         let exporter_builder = match self.file_path.as_ref() {
@@ -47,7 +51,7 @@ impl crate::tracing_subscriber::layers::Config for Config {
         let layer = tracing_opentelemetry::layer().with_tracer(tracer);
         Ok(WithShutdown {
             layer: Box::new(layer),
-            shutdown: force_flush_provider_as_shutdown(provider),
+            shutdown: force_flush_provider_as_shutdown(provider, None),
         })
     }
 }
