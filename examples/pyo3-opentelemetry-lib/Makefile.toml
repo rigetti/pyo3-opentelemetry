@@ -10,7 +10,6 @@
   '''
     
 [tasks.python-format]
-  private = true
   dependencies = ["python-build"]
   script = '''
   poetry run black .

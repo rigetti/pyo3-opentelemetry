@@ -63,5 +63,5 @@ export = [
   "rigetti-pyo3",
   "once_cell"
 ]
-export-otlp = ["export", "opentelemetry-otlp", "opentelemetry-proto", "tonic"]
+export-otlp = ["export", "opentelemetry-otlp", "opentelemetry-proto", "tonic", "tracing-subscriber/env-filter"]
 export-file = ["export", "opentelemetry-stdout/trace"]

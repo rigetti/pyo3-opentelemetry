@@ -64,23 +64,14 @@ use std::collections::HashMap;
 
 use opentelemetry::propagation::TextMapPropagator;
 use opentelemetry::trace::FutureExt;
-use opentelemetry_api::trace::TraceContextExt;
-use opentelemetry_api::Context;
+// use opentelemetry_api::trace::TraceContextExt;
+// use opentelemetry_api::Context;
 use pyo3::prelude::*;
 use pyo3_opentelemetry::pypropagate;
 use tracing::instrument;
 
 #[instrument]
 fn example_function_impl() -> HashMap<String, String> {
-    let span = tracing::info_span!("example_function");
-    let _guard = span.enter();
-
-    // FIXME
-    println!(
-        "example_function_impl> {}",
-        Context::current().span().span_context().trace_id()
-    );
-
     let propagator = opentelemetry_sdk::propagation::TraceContextPropagator::new();
     let mut injector = HashMap::new();
     propagator.inject(&mut injector);
@@ -98,15 +89,6 @@ async fn example_function_impl_async() -> PyResult<HashMap<String, String>> {
 #[pypropagate(on_context_extraction_failure = "print")]
 #[pyfunction]
 pub fn example_function(py: Python<'_>) -> HashMap<String, String> {
-    // println!(
-    //     "Hello from example_function {}",
-    //     Context::current().span().span_context().trace_id()
-    // );
-    // FIXME
-    println!(
-        "example_function> is recording?? {}",
-        Context::current().span().is_recording()
-    );
     example_function_impl()
 }
 

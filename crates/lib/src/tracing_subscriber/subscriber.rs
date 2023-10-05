@@ -2,6 +2,7 @@ use std::path::Path;
 
 use pyo3::prelude::*;
 use rigetti_pyo3::create_init_submodule;
+use tracing::subscriber::DefaultGuard;
 use tracing_subscriber::{layer::Layered, prelude::__tracing_subscriber_SubscriberExt, Registry};
 
 #[derive(thiserror::Error, Debug)]
@@ -36,6 +37,7 @@ pub(crate) type Shutdown = Box<
 type SubscriberBuildResult<T> = Result<T, BuildError>;
 
 pub(crate) trait Config: BoxDynConfigClone + Send + Sync {
+    fn requires_runtime(&self) -> bool;
     fn build(&self, batch: bool) -> SubscriberBuildResult<WithShutdown>;
 }
 
@@ -68,7 +70,7 @@ where
 }
 
 pub(crate) struct WithShutdown {
-    pub(crate) subscriber: Option<Box<dyn SendSyncSubscriber>>,
+    pub(crate) subscriber: Box<dyn SendSyncSubscriber>,
     pub(crate) shutdown: Shutdown,
 }
 
@@ -76,11 +78,7 @@ impl core::fmt::Debug for WithShutdown {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "WithShutdown subscriber: {}, shutdown: Shutdown",
-            &self
-                .subscriber
-                .as_ref()
-                .map_or("None", |_| "Some(Box<dyn SendSyncSubscriber>)"),
+            "WithShutdown subscriber: Box<dyn SendSyncSubscriber>, shutdown: Shutdown",
         )
     }
 }
@@ -133,12 +131,16 @@ pub(super) struct TracingSubscriberRegistryConfig {
 }
 
 impl Config for TracingSubscriberRegistryConfig {
+    fn requires_runtime(&self) -> bool {
+        self.layer_config.requires_runtime()
+    }
+
     fn build(&self, batch: bool) -> SubscriberBuildResult<WithShutdown> {
         let layer = self.layer_config.clone().build(batch)?;
         let subscriber = Registry::default().with(layer.layer);
         let shutdown = layer.shutdown;
         Ok(WithShutdown {
-            subscriber: Some(Box::new(subscriber)),
+            subscriber: Box::new(subscriber),
             shutdown: Box::new(move || {
                 Box::pin(async move {
                     shutdown().await?;
@@ -146,6 +148,50 @@ impl Config for TracingSubscriberRegistryConfig {
                 })
             }),
         })
+    }
+}
+
+#[derive(thiserror::Error, Debug)]
+pub(crate) enum SetSubscriberError {
+    #[error("global default: {0}")]
+    SetGlobalDefault(#[from] tracing::subscriber::SetGlobalDefaultError),
+}
+
+type SetSubscriberResult<T> = Result<T, SetSubscriberError>;
+
+pub(crate) fn set_subscriber(
+    subscriber: WithShutdown,
+    global: bool,
+) -> SetSubscriberResult<SubscriberManagerGuard> {
+    if global {
+        let shutdown = subscriber.shutdown;
+        tracing::subscriber::set_global_default(subscriber.subscriber)?;
+        Ok(SubscriberManagerGuard::Global(shutdown))
+    } else {
+        let shutdown = subscriber.shutdown;
+        let guard = tracing::subscriber::set_default(subscriber.subscriber);
+        Ok(SubscriberManagerGuard::CurrentThread((shutdown, guard)))
+    }
+}
+
+pub(crate) enum SubscriberManagerGuard {
+    Global(Shutdown),
+    CurrentThread((Shutdown, DefaultGuard)),
+}
+
+impl SubscriberManagerGuard {
+    pub(crate) async fn shutdown(self) -> ShutdownResult<()> {
+        match self {
+            Self::Global(shutdown) => {
+                shutdown().await?;
+                opentelemetry::global::shutdown_tracer_provider();
+            }
+            Self::CurrentThread((shutdown, guard)) => {
+                shutdown().await?;
+                drop(guard);
+            }
+        }
+        Ok(())
     }
 }
 
