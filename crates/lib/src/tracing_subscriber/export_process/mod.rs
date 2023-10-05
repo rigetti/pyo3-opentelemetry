@@ -163,7 +163,7 @@ impl ExportProcess {
 
     pub(crate) async fn shutdown(self) -> ShutdownResult<Option<Runtime>> {
         match self {
-            Self::Background(process) => Ok(Some(process.shutdown().await)),
+            Self::Background(process) => Ok(Some(process.shutdown().await?)),
             Self::Foreground(guard) => {
                 guard.shutdown().await?;
                 Ok(None)

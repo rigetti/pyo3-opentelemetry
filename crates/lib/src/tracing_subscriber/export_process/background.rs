@@ -1,15 +1,12 @@
-use std::sync::Arc;
+use tokio::runtime::{Builder, Runtime};
 
-use tokio::{
-    runtime::{Builder, Runtime},
-    sync::Notify,
+use crate::tracing_subscriber::subscriber::{
+    set_subscriber, Config as SubscriberConfig, SubscriberManagerGuard,
 };
-
-use crate::tracing_subscriber::subscriber::{set_subscriber, Config as SubscriberConfig};
 
 use tracing::subscriber::SetGlobalDefaultError;
 
-use super::StartResult;
+use super::{ShutdownResult, StartResult};
 
 #[derive(thiserror::Error, Debug)]
 #[allow(variant_size_differences)]
@@ -28,16 +25,13 @@ pub(crate) enum StartError {
 }
 
 pub(crate) struct ExportProcess {
-    shutdown_notify: Arc<Notify>,
-    pub(super) runtime: Runtime,
+    runtime: Runtime,
+    guard: SubscriberManagerGuard,
 }
 
 impl ExportProcess {
-    pub(super) fn new(shutdown_notify: Arc<Notify>, runtime: Runtime) -> Self {
-        Self {
-            shutdown_notify,
-            runtime,
-        }
+    pub(super) fn new(guard: SubscriberManagerGuard, runtime: Runtime) -> Self {
+        Self { runtime, guard }
     }
 
     pub(super) fn start(
@@ -45,27 +39,15 @@ impl ExportProcess {
         global: bool,
     ) -> StartResult<Self> {
         let runtime = init_runtime()?;
-        let shutdown_notify_rx = Arc::new(Notify::new());
         let subscriber = runtime
             .block_on(async move { subscriber_config.build(true).map_err(StartError::from) })?;
         let guard = set_subscriber(subscriber, global)?;
-        let shutdown_notify_tx = shutdown_notify_rx.clone();
-        // TODO Do we actually need this?
-        runtime.spawn(async move {
-            shutdown_notify_tx.notified().await;
-            guard.shutdown().await.unwrap();
-            // notify the shutdown is complete
-            shutdown_notify_tx.notify_one();
-        });
-        Ok(Self::new(shutdown_notify_rx, runtime))
+        Ok(Self::new(guard, runtime))
     }
 
-    pub(super) async fn shutdown(self) -> Runtime {
-        // notify the background process to shutdown
-        self.shutdown_notify.notify_one();
-        // wait to be notified that the shutdown is complete
-        self.shutdown_notify.notified().await;
-        self.runtime
+    pub(super) async fn shutdown(self) -> ShutdownResult<Runtime> {
+        self.guard.shutdown().await?;
+        Ok(self.runtime)
     }
 }
 
