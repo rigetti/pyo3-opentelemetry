@@ -42,4 +42,6 @@ class Config:
         sampler: Optional[Sampler] = None,
         endpoint: Optional[str] = None,
         timeout_millis: Optional[int] = None,
+        pre_shutdown_timeout_millis: int = 4000,
+        env_filter: Optional[str] = None,
     ) -> None: ...
