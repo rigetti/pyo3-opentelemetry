@@ -99,6 +99,7 @@ pub(super) fn force_flush_provider_as_shutdown(
 }
 
 #[derive(FromPyObject, Clone, Debug)]
+#[allow(variant_size_differences, clippy::large_enum_variant)]
 pub(crate) enum PyConfig {
     #[cfg(feature = "export-file")]
     File(file::Config),

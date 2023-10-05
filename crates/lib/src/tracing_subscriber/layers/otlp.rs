@@ -1,4 +1,4 @@
-use std::{collections::HashMap, path::Path, time::Duration};
+use std::{collections::HashMap, env, path::Path, time::Duration};
 
 use opentelemetry_api::{trace::TraceError, KeyValue};
 use opentelemetry_otlp::{TonicExporterBuilder, WithExportConfig};
@@ -14,7 +14,10 @@ use tonic::metadata::{
     errors::{InvalidMetadataKey, InvalidMetadataValue},
     MetadataKey,
 };
-use tracing_subscriber::{EnvFilter, Layer};
+use tracing_subscriber::{
+    filter::{FromEnvError, ParseError},
+    EnvFilter, Layer,
+};
 
 use super::{force_flush_provider_as_shutdown, LayerBuildResult, WithShutdown};
 
@@ -45,6 +48,8 @@ impl crate::tracing_subscriber::layers::Config for PyConfig {
     }
 }
 
+const PYO3_OPENTELEMETRY_ENV_FILTER: &str = "PYO3_OPENTELEMETRY_ENV_FILTER";
+
 impl Config {
     const fn requires_runtime() -> bool {
         true
@@ -70,10 +75,17 @@ impl Config {
         let provider = tracer
             .provider()
             .ok_or(BuildError::ProviderNotSetOnTracer)?;
+        let env_filter = self
+            .env_filter
+            .clone()
+            .or_else(|| env::var(PYO3_OPENTELEMETRY_ENV_FILTER).ok())
+            .map_or_else(
+                || EnvFilter::try_from_default_env().map_err(BuildError::from),
+                |filter| EnvFilter::try_new(filter).map_err(BuildError::from),
+            )?;
         let layer = tracing_opentelemetry::layer()
             .with_tracer(tracer)
-            // TODO: trace_filter -> PYO3_OPENTELEMETRY_LOG -> RUST_LOG
-            .with_filter(EnvFilter::from_default_env());
+            .with_filter(env_filter);
         Ok(WithShutdown {
             layer: Box::new(layer),
             shutdown: force_flush_provider_as_shutdown(provider, Some(self.pre_shutdown_timeout)),
@@ -95,6 +107,10 @@ pub(crate) enum BuildError {
     ProviderNotSetOnTracer,
     #[error("error in the configuration: {0}")]
     Config(#[from] ConfigError),
+    #[error("failed to parse specified trace filter: {0}")]
+    TraceFilterParseError(#[from] ParseError),
+    #[error("failed to parse trace filter from RUST_LOG: {0}")]
+    TraceFilterEnvError(#[from] FromEnvError),
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -114,6 +130,7 @@ pub(crate) struct Config {
     endpoint: Option<String>,
     timeout: Option<Duration>,
     pre_shutdown_timeout: Duration,
+    env_filter: Option<String>,
 }
 
 #[pyclass(name = "SpanLimits")]
@@ -203,6 +220,7 @@ pub(crate) struct PyConfig {
     endpoint: Option<String>,
     timeout_millis: Option<u64>,
     pre_shutdown_timeout_millis: u64,
+    env_filter: Option<String>,
 }
 
 #[pymethods]
@@ -216,8 +234,10 @@ impl PyConfig {
         sampler = None,
         endpoint = None,
         timeout_millis = None,
-        pre_shutdown_timeout_millis = 4000
+        pre_shutdown_timeout_millis = 4000,
+        env_filter = None
     ))]
+    #[allow(clippy::too_many_arguments)]
     fn new(
         span_limits: Option<PySpanLimits>,
         resource: Option<PyResource>,
@@ -226,6 +246,7 @@ impl PyConfig {
         endpoint: Option<&str>,
         timeout_millis: Option<u64>,
         pre_shutdown_timeout_millis: u64,
+        env_filter: Option<&str>,
     ) -> PyResult<Self> {
         Ok(Self {
             span_limits: span_limits.unwrap_or_default(),
@@ -235,6 +256,7 @@ impl PyConfig {
             endpoint: endpoint.map(String::from),
             timeout_millis,
             pre_shutdown_timeout_millis,
+            env_filter: env_filter.map(String::from),
         })
     }
 }
@@ -406,6 +428,7 @@ impl TryFrom<PyConfig> for Config {
             endpoint: config.endpoint,
             timeout: config.timeout_millis.map(Duration::from_millis),
             pre_shutdown_timeout: Duration::from_millis(config.pre_shutdown_timeout_millis),
+            env_filter: config.env_filter,
         })
     }
 }
