@@ -5,7 +5,8 @@ from base64 import b64encode
 from contextlib import asynccontextmanager
 import json
 from multiprocessing.managers import ListProxy
-from typing import TYPE_CHECKING, AsyncGenerator, Dict, Iterable, List, MutableSequence
+import os
+from typing import TYPE_CHECKING, AsyncGenerator, Callable, Dict, Iterable, Iterator, List, MutableSequence
 
 import pytest
 from google.protobuf import json_format
@@ -19,6 +20,7 @@ from opentelemetry.trace.propagation import get_current_span
 import pyo3_opentelemetry_lib
 from pyo3_opentelemetry_lib._tracing_subscriber import (
     BatchConfig,
+    CurrentThreadTracingConfig,
     GlobalTracingConfig,
     SimpleConfig,
     Tracing,
@@ -31,24 +33,20 @@ if TYPE_CHECKING:
     from pyo3_opentelemetry_lib._tracing_subscriber.layers import Config as LayerConfig
 
 
-def _build_tracing_configs(layer: LayerConfig) -> List[TracingConfig]:
-    return [
-        # CurrentThreadTracingConfig(export_process=SimpleConfig(subscriber=subscriber.Config(layer=layer))),
-        # GlobalTracingConfig(export_process=SimpleConfig(subscriber=subscriber.Config(layer=layer))),
-        GlobalTracingConfig(export_process=BatchConfig(subscriber=subscriber.Config(layer=layer))),
-    ]
+_TEST_ARTIFACTS_DIR = os.path.join(os.path.dirname(__file__), "__artifacts__")
 
 
-FILE_EXPORT_PATH = "./spans.txt"
-
-
+@pytest.mark.forked
 @pytest.mark.parametrize(
-    "config",
-    _build_tracing_configs(
-        file.Config(file_path=FILE_EXPORT_PATH),
-    ),
+    "index,config",
+    [
+        (0, CurrentThreadTracingConfig(export_process=SimpleConfig(subscriber=subscriber.Config(layer=file.Config(file_path=os.path.join(_TEST_ARTIFACTS_DIR, "file_export0.txt")))))),
+        (1, CurrentThreadTracingConfig(export_process=BatchConfig(subscriber=subscriber.Config(layer=file.Config(file_path=os.path.join(_TEST_ARTIFACTS_DIR, "file_export1.txt")))))),
+        (2, GlobalTracingConfig(export_process=SimpleConfig(subscriber=subscriber.Config(layer=file.Config(file_path=os.path.join(_TEST_ARTIFACTS_DIR, "file_export2.txt")))))),
+        (3, GlobalTracingConfig(export_process=BatchConfig(subscriber=subscriber.Config(layer=file.Config(file_path=os.path.join(_TEST_ARTIFACTS_DIR, "file_export3.txt")))))),
+    ]
 )
-async def test_file_export_tracing(config: TracingConfig, tracer: Tracer):
+async def test_file_export(config: TracingConfig, index: int, tracer: Tracer):
     async with Tracing(config=config):
         with tracer.start_as_current_span("test_file_export_tracing"):
             current_span = get_current_span()
@@ -60,7 +58,8 @@ async def test_file_export_tracing(config: TracingConfig, tracer: Tracer):
 
     _assert_propagated_trace_id_eq(result, trace_id)
 
-    with open(FILE_EXPORT_PATH, "r") as f:
+    file_path = os.path.join(_TEST_ARTIFACTS_DIR, f"file_export{index}.txt")
+    with open(file_path, "r") as f:
         resource_spans: List[ResourceSpans] = []
         for line in f.readlines():
             request = ExportTraceServiceRequest()
@@ -72,29 +71,15 @@ async def test_file_export_tracing(config: TracingConfig, tracer: Tracer):
                 assert b64encode(span.trace_id).decode("utf-8") == format_trace_id(trace_id), trace_id
 
 
-@asynccontextmanager
-async def _start_as_current_span_async(tracer: Tracer, *args, **kwargs) -> AsyncGenerator[trace.Span, None]:
-    """
-    This function providers a decorator function for async functions that will start a span and set it as the current
-    span.
-
-    This is necessary because `tracer.Tracer.start_as_current_span` currently does not support asynchronous
-    functions. See `opentelemetry-python#62 <https://github.com/open-telemetry/opentelemetry-python/issues/62>`_
-    for more detail.
-
-    :param tracer: The tracer to use to start the span.
-    :param args: The arguments to pass to the tracer's `start_as_current_span` method.
-    :param kwargs: The keyword arguments to pass to the tracer's `start_as_current_span` method.
-    """
-    with tracer.start_as_current_span(*args, **kwargs) as span:
-        yield span
-
-
+@pytest.mark.forked
 @pytest.mark.parametrize(
     "config",
-    _build_tracing_configs(
-        otlp.Config(),
-    ),
+    [
+        CurrentThreadTracingConfig(export_process=SimpleConfig(subscriber=subscriber.Config(layer=otlp.Config()))),
+        CurrentThreadTracingConfig(export_process=BatchConfig(subscriber=subscriber.Config(layer=otlp.Config()))),
+        GlobalTracingConfig(export_process=SimpleConfig(subscriber=subscriber.Config(layer=otlp.Config()))),
+        GlobalTracingConfig(export_process=BatchConfig(subscriber=subscriber.Config(layer=otlp.Config()))),
+    ]
 )
 async def test_otlp_export(config: TracingConfig, tracer: Tracer, otlp_service: MutableSequence[ResourceSpans]):
     async with Tracing(config=config):

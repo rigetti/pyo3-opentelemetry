@@ -12,6 +12,12 @@
           {
             "attributes": [
               {
+                "key": "idle_ns",
+                "value": {
+                  "intValue": "104084"
+                }
+              },
+              {
                 "key": "code.namespace",
                 "value": {
                   "stringValue": "pyo3_opentelemetry_lib"
@@ -24,38 +30,32 @@
                 }
               },
               {
-                "key": "code.filepath",
-                "value": {
-                  "stringValue": "examples/pyo3-opentelemetry-lib/src/lib.rs"
-                }
-              },
-              {
                 "key": "thread.id",
                 "value": {
                   "intValue": "1"
                 }
               },
               {
-                "key": "busy_ns",
+                "key": "code.filepath",
                 "value": {
-                  "intValue": "8292"
+                  "stringValue": "examples/pyo3-opentelemetry-lib/src/lib.rs"
                 }
               },
               {
-                "key": "idle_ns",
+                "key": "busy_ns",
                 "value": {
-                  "intValue": "153167"
+                  "intValue": "11666"
                 }
               }
             ],
-            "endTimeUnixNano": "1696464790498144000",
+            "endTimeUnixNano": "1696536475268405000",
             "kind": "SPAN_KIND_INTERNAL",
             "name": "example_function_impl",
-            "parentSpanId": "/SGYCT4nzMo=",
-            "spanId": "Ao6I272U7fQ=",
-            "startTimeUnixNano": "1696464790497959000",
+            "parentSpanId": "LphPp2iJxy0=",
+            "spanId": "K0liBZbUUzw=",
+            "startTimeUnixNano": "1696536475268289000",
             "status": {},
-            "traceId": "U9/D0fc0UJ/Xq/taKX8Tbg=="
+            "traceId": "7YTFJf6bXJl0DeShJNWj3Q=="
           }
         ]
       }
