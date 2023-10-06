@@ -1,8 +1,10 @@
-// use pyo3_opentelemetry::tracing_subscriber::build_stub_files;
+use pyo3_tracing_subscriber_stubs::write_stub_files;
 
 fn main() {
-    // build_stub_files(std::path::Path::new(
-    //     "./pyo3_opentelemetry_lib/_tracing_subscriber",
-    // ))
-    // .unwrap();
+    write_stub_files(
+        "pyo3_opentelemetry_lib",
+        "_tracing_subscriber",
+        std::path::Path::new("./pyo3_opentelemetry_lib/_tracing_subscriber"),
+    )
+    .unwrap();
 }

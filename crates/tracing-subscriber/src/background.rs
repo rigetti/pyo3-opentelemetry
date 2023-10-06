@@ -1,6 +1,6 @@
 use tokio::runtime::{Builder, Runtime};
 
-use crate::tracing_subscriber::subscriber::{
+use crate::subscriber::{
     set_subscriber, Config as SubscriberConfig, SubscriberManagerGuard,
 };
 
@@ -12,7 +12,7 @@ use super::{ShutdownResult, StartResult};
 #[allow(variant_size_differences)]
 pub(crate) enum StartError {
     #[error("failed to build subscriber: {0}")]
-    SubscriberBuild(#[from] crate::tracing_subscriber::subscriber::BuildError),
+    SubscriberBuild(#[from] crate::subscriber::BuildError),
 
     #[error("failed to set global default tracing subscriber: {0}")]
     SetSubscriber(#[from] SetGlobalDefaultError),

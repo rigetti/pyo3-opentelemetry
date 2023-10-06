@@ -3,7 +3,7 @@ pub(crate) mod file;
 #[cfg(feature = "export-otlp")]
 pub(crate) mod otlp;
 
-use std::{fmt::Debug, path::Path, time::Duration};
+use std::{fmt::Debug, time::Duration};
 
 use opentelemetry_sdk::trace::TracerProvider;
 use pyo3::prelude::*;
@@ -213,18 +213,4 @@ pub(crate) fn init_submodule(name: &str, py: Python, m: &PyModule) -> PyResult<(
     // m.add_class::<CustomLayer>()?;
 
     Ok(())
-}
-
-#[allow(dead_code)]
-pub(super) fn build_stub_files(directory: &Path) -> Result<(), std::io::Error> {
-    let data = include_bytes!("../../../assets/python_stubs/layers/__init__.pyi");
-    std::fs::create_dir_all(directory)?;
-
-    #[cfg(feature = "export-file")]
-    file::build_stub_files(&directory.join("file"))?;
-    #[cfg(feature = "export-otlp")]
-    otlp::build_stub_files(&directory.join("otlp"))?;
-
-    let init_file = directory.join("__init__.pyi");
-    std::fs::write(init_file, data)
 }

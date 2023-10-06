@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use crate::tracing_subscriber::subscriber::PyConfig;
+use crate::subscriber::PyConfig;
 use pyo3::{exceptions::PyRuntimeError, prelude::*};
 use rigetti_pyo3::{create_init_submodule, py_wrap_error, wrap_error};
 use tokio::runtime::Runtime;
@@ -27,7 +27,7 @@ impl BatchConfig {
         #[cfg(any(feature = "export-file", feature = "export-otlp"))]
         let subscriber = subscriber.unwrap_or_default();
         #[cfg(all(not(feature = "export-file"), not(feature = "export-otlp")))]
-        let subscriber = crate::tracing_subscriber::unsupported_default_initialization(subscriber)?;
+        let subscriber = crate::unsupported_default_initialization(subscriber)?;
         Ok(Self { subscriber })
     }
 }
@@ -47,7 +47,7 @@ impl SimpleConfig {
         #[cfg(any(feature = "export-file", feature = "export-otlp"))]
         let subscriber = subscriber.unwrap_or_default();
         #[cfg(all(not(feature = "export-file"), not(feature = "export-otlp")))]
-        let subscriber = crate::tracing_subscriber::unsupported_default_initialization(subscriber)?;
+        let subscriber = crate::unsupported_default_initialization(subscriber)?;
         Ok(Self { subscriber })
     }
 }
@@ -88,7 +88,7 @@ type StartResult<T> = Result<T, StartError>;
 #[derive(thiserror::Error, Debug)]
 pub(crate) enum ShutdownError {
     #[error("the subscriber failed to shutdown: {0}")]
-    Subscriber(#[from] crate::tracing_subscriber::subscriber::ShutdownError),
+    Subscriber(#[from] crate::subscriber::ShutdownError),
 }
 
 wrap_error!(RustTracingShutdownError(ShutdownError));

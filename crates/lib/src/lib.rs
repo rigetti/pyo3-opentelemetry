@@ -94,9 +94,6 @@ use opentelemetry_api::ContextGuard;
 
 pub use pyo3_opentelemetry_macros::pypropagate;
 
-#[cfg(feature = "export")]
-pub mod tracing_subscriber;
-
 /// A context carrier for propagating `OpenTelemetry` context from Python to Rust.
 #[derive(Default, Clone, Debug, FromPyObject)]
 struct Carrier {

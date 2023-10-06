@@ -37,7 +37,7 @@ impl Config {
     }
 }
 
-impl crate::tracing_subscriber::layers::Config for PyConfig {
+impl crate::layers::Config for PyConfig {
     fn requires_runtime(&self) -> bool {
         Config::requires_runtime()
     }

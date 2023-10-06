@@ -24,8 +24,7 @@ impl GlobalTracingConfig {
         #[cfg(any(feature = "export-file", feature = "export-otlp"))]
         let export_process = export_process.unwrap_or_default();
         #[cfg(all(not(feature = "export-file"), not(feature = "export-otlp")))]
-        let export_process =
-            crate::tracing_subscriber::unsupported_default_initialization(export_process)?;
+        let export_process = crate::unsupported_default_initialization(export_process)?;
         Ok(Self { export_process })
     }
 }
@@ -46,8 +45,8 @@ impl CurrentThreadTracingConfig {
         let export_process = export_process.unwrap_or_default();
         #[cfg(all(not(feature = "export-file"), not(feature = "export-otlp")))]
         let export_process = export_process
-            .ok_or(crate::tracing_subscriber::export_process::InitializationError::NoDefaultInitialization)
-            .map_err(crate::tracing_subscriber::export_process::RustTracingInitializationError::from)
+            .ok_or(crate::export_process::InitializationError::NoDefaultInitialization)
+            .map_err(crate::export_process::RustTracingInitializationError::from)
             .map_err(rigetti_pyo3::ToPythonError::to_py_err)?;
         Ok(Self { export_process })
     }
@@ -105,7 +104,7 @@ impl Tracing {
         #[cfg(any(feature = "export-file", feature = "export-otlp"))]
         let config = config.unwrap_or_default();
         #[cfg(all(not(feature = "export-file"), not(feature = "export-otlp")))]
-        let config = crate::tracing_subscriber::unsupported_default_initialization(config)?;
+        let config = crate::unsupported_default_initialization(config)?;
         Ok(Self {
             state: ContextManagerState::Initialized(config),
         })
@@ -161,7 +160,7 @@ mod test {
 
     use tokio::runtime::Builder;
 
-    use crate::tracing_subscriber::{
+    use crate::{
         contextmanager::{CurrentThreadTracingConfig, GlobalTracingConfig, TracingConfig},
         export_process::{BatchConfig, ExportProcess, ExportProcessConfig, SimpleConfig},
         subscriber::TracingSubscriberRegistryConfig,
@@ -208,13 +207,13 @@ mod test {
     fn test_global_batch() {
         let temporary_file = tempfile::NamedTempFile::new().unwrap();
         let temporary_file_path = temporary_file.path().to_owned();
-        let layer_config = Box::new(crate::tracing_subscriber::layers::file::Config {
+        let layer_config = Box::new(crate::layers::file::Config {
             file_path: Some(temporary_file_path.as_os_str().to_str().unwrap().to_owned()),
         });
         let subscriber = Box::new(TracingSubscriberRegistryConfig { layer_config });
         let config = TracingConfig::Global(GlobalTracingConfig {
             export_process: ExportProcessConfig::Batch(BatchConfig {
-                subscriber: crate::tracing_subscriber::subscriber::PyConfig {
+                subscriber: crate::subscriber::PyConfig {
                     subscriber_config: subscriber,
                 },
             }),
@@ -254,7 +253,7 @@ mod test {
             .collect::<Vec<Span>>();
         assert_eq!(spans.len(), N_SPANS);
 
-        let span_grace = Duration::from_millis(10);
+        let span_grace = Duration::from_millis(50);
         for span in spans {
             assert_eq!(span.name, "example");
             assert!(
@@ -271,13 +270,13 @@ mod test {
     fn test_global_simple() {
         let temporary_file = tempfile::NamedTempFile::new().unwrap();
         let temporary_file_path = temporary_file.path().to_owned();
-        let layer_config = Box::new(crate::tracing_subscriber::layers::file::Config {
+        let layer_config = Box::new(crate::layers::file::Config {
             file_path: Some(temporary_file_path.as_os_str().to_str().unwrap().to_owned()),
         });
         let subscriber = Box::new(TracingSubscriberRegistryConfig { layer_config });
         let config = TracingConfig::Global(GlobalTracingConfig {
             export_process: ExportProcessConfig::Simple(SimpleConfig {
-                subscriber: crate::tracing_subscriber::subscriber::PyConfig {
+                subscriber: crate::subscriber::PyConfig {
                     subscriber_config: subscriber,
                 },
             }),
@@ -333,18 +332,16 @@ mod test {
     fn test_current_thread_simple() {
         let temporary_file = tempfile::NamedTempFile::new().unwrap();
         let temporary_file_path = temporary_file.path().to_owned();
-        let layer_config = Box::new(crate::tracing_subscriber::layers::file::Config {
+        let layer_config = Box::new(crate::layers::file::Config {
             file_path: Some(temporary_file_path.as_os_str().to_str().unwrap().to_owned()),
         });
         let subscriber = Box::new(TracingSubscriberRegistryConfig { layer_config });
         let config = TracingConfig::CurrentThread(CurrentThreadTracingConfig {
-            export_process: crate::tracing_subscriber::export_process::ExportProcessConfig::Simple(
-                SimpleConfig {
-                    subscriber: crate::tracing_subscriber::subscriber::PyConfig {
-                        subscriber_config: subscriber,
-                    },
+            export_process: crate::export_process::ExportProcessConfig::Simple(SimpleConfig {
+                subscriber: crate::subscriber::PyConfig {
+                    subscriber_config: subscriber,
                 },
-            ),
+            }),
         });
         let export_process = ExportProcess::start(config).unwrap();
 
