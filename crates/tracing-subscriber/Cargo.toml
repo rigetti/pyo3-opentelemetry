@@ -35,8 +35,8 @@ tracing-opentelemetry = { version = "0.21.0" }
 tracing-subscriber = { version = "0.3.17" }
 
 [features]
-export-otlp = ["opentelemetry-otlp", "opentelemetry-proto", "tonic", "tracing-subscriber/env-filter"]
-export-file = ["opentelemetry-stdout/trace"]
+layer-otel-otlp = ["opentelemetry-otlp", "opentelemetry-proto", "tonic", "tracing-subscriber/env-filter"]
+layer-otel-file = ["opentelemetry-stdout/trace"]
 
 [dev-dependencies]
 serde_json = "1.0.107"

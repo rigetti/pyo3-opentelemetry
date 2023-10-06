@@ -56,7 +56,7 @@ pub fn add_submodule(name: &str, py: Python, m: &PyModule) -> PyResult<()> {
     Ok(())
 }
 
-#[cfg(all(not(feature = "export-file"), not(feature = "export-otlp")))]
+#[cfg(all(not(feature = "layer-otel-file"), not(feature = "layer-otel-otlp")))]
 fn unsupported_default_initialization<T>(value: Option<T>) -> PyResult<T> {
     value.ok_or_else(|| {
         pyo3::exceptions::PyValueError::new_err(

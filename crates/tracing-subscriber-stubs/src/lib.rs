@@ -68,8 +68,8 @@ pub fn write_stub_files(
     include_stub_and_init!(directory, "", hb);
     include_stub_and_init!(directory, "subscriber/", hb);
     include_stub_and_init!(directory, "layers/", hb);
-    include_stub_and_init!(directory, "layers/file/", hb);
-    include_stub_and_init!(directory, "layers/otlp/", hb);
+    include_stub_and_init!(directory, "layers/otel_file/", hb);
+    include_stub_and_init!(directory, "layers/otel_otlp/", hb);
     let data = Data::new(
         host_package.to_string(),
         tracing_subscriber_module_name.to_string(),
