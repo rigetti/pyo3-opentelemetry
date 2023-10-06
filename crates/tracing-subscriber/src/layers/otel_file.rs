@@ -4,6 +4,8 @@ use rigetti_pyo3::create_init_submodule;
 
 use super::{force_flush_provider_as_shutdown, LayerBuildResult, WithShutdown};
 
+/// Configures the [`opentelemetry-stdout`] crate layer. If [`file_path`] is None, the layer
+/// will write to stdout.
 #[pyclass]
 #[derive(Clone, Debug, Default)]
 pub(crate) struct Config {

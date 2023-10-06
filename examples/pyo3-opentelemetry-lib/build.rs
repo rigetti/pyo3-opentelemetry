@@ -5,6 +5,8 @@ fn main() {
         "pyo3_opentelemetry_lib",
         "_tracing_subscriber",
         std::path::Path::new("./pyo3_opentelemetry_lib/_tracing_subscriber"),
+        true,
+        true,
     )
     .unwrap();
 }

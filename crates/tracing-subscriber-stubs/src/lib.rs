@@ -1,3 +1,79 @@
+// Copyright 2023 Rigetti Computing
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Covers correctness, suspicious, style, complexity, and perf
+#![deny(clippy::all)]
+#![deny(clippy::pedantic)]
+#![deny(clippy::cargo)]
+#![warn(clippy::nursery)]
+// Has false positives that conflict with unreachable_pub
+#![allow(clippy::redundant_pub_crate)]
+#![deny(
+    absolute_paths_not_starting_with_crate,
+    anonymous_parameters,
+    bad_style,
+    dead_code,
+    keyword_idents,
+    improper_ctypes,
+    macro_use_extern_crate,
+    meta_variable_misuse, // May have false positives
+    missing_abi,
+    missing_debug_implementations, // can affect compile time/code size
+    missing_docs,
+    no_mangle_generic_items,
+    non_shorthand_field_patterns,
+    noop_method_call,
+    overflowing_literals,
+    path_statements,
+    patterns_in_fns_without_body,
+    pointer_structural_match,
+    private_in_public,
+    semicolon_in_expressions_from_macros,
+    trivial_casts,
+    trivial_numeric_casts,
+    unconditional_recursion,
+    unreachable_pub,
+    unsafe_code,
+    unused,
+    unused_allocation,
+    unused_comparisons,
+    unused_extern_crates,
+    unused_import_braces,
+    unused_lifetimes,
+    unused_parens,
+    variant_size_differences,
+    while_true
+)]
+//! This crates provides a function to evaluate Python stub file templates for the
+//! `pyo3-tracing-subscriber` crate. If may be used in upstream build scripts to write
+//! the Python stub files.
+//!
+//! # Example
+//!
+//! In `build.rs` with `example` containing Python source code.
+//!
+//! ```rust
+//! use tracing_subscriber_stubs::write_stubs;
+//!
+//! write_stub_files(
+//!     "example",
+//!     "tracing_subscriber",
+//!     std::path::Path::new("example/tracing_subscriber"),
+//!     true,
+//!     true,
+//! ).unwrap();
+//!
 use std::path::Path;
 
 use handlebars::{RenderError, TemplateError};
@@ -30,12 +106,16 @@ impl Data {
     }
 }
 
+/// Errors that may occur when writing stub files.
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
+    /// Failed to open file for writing.
     #[error("failed open file for writing: {0}")]
     Io(#[from] std::io::Error),
+    /// Failed to render template.
     #[error("failed to render template: {0}")]
     Render(#[from] RenderError),
+    /// Failed to initialize template.
     #[error("failed to initialize template: {0}")]
     Template(#[from] Box<TemplateError>),
 }
@@ -66,6 +146,20 @@ macro_rules! include_stub_and_init {
     };
 }
 
+/// Write stub files for the given host package and tracing subscriber module name to the given
+/// directory.
+///
+/// # Arguments
+///
+/// * `host_package` - The name of the host Python package.
+/// * `tracing_subscriber_module_name` - The name of the tracing subscriber module (ie the Python
+/// module that will contain the stub files).
+/// * `directory` - The directory to write the stub files to.
+/// * `layer_otel_file` - Whether to include stub files for the `otel_file` layer.
+/// * `layer_otel_otlp` - Whether to include stub files for the `otel_otlp` layer.
+///
+/// See module level documentation for the `pyo3-tracing-subscriber` crate for more information
+/// about the `layer_` arguments.
 ///
 /// # Errors
 ///

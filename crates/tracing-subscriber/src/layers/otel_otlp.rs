@@ -21,6 +21,30 @@ use tracing_subscriber::{
 
 use super::{force_flush_provider_as_shutdown, LayerBuildResult, WithShutdown};
 
+/// Configures the [`opentelemetry-otlp`] crate layer.
+#[derive(Clone, Debug)]
+pub(crate) struct Config {
+    /// Configuration to limit the amount of trace data collected.
+    span_limits: SpanLimits,
+    /// OpenTelemetry resource attributes describing the entity that produced the telemetry.
+    resource: Resource,
+    /// The metadata map to use for requests to the remote collector.
+    metadata_map: Option<tonic::metadata::MetadataMap>,
+    /// The sampler to use for the [`opentelemetry::sdk::trace::TracerProvider`].
+    sampler: Sampler,
+    /// The endpoint to which the exporter will send trace data. If not set, this must be set by
+    /// OTLP environment variables.
+    endpoint: Option<String>,
+    /// Timeout applied the [`tonic::transport::Channel`] used to send trace data to the remote collector.
+    timeout: Option<Duration>,
+    /// A timeout applied to the shutdown of the [`crate::contextmanager::Tracing`] context
+    /// manager upon exiting, before the underlying [`opentelemetry::sdk::trace::TracerProvider`]
+    /// is shutdown. Ensures that spans are flushed before the program exits.
+    pre_shutdown_timeout: Duration,
+    /// The filter to use for the [`EnvFilter`] layer.
+    env_filter: Option<String>,
+}
+
 impl Config {
     fn initialize_otlp_exporter(&self) -> TonicExporterBuilder {
         let mut otlp_exporter = opentelemetry_otlp::new_exporter().tonic().with_env();
@@ -48,6 +72,9 @@ impl crate::layers::Config for PyConfig {
     }
 }
 
+/// An environment variable that can be used to set an [`EnvFilter`] for the OTLP layer.
+/// This supersedes the `RUST_LOG` environment variable, but is superseded by the
+/// [`Config::env_filter`] field.
 const PYO3_OPENTELEMETRY_ENV_FILTER: &str = "PYO3_OPENTELEMETRY_ENV_FILTER";
 
 impl Config {
@@ -119,18 +146,6 @@ pub(crate) enum ConfigError {
     InvalidMetadataValue(#[from] InvalidMetadataValue),
     #[error("invalid metadata map key: {0}")]
     InvalidMetadataKey(#[from] InvalidMetadataKey),
-}
-
-#[derive(Clone, Debug)]
-pub(crate) struct Config {
-    span_limits: SpanLimits,
-    resource: Resource,
-    metadata_map: Option<tonic::metadata::MetadataMap>,
-    sampler: Sampler,
-    endpoint: Option<String>,
-    timeout: Option<Duration>,
-    pre_shutdown_timeout: Duration,
-    env_filter: Option<String>,
 }
 
 #[pyclass(name = "SpanLimits")]
@@ -210,6 +225,7 @@ impl PySpanLimits {
     }
 }
 
+/// A Python representation of [`Config`].
 #[pyclass(name = "Config")]
 #[derive(Clone, Default, Debug)]
 pub(crate) struct PyConfig {
@@ -368,11 +384,12 @@ impl From<PySampler> for Sampler {
     }
 }
 
+/// The Rust OpenTelemetry SDK does not support the official OTLP headers environment variables.
+/// Here we include a custom implementation.
 // https://opentelemetry.io/docs/specs/otel/protocol/exporter/
 const OTEL_EXPORTER_OTLP_HEADERS: &str = "OTEL_EXPORTER_OTLP_HEADERS";
 const OTEL_EXPORTER_OTLP_TRACES_HEADERS: &str = "OTEL_EXPORTER_OTLP_TRACES_HEADERS";
 
-#[allow(dead_code)]
 fn get_metadata_from_environment() -> Result<tonic::metadata::MetadataMap, ConfigError> {
     [
         OTEL_EXPORTER_OTLP_HEADERS,

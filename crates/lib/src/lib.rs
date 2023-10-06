@@ -30,8 +30,7 @@
     meta_variable_misuse, // May have false positives
     missing_abi,
     missing_debug_implementations, // can affect compile time/code size
-    // FIXME
-    // missing_docs,
+    missing_docs,
     no_mangle_generic_items,
     non_shorthand_field_patterns,
     noop_method_call,
@@ -65,6 +64,13 @@
 //! * All functionality here requires the calling Python code to have [opentelemetry-api](https://pypi.org/project/opentelemetry-api/) to be installed.
 //! * See `pypropagate` for additional requirements and limitations.
 //!
+//! # Related Crates
+//!
+//! * [pyo3-opentelemetry-macros](https://crates.io/crates/pyo3-opentelemetry-macros) - a crate
+//! defining the `pypropagate` macro.
+//! * [`pyo3-tracing-subscriber`](https://crates.io/crates/pyo3-tracing-subscriber) - a crate supporting
+//! a `pyo3::PyModule` for configuring and setting tracing subscribers.
+//!
 //! # Examples
 //!
 //! ```
@@ -85,6 +91,9 @@
 //!    Ok(())
 //! }
 //! ```
+//!
+//! For a more comprehensive example, see the `pyo3-opentelemetry-lib` example in this repository.
+//! Specifically, see the `pyo3-opentelemetry-lib/src/lib.rs` for the Rust code and `pyo3-opentelemetry-lib/pyo3_opentelemetry_lib/tests/test_tracing.py` for the Python code and behavioural assertions.
 use std::collections::HashMap;
 
 use pyo3::{prelude::*, types::IntoPyDict};
