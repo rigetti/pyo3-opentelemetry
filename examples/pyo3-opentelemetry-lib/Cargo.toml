@@ -23,7 +23,8 @@ opentelemetry_api = "0.20.0"
 opentelemetry_sdk = "0.20.0"
 pyo3 = { version = "0.19.0" }
 pyo3-asyncio = { version = "0.19.0", features = ["tokio", "tokio-runtime"] }
-pyo3-opentelemetry = { path = "../../crates/lib", features = ["export-file", "export-otlp"], default-features = false }
+pyo3-opentelemetry = { path = "../../crates/lib" }
+pyo3-tracing-subscriber = { version = "0.1.0", path = "../../crates/tracing-subscriber", features = ["export-file", "export-otlp"] }
 tokio = { version = "1.27.0", features = ["sync", "parking_lot", "macros"] }
 tracing = "0.1.37"
 tracing-subscriber = { version = "0.3.17", features = ["env-filter"], optional = true }
@@ -31,4 +32,7 @@ tracing-subscriber = { version = "0.3.17", features = ["env-filter"], optional =
 [features]
 extension-module = ["pyo3/extension-module"]
 default = ["extension-module"]
+
+[build-dependencies]
+pyo3-tracing-subsciber-stubs = { version = "0.1.0", path = "../../crates/tracing-subscriber-stubs" }
 

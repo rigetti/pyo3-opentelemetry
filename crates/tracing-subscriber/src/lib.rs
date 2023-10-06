@@ -15,8 +15,6 @@
 //! This module provides utilities for exporting spans to various backends
 //! from Rust.
 
-use std::path::Path;
-
 use pyo3::{types::PyModule, PyResult, Python};
 use rigetti_pyo3::create_init_submodule;
 
@@ -58,21 +56,6 @@ pub fn add_submodule(name: &str, py: Python, m: &PyModule) -> PyResult<()> {
     Ok(())
 }
 
-/// Build stub files for the tracing subscriber.
-///
-/// # Errors
-///
-/// * `std::io::Error` if the stub files cannot be written to disk.
-pub fn build_stub_files(directory: &Path) -> Result<(), std::io::Error> {
-    subscriber::build_stub_files(&directory.join("subscriber"))?;
-    layers::build_stub_files(&directory.join("layers"))?;
-
-    let data = include_bytes!("../../assets/python_stubs/__init__.pyi");
-    std::fs::create_dir_all(directory)?;
-    let init_file = directory.join("__init__.pyi");
-    std::fs::write(init_file, data)
-}
-
 #[cfg(all(not(feature = "export-file"), not(feature = "export-otlp")))]
 fn unsupported_default_initialization<T>(value: Option<T>) -> PyResult<T> {
     value.ok_or_else(|| {
@@ -80,12 +63,4 @@ fn unsupported_default_initialization<T>(value: Option<T>) -> PyResult<T> {
             "this package does not support default file or otlp layers",
         )
     })
-}
-
-#[cfg(test)]
-mod test {
-    #[test]
-    fn test_build_stub_files() {
-        super::build_stub_files(std::path::Path::new("target/stubs")).unwrap();
-    }
 }

@@ -1,5 +1,3 @@
-use std::path::Path;
-
 use pyo3::prelude::*;
 use rigetti_pyo3::create_init_submodule;
 use tracing::subscriber::DefaultGuard;
@@ -8,7 +6,7 @@ use tracing_subscriber::{layer::Layered, prelude::__tracing_subscriber_Subscribe
 #[derive(thiserror::Error, Debug)]
 pub(crate) enum ShutdownError {
     #[error("failed to shutdown configured layer: {0}")]
-    LayerShutdown(#[from] crate::tracing_subscriber::layers::ShutdownError),
+    LayerShutdown(#[from] crate::layers::ShutdownError),
 }
 
 type ShutdownResult<T> = Result<T, ShutdownError>;
@@ -16,7 +14,7 @@ type ShutdownResult<T> = Result<T, ShutdownError>;
 #[derive(thiserror::Error, Debug)]
 pub(crate) enum BuildError {
     #[error("failed to build layer: {0}")]
-    LayerBuild(#[from] crate::tracing_subscriber::layers::BuildError),
+    LayerBuild(#[from] crate::layers::BuildError),
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -116,7 +114,7 @@ impl PyConfig {
         #[cfg(any(feature = "export-file", feature = "export-otlp"))]
         let layer = layer.unwrap_or_default();
         #[cfg(all(not(feature = "export-file"), not(feature = "export-otlp")))]
-        let layer = crate::tracing_subscriber::unsupported_default_initialization(layer)?;
+        let layer = crate::unsupported_default_initialization(layer)?;
         Ok(Self {
             subscriber_config: Box::new(TracingSubscriberRegistryConfig {
                 layer_config: Box::new(layer),
@@ -199,11 +197,4 @@ create_init_submodule! {
     classes: [
         PyConfig
     ],
-}
-
-pub(super) fn build_stub_files(directory: &Path) -> Result<(), std::io::Error> {
-    let data = include_bytes!("../../assets/python_stubs/subscriber/__init__.pyi");
-    std::fs::create_dir_all(directory)?;
-    let init_file = directory.join("__init__.pyi");
-    std::fs::write(init_file, data)
 }

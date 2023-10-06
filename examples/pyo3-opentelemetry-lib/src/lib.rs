@@ -64,8 +64,6 @@ use std::collections::HashMap;
 
 use opentelemetry::propagation::TextMapPropagator;
 use opentelemetry::trace::FutureExt;
-// use opentelemetry_api::trace::TraceContextExt;
-// use opentelemetry_api::Context;
 use pyo3::prelude::*;
 use pyo3_opentelemetry::pypropagate;
 use tracing::instrument;
@@ -137,7 +135,7 @@ fn pyo3_opentelemetry_lib(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(example_function_async, m)?)?;
 
     let tracing_subscriber = PyModule::new(py, "_tracing_subscriber")?;
-    pyo3_opentelemetry::tracing_subscriber::add_submodule(
+    pyo3_tracing_subscriber::add_submodule(
         "pyo3_opentelemetry_lib._tracing_subscriber",
         py,
         tracing_subscriber,
