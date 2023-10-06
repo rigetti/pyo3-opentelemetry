@@ -34,7 +34,7 @@ ExportConfig = Union[BatchConfig, SimpleConfig]
 
 
 class CurrentThreadTracingConfig:
-    def __init__(self, *, subscriber: subscriber.Config):
+    def __init__(self, *, export_process: ExportConfig):
         ... 
 
 

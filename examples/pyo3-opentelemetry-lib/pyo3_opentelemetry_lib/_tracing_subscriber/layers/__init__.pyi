@@ -1,6 +1,7 @@
 from typing import Union
-from . import otlp, file, py_otlp
+from .otel_file import Config as FileConfig
+from .otel_otlp import Config as OtlpConfig
 
 
-Config = Union[otlp.Config, file.Config, py_otlp.Config]
+Config = Union[FileConfig, OtlpConfig]
 

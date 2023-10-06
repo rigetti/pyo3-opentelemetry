@@ -24,9 +24,9 @@ impl BatchConfig {
     #[pyo3(signature = (subscriber = None))]
     #[allow(clippy::pedantic)]
     fn new(subscriber: Option<PyConfig>) -> PyResult<Self> {
-        #[cfg(any(feature = "export-file", feature = "export-otlp"))]
+        #[cfg(any(feature = "layer-otel-file", feature = "layer-otel-otlp"))]
         let subscriber = subscriber.unwrap_or_default();
-        #[cfg(all(not(feature = "export-file"), not(feature = "export-otlp")))]
+        #[cfg(all(not(feature = "layer-otel-file"), not(feature = "layer-otel-otlp")))]
         let subscriber = crate::unsupported_default_initialization(subscriber)?;
         Ok(Self { subscriber })
     }
@@ -44,9 +44,9 @@ impl SimpleConfig {
     #[pyo3(signature = (subscriber = None))]
     #[allow(clippy::pedantic)]
     fn new(subscriber: Option<PyConfig>) -> PyResult<Self> {
-        #[cfg(any(feature = "export-file", feature = "export-otlp"))]
+        #[cfg(any(feature = "layer-otel-file", feature = "layer-otel-otlp"))]
         let subscriber = subscriber.unwrap_or_default();
-        #[cfg(all(not(feature = "export-file"), not(feature = "export-otlp")))]
+        #[cfg(all(not(feature = "layer-otel-file"), not(feature = "layer-otel-otlp")))]
         let subscriber = crate::unsupported_default_initialization(subscriber)?;
         Ok(Self { subscriber })
     }
@@ -58,7 +58,7 @@ pub(crate) enum ExportProcessConfig {
     Simple(SimpleConfig),
 }
 
-#[cfg(any(feature = "export-file", feature = "export-otlp"))]
+#[cfg(any(feature = "layer-otel-file", feature = "layer-otel-otlp"))]
 impl Default for ExportProcessConfig {
     fn default() -> Self {
         Self::Batch(BatchConfig::default())

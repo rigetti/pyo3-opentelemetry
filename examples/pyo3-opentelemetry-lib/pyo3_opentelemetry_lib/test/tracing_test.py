@@ -1,17 +1,13 @@
 from __future__ import annotations
 
-import asyncio
 from base64 import b64encode
 from collections import Counter
-from contextlib import asynccontextmanager
-import json
-from multiprocessing.managers import ListProxy
 import os
-from typing import TYPE_CHECKING, AsyncGenerator, Callable, Dict, Iterable, Iterator, List, MutableSequence
+from typing import TYPE_CHECKING, Callable, Dict, List, MutableSequence
 from uuid import uuid4
 import pytest
 from google.protobuf import json_format
-from opentelemetry import propagate, trace
+from opentelemetry import propagate
 from opentelemetry.context import attach, detach
 from opentelemetry.proto.collector.trace.v1.trace_service_pb2 import ExportTraceServiceRequest
 from opentelemetry.proto.trace.v1.trace_pb2 import ResourceSpans
@@ -27,11 +23,10 @@ from pyo3_opentelemetry_lib._tracing_subscriber import (
     Tracing,
     subscriber,
 )
-from pyo3_opentelemetry_lib._tracing_subscriber.layers import file, otlp
+from pyo3_opentelemetry_lib._tracing_subscriber.layers import otel_file as file, otel_otlp as otlp
 
 if TYPE_CHECKING:
     from pyo3_opentelemetry_lib._tracing_subscriber import TracingConfig
-    from pyo3_opentelemetry_lib._tracing_subscriber.layers import Config as LayerConfig
 
 
 _TEST_ARTIFACTS_DIR = os.path.join(os.path.dirname(__file__), "__artifacts__")

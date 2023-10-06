@@ -1,7 +1,7 @@
-#[cfg(feature = "export-file")]
-pub(crate) mod file;
-#[cfg(feature = "export-otlp")]
-pub(crate) mod otlp;
+#[cfg(feature = "layer-otel-file")]
+pub(crate) mod otel_file;
+#[cfg(feature = "layer-otel-otlp")]
+pub(crate) mod otel_otlp;
 
 use std::{fmt::Debug, time::Duration};
 
@@ -37,12 +37,12 @@ pub(crate) struct CustomError {
 
 #[derive(thiserror::Error, Debug)]
 pub(crate) enum BuildError {
-    #[cfg(feature = "export-file")]
+    #[cfg(feature = "layer-otel-file")]
     #[error("file layer: {0}")]
-    File(#[from] file::BuildError),
-    #[cfg(feature = "export-otlp")]
+    File(#[from] otel_file::BuildError),
+    #[cfg(feature = "layer-otel-otlp")]
     #[error("otlp layer: {0}")]
-    Otlp(#[from] otlp::BuildError),
+    Otlp(#[from] otel_otlp::BuildError),
     #[error("custom layer: {0}")]
     Custom(#[from] CustomError),
 }
@@ -101,20 +101,20 @@ pub(super) fn force_flush_provider_as_shutdown(
 #[derive(FromPyObject, Clone, Debug)]
 #[allow(variant_size_differences, clippy::large_enum_variant)]
 pub(crate) enum PyConfig {
-    #[cfg(feature = "export-file")]
-    File(file::Config),
-    #[cfg(feature = "export-otlp")]
-    Otlp(otlp::PyConfig),
+    #[cfg(feature = "layer-otel-file")]
+    File(otel_file::Config),
+    #[cfg(feature = "layer-otel-otlp")]
+    Otlp(otel_otlp::PyConfig),
 }
 
-#[cfg(any(feature = "export-file", feature = "export-otlp"))]
+#[cfg(any(feature = "layer-otel-file", feature = "layer-otel-otlp"))]
 impl Default for PyConfig {
     fn default() -> Self {
-        #[cfg(feature = "export-file")]
+        #[cfg(feature = "layer-otel-file")]
         {
-            Self::File(file::Config::default())
+            Self::File(otel_file::Config::default())
         }
-        #[cfg(all(feature = "export-otlp", not(feature = "export-file")))]
+        #[cfg(all(feature = "layer-otel-otlp", not(feature = "layer-otel-file")))]
         {
             Self::Otlp(otlp::PyConfig::default())
         }
@@ -124,54 +124,22 @@ impl Default for PyConfig {
 impl Config for PyConfig {
     fn build(&self, batch: bool) -> LayerBuildResult<WithShutdown> {
         match self {
-            #[cfg(feature = "export-file")]
+            #[cfg(feature = "layer-otel-file")]
             Self::File(config) => config.build(batch),
-            #[cfg(feature = "export-otlp")]
+            #[cfg(feature = "layer-otel-otlp")]
             Self::Otlp(config) => config.build(batch),
         }
     }
 
     fn requires_runtime(&self) -> bool {
         match self {
-            #[cfg(feature = "export-file")]
+            #[cfg(feature = "layer-otel-file")]
             Self::File(config) => config.requires_runtime(),
-            #[cfg(feature = "export-otlp")]
+            #[cfg(feature = "layer-otel-otlp")]
             Self::Otlp(config) => config.requires_runtime(),
         }
     }
 }
-
-// #[pyclass(name = "Config")]
-// #[derive(Clone)]
-// pub(crate) struct CustomLayer {
-//     pub(crate) layer_config: Box<dyn Config>,
-// }
-//
-// #[cfg(any(feature = "export-file", feature = "export-otlp"))]
-// impl Default for CustomLayer {
-//     fn default() -> Self {
-//         Self {
-//             layer_config: Box::<PyConfig>::default(),
-//         }
-//     }
-// }
-//
-// impl core::fmt::Debug for CustomLayer {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         write!(f, "PyConfig {{ layer_config: Box<dyn Config> }}")
-//     }
-// }
-//
-// #[pymethods]
-// impl CustomLayer {
-//     #[new]
-//     #[pyo3(signature = (/, layer))]
-//     pub(crate) fn new(layer: PyConfig) -> Self {
-//         Self {
-//             layer_config: Box::new(layer),
-//         }
-//     }
-// }
 
 /// Adds the pyo3-opentelemetry export module to your parent module. The upshot here
 /// is that the Python package will contain `{name}.export.{stdout/otlp/py_otlp}`,
@@ -193,19 +161,19 @@ impl Config for PyConfig {
 pub(crate) fn init_submodule(name: &str, py: Python, m: &PyModule) -> PyResult<()> {
     let modules = py.import("sys")?.getattr("modules")?;
 
-    #[cfg(feature = "export-file")]
+    #[cfg(feature = "layer-otel-file")]
     {
-        let submod = pyo3::types::PyModule::new(py, "file")?;
-        let qualified_name = format!("{name}.file");
-        file::init_submodule(qualified_name.as_str(), py, submod)?;
+        let submod = pyo3::types::PyModule::new(py, "otel_file")?;
+        let qualified_name = format!("{name}.otel_file");
+        otel_file::init_submodule(qualified_name.as_str(), py, submod)?;
         modules.set_item(qualified_name, submod)?;
         m.add_submodule(submod)?;
     }
-    #[cfg(feature = "export-otlp")]
+    #[cfg(feature = "layer-otel-otlp")]
     {
-        let submod = pyo3::types::PyModule::new(py, "otlp")?;
-        let qualified_name = format!("{name}.otlp");
-        otlp::init_submodule(qualified_name.as_str(), py, submod)?;
+        let submod = pyo3::types::PyModule::new(py, "otel_otlp")?;
+        let qualified_name = format!("{name}.otel_otlp");
+        otel_otlp::init_submodule(qualified_name.as_str(), py, submod)?;
         modules.set_item(qualified_name, submod)?;
         m.add_submodule(submod)?;
     }
