@@ -76,6 +76,9 @@ enum ContextManagerState {
     Exited,
 }
 
+/// A Python class that implements the context manager interface. It is initialized with a
+/// configuration. Upon entry it builds and installs the configured tracing subscriber. Upon exit
+/// it shuts down the tracing subscriber.
 #[pyclass]
 #[derive(Debug)]
 pub struct Tracing {

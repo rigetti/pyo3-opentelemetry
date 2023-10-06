@@ -12,6 +12,7 @@ use super::{
 
 mod background;
 
+/// Configuration for batch export processes.
 #[pyclass]
 #[derive(Clone, Debug, Default)]
 pub(crate) struct BatchConfig {
@@ -32,6 +33,7 @@ impl BatchConfig {
     }
 }
 
+/// Configuration for simple export processes.
 #[pyclass]
 #[derive(Clone, Debug, Default)]
 pub(crate) struct SimpleConfig {
@@ -101,6 +103,9 @@ py_wrap_error!(
 
 type ShutdownResult<T> = Result<T, ShutdownError>;
 
+/// A representation of a running export process, either a background task or a process just
+/// running in the current thread. A background task carries both its tokio runtime and the
+/// tracing subscriber guard; a foreground task only carries the subscriber guard.
 pub(crate) enum ExportProcess {
     Background(background::ExportProcess),
     Foreground(SubscriberManagerGuard),

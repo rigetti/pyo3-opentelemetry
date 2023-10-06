@@ -25,6 +25,7 @@ pub(crate) struct CustomError {
     source: Option<Box<dyn std::error::Error + Send + Sync>>,
 }
 
+/// A shutdown function that can be used to shutdown the configured tracing subscriber.
 pub(crate) type Shutdown = Box<
     dyn (FnOnce() -> std::pin::Pin<
             Box<dyn std::future::Future<Output = ShutdownResult<()>> + Send + Sync>,
@@ -35,10 +36,16 @@ pub(crate) type Shutdown = Box<
 type SubscriberBuildResult<T> = Result<T, BuildError>;
 
 pub(crate) trait Config: BoxDynConfigClone + Send + Sync {
+    /// Indicates whether the underlying layer requires a Tokio runtime.
     fn requires_runtime(&self) -> bool;
+    /// Builds the configured tracing subscriber. The `batch` argument may be
+    /// passed to underlying layers to indicate whether the subscriber will be
+    /// used in a batch context.
     fn build(&self, batch: bool) -> SubscriberBuildResult<WithShutdown>;
 }
 
+/// This trait is necessary so that `Box<dyn Config>` can be cloned and, therefore,
+/// used as an attribute on a `pyo3` class.
 pub(crate) trait BoxDynConfigClone {
     fn clone_box(&self) -> Box<dyn Config>;
 }
@@ -58,6 +65,8 @@ impl Clone for Box<dyn Config> {
     }
 }
 
+/// A built tracing subscriber that is both `Send` and `Sync`. This is necessary to run any
+/// background tasks necessary for exporting trace data.
 pub(crate) trait SendSyncSubscriber: tracing::subscriber::Subscriber + Send + Sync {}
 
 impl<L, I> SendSyncSubscriber for Layered<L, I>
@@ -67,6 +76,8 @@ where
 {
 }
 
+/// Carries the built tracing subscriber and a shutdown function that can later be used to
+/// shutdown the subscriber upon context manager exit.
 pub(crate) struct WithShutdown {
     pub(crate) subscriber: Box<dyn SendSyncSubscriber>,
     pub(crate) shutdown: Shutdown,
@@ -81,6 +92,7 @@ impl core::fmt::Debug for WithShutdown {
     }
 }
 
+/// A Python wrapper for a tracing subscriber configuration.
 #[pyclass(name = "Config")]
 #[derive(Clone)]
 pub(crate) struct PyConfig {
@@ -123,6 +135,8 @@ impl PyConfig {
     }
 }
 
+/// A concrete implementation of [`Config`] that wraps a [`tracing_subscriber::Registry`]. This is
+/// used internally to build a [`tracing_subscriber::Registry`] from a [`crate::layers::PyConfig`].
 #[derive(Clone)]
 pub(super) struct TracingSubscriberRegistryConfig {
     pub(super) layer_config: Box<dyn super::layers::Config>,
@@ -157,6 +171,8 @@ pub(crate) enum SetSubscriberError {
 
 type SetSubscriberResult<T> = Result<T, SetSubscriberError>;
 
+/// Sets the tracing subscriber for the current thread or globally. It returns a guard
+/// that can be shutdown asynchronously.
 pub(crate) fn set_subscriber(
     subscriber: WithShutdown,
     global: bool,

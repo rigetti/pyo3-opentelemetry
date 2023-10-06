@@ -1,3 +1,11 @@
+//! This module contains a limited set of tracing layers which can be used to configure the
+//! [`tracing_subscriber::Registry`] for use with the [`Tracing`] context manager.
+//!
+//! Currently, the following layers are supported:
+//!
+//! * [`crate::layers::otel_file::Config`] - a layer which writes spans to a file (or stdout) in the OpenTelemetry OTLP
+//! JSON-serialized format.
+//! * [`crate::layers::otel_otlp::Config`] - a layer which exports spans to an OpenTelemetry collector.
 #[cfg(feature = "layer-otel-file")]
 pub(crate) mod otel_file;
 #[cfg(feature = "layer-otel-otlp")]
@@ -16,6 +24,8 @@ pub(super) type Shutdown = Box<
         + Sync,
 >;
 
+/// Carries the built tracing subscriber layer and a shutdown function that can later be used to
+/// shutdown the subscriber upon context manager exit.
 pub(crate) struct WithShutdown {
     pub(crate) layer: Box<dyn Layer<Registry> + Send + Sync>,
     pub(crate) shutdown: Shutdown,
@@ -28,14 +38,6 @@ impl core::fmt::Debug for WithShutdown {
 }
 
 #[derive(thiserror::Error, Debug)]
-#[error("{message}")]
-pub(crate) struct CustomError {
-    message: String,
-    #[source]
-    source: Box<dyn std::error::Error + Send + Sync>,
-}
-
-#[derive(thiserror::Error, Debug)]
 pub(crate) enum BuildError {
     #[cfg(feature = "layer-otel-file")]
     #[error("file layer: {0}")]
@@ -43,8 +45,6 @@ pub(crate) enum BuildError {
     #[cfg(feature = "layer-otel-otlp")]
     #[error("otlp layer: {0}")]
     Otlp(#[from] otel_otlp::BuildError),
-    #[error("custom layer: {0}")]
-    Custom(#[from] CustomError),
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -66,6 +66,8 @@ pub(crate) trait BoxDynConfigClone {
     fn clone_box(&self) -> Box<dyn Config>;
 }
 
+/// This trait is necessary so that `Box<dyn Config>` can be cloned and, therefore,
+/// used as an attribute on a `pyo3` class.
 impl<T> BoxDynConfigClone for T
 where
     T: 'static + Config + Clone,
@@ -98,6 +100,7 @@ pub(super) fn force_flush_provider_as_shutdown(
     )
 }
 
+/// A Python union of one of the supported layers.
 #[derive(FromPyObject, Clone, Debug)]
 #[allow(variant_size_differences, clippy::large_enum_variant)]
 pub(crate) enum PyConfig {
@@ -141,22 +144,7 @@ impl Config for PyConfig {
     }
 }
 
-/// Adds the pyo3-opentelemetry export module to your parent module. The upshot here
-/// is that the Python package will contain `{name}.export.{stdout/otlp/py_otlp}`,
-/// each with an async context manager that can be used on the Python side to
-/// export spans.
-///
-/// # Arguments
-/// * `name` - The name of the parent module.
-/// * `py` - The Python interpreter.
-/// * `m` - The parent module.
-///
-/// # Returns
-/// * `PyResult<()>` - The result of adding the submodule to the parent module.
-///
-/// # Errors
-/// * If the submodule cannot be added to the parent module.
-///
+/// Adds `layers` submodule to the root level submodule.
 #[allow(dead_code)]
 pub(crate) fn init_submodule(name: &str, py: Python, m: &PyModule) -> PyResult<()> {
     let modules = py.import("sys")?.getattr("modules")?;
@@ -177,8 +165,6 @@ pub(crate) fn init_submodule(name: &str, py: Python, m: &PyModule) -> PyResult<(
         modules.set_item(qualified_name, submod)?;
         m.add_submodule(submod)?;
     }
-
-    // m.add_class::<CustomLayer>()?;
 
     Ok(())
 }
