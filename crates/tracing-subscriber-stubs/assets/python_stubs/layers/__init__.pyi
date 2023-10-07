@@ -4,8 +4,8 @@
 
  {{#if any_layer }}
 Config = Union[
- {{#if layer_otel_file }}fFileConfig,{{/if}} 
- {{#if layer_otel_otlp }}fOtlpConfig,{{/if}}
+ {{#if layer_otel_file }}FileConfig,{{/if}} 
+ {{#if layer_otel_otlp }}OtlpConfig,{{/if}}
 ]
 {{else}}
 Config = None
