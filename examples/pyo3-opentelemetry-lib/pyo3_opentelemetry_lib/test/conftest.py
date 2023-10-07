@@ -14,25 +14,29 @@
 #    limitations under the License.
 ##############################################################################
 import asyncio
+from contextlib import closing
 import multiprocessing as mp
 import os
 import socket
 from concurrent import futures
-from typing import AsyncGenerator, MutableSequence 
+from time import sleep
+from typing import AsyncGenerator, MutableSequence
 from unittest import mock
 
 import grpc
-from opentelemetry.proto.trace.v1.trace_pb2 import ResourceSpans
 import pytest
-from grpc.aio import ServicerContext
+from grpc.aio import ServicerContext, insecure_channel
 from grpc.aio import server as create_grpc_server
 from opentelemetry import trace
 from opentelemetry.proto.collector.trace.v1 import trace_service_pb2, trace_service_pb2_grpc
+from opentelemetry.proto.trace.v1.trace_pb2 import ResourceSpans
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import (
     BatchSpanProcessor,
     ConsoleSpanExporter,
 )
+
+mp.set_start_method("fork")
 
 
 @pytest.fixture(scope="session")
@@ -51,7 +55,7 @@ class TraceServiceServicer(trace_service_pb2_grpc.TraceServiceServicer):
     def _are_headers_set(self, context: ServicerContext) -> bool:
         metadata = context.invocation_metadata()
         if metadata is None:
-            return False 
+            return False
         for k, v in _SERVICE_TEST_HEADERS.items():
             value = next((value for key, value in metadata if key == k), None)
             if value != v:
@@ -61,8 +65,7 @@ class TraceServiceServicer(trace_service_pb2_grpc.TraceServiceServicer):
     async def Export(
         self, request: trace_service_pb2.ExportTraceServiceRequest, context: ServicerContext
     ) -> trace_service_pb2.ExportTraceServiceResponse:
-        print("EXPORT")
-        if not self._are_headers_set(context): 
+        if not self._are_headers_set(context):
             context.set_code(grpc.StatusCode.PERMISSION_DENIED)
             return trace_service_pb2.ExportTraceServiceResponse()
 
@@ -88,8 +91,11 @@ async def _start_otlp_service_async(data, port):
     trace_service_pb2_grpc.add_TraceServiceServicer_to_server(servicer, server)
 
     server.add_insecure_port(f"[::]:{port}")
-    await server.start()
-    await server.wait_for_termination()
+    try:
+        await server.start()
+        await server.wait_for_termination()
+    except Exception as e:
+        print(e)
 
 
 def _start_otlp_service(data, port):
@@ -102,7 +108,7 @@ async def otlp_service() -> AsyncGenerator[MutableSequence[ResourceSpans], None]
     data = manager.list()
     sock = socket.socket()
     sock.bind(("", 0))
-    address = f"http://[::]:{sock.getsockname()[1]}"
+    address = f"localhost:{sock.getsockname()[1]}"
     process = mp.Process(
         target=_start_otlp_service,
         args=(
@@ -111,16 +117,21 @@ async def otlp_service() -> AsyncGenerator[MutableSequence[ResourceSpans], None]
         ),
     )
     process.start()
+                
     try:
+        # wait for the port to open
+        async with insecure_channel(address) as channel:
+            await asyncio.wait_for(channel.channel_ready(), timeout=30)
+
         with mock.patch.dict(
             os.environ,
             {
-                "OTEL_EXPORTER_OTLP_ENDPOINT": address,
+                "OTEL_EXPORTER_OTLP_ENDPOINT": f"http://{address}",
                 "OTEL_EXPORTER_OTLP_INSECURE": "true",
-                "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT": address,
-                "OTEL_EXPORTER_OTLP_HEADERS": ','.join([f"{k}={v}" for k, v in _SERVICE_TEST_HEADERS.items()]),
+                "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT": f"http://{address}",
+                "OTEL_EXPORTER_OTLP_HEADERS": ",".join([f"{k}={v}" for k, v in _SERVICE_TEST_HEADERS.items()]),
                 "OTEL_EXPORTER_OTLP_TIMEOUT": "1s",
-                "RUST_LOG": "error,pyo3_opentelemetry_lib=info"
+                "RUST_LOG": "error,pyo3_opentelemetry_lib=info",
             },
         ):
             yield data

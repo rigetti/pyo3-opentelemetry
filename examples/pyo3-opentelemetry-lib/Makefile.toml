@@ -7,6 +7,8 @@
   dependencies = ["python-install-dependencies"]
   script = '''
   poetry run maturin develop
+  poetry run black pyo3_opentelemetry_lib/_tracing_subscriber
+  poetry run ruff pyo3_opentelemetry_lib/_tracing_subscriber --fix
   '''
     
 [tasks.python-format]
@@ -17,7 +19,6 @@
   '''
 
 [tasks.python-check]
-  private = true
   dependencies = ["python-build"]
   script = '''
   poetry run black . --check
@@ -26,9 +27,20 @@
   '''
 
 [tasks.python-test]
-  private = true
   dependencies = ["python-build"]
-  script = "poetry run pytest ."
+  script = '''
+  poetry run pytest .
+
+  PYTEST_FORCE=1 poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_file_export[<lambda>2]'
+  PYTEST_FORCE=1 poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_file_export[<lambda>3]'
+  PYTEST_FORCE=1 poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_file_export_async[<lambda>0]'
+  PYTEST_FORCE=1 poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_file_export_async[<lambda>1]'
+
+  PYTEST_FORCE=1 poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_otlp_export[config2]'
+  PYTEST_FORCE=1 poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_otlp_export[config3]'
+  PYTEST_FORCE=1 poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_otlp_export_async[config0]'
+  PYTEST_FORCE=1 poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_otlp_export_async[config1]'
+  '''
 
 [tasks.python-check-all]
   dependencies = ["python-check", "python-test"]

@@ -250,7 +250,7 @@ impl PyConfig {
         sampler = None,
         endpoint = None,
         timeout_millis = None,
-        pre_shutdown_timeout_millis = 4000,
+        pre_shutdown_timeout_millis = 2000,
         env_filter = None
     ))]
     #[allow(clippy::too_many_arguments)]

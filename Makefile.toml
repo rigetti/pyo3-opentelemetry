@@ -193,14 +193,9 @@
     command = "cargo"
     args = ["outdated"]
 
-[tasks.test]
-    clear = true
-    dependencies = ["install-cargo-hack"]
-    env = { CARGO_MAKE_WORKSPACE_SKIP_MEMBERS = "examples/*"}
-    script = "cargo hack test $CARGO_HACK_COMMON_FLAGS"
-
 [tasks.test-nextest]
     dependencies = ["install-cargo-hack", "install-cargo-nextest"]
+    env = { CARGO_MAKE_WORKSPACE_SKIP_MEMBERS = "examples/*"}
     script = "cargo hack nextest run $CARGO_HACK_COMMON_FLAGS"
 
 [tasks.example-lib-python]

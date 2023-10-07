@@ -49,8 +49,7 @@ pub(crate) enum BuildError {
 
 #[derive(thiserror::Error, Debug)]
 pub(crate) enum ShutdownError {
-    #[error("custom layer: {0}")]
-    Custom(#[from] CustomError),
+    // TODO: This will eventually accept a `CustomError` that can be set by upstream libraries.
 }
 
 pub(crate) type ShutdownResult<T> = Result<T, ShutdownError>;

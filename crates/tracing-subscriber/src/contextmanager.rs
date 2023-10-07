@@ -160,6 +160,7 @@ impl Tracing {
     }
 }
 
+#[cfg(feature = "layer-otel-file")]
 #[cfg(test)]
 mod test {
     use std::{io::BufRead, thread::sleep, time::Duration};
