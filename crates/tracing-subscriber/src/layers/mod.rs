@@ -3,9 +3,9 @@
 //!
 //! Currently, the following layers are supported:
 //!
-//! * [`crate::layers::otel_file::Config`] - a layer which writes spans to a file (or stdout) in the OpenTelemetry OTLP
+//! * [`crate::layers::otel_file::Config`] - a layer which writes spans to a file (or stdout) in the `OpenTelemetry` OTLP
 //! JSON-serialized format.
-//! * [`crate::layers::otel_otlp::Config`] - a layer which exports spans to an OpenTelemetry collector.
+//! * [`crate::layers::otel_otlp::Config`] - a layer which exports spans to an `OpenTelemetry` collector.
 #[cfg(feature = "layer-otel-file")]
 pub(crate) mod otel_file;
 #[cfg(feature = "layer-otel-otlp")]
@@ -118,7 +118,7 @@ impl Default for PyConfig {
         }
         #[cfg(all(feature = "layer-otel-otlp", not(feature = "layer-otel-file")))]
         {
-            Self::Otlp(otlp::PyConfig::default())
+            Self::Otlp(otel_otlp::PyConfig::default())
         }
     }
 }

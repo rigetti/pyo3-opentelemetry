@@ -67,19 +67,19 @@
 //! # Requirements and Limitations
 //!
 //! * The tracing subscribers initialized and configured _only_ capture tracing data for the pyo3
-//! library which adds the  pyo3-tracing-subscriber` module. Separate crates require separate
+//! library which adds the `pyo3-tracing-subscriber` module. Separate crates require separate
 //! bootstrapping.
 //! * Python users can initialize tracing subscribers using context managers either globally, in
 //! which case they can only initialize once, or per-thread which is incompatible with Python
 //! `async/await`.
-//! * The OTel OTLP layer requires a heuristic based timeout upon context manager exit to ensure
+//! * The `OTel` OTLP layer requires a heuristic based timeout upon context manager exit to ensure
 //! trace data on the Rust side is flushed to the OTLP collector. This issue persists despite calls
 //! to [`opentelemetry_sdk::trace::provider::TracerProvider::force_flush`] and [`opentelemetry::global::shutdown_tracer_provider`].
 //!
 //! # Related Crates
 //!
 //! * [`pyo3-opentelemetry`](https://crates.io/crates/pyo3-opentelemetry) - propagates
-//! OpenTelemetry contexts from Python into Rust.
+//! `OpenTelemetry` contexts from Python into Rust.
 //! * [pyo3-tracing-subscriber-stubs](https://crates.io/crates/pyo3-tracing-subscriber-stubs) -
 //! evaluates Python stub templates for use in upstream pyo3 library build scripts.
 //!
@@ -173,7 +173,7 @@ create_init_submodule! {
 /// * [`layers`] - a submodule which contains different layers to add to the tracing subscriber.
 /// Currently supported:
 ///     * `opentelemetry-stdout` - a layer which exports trace data to stdout (requires the `layer-otel-file` feature).
-///     * `opentelemetry-otlp` - a layer which exports trace data to an OpenTelemetry collector (requires the `layer-otel-otlp` feature).
+///     * `opentelemetry-otlp` - a layer which exports trace data to an `OpenTelemetry` collector (requires the `layer-otel-otlp` feature).
 /// * [`subscriber`] - a submodule which contains utilities for initialing the tracing subscriber
 /// with the configured layer. Currently, the tracing subscriber is initialized as
 /// `tracing::subscriber::Registry::default().with(layer)`.
