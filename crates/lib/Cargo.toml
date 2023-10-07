@@ -33,6 +33,4 @@ tracing-opentelemetry = "0.21.0"
 tracing-subscriber = "0.3.16"
 
 [features]
-extension-module = ["pyo3/extension-module"]
-default = ["extension-module"]
 
