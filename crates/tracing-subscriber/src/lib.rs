@@ -78,10 +78,9 @@
 //!
 //! # Related Crates
 //!
-//! * [`pyo3-opentelemetry`](https://crates.io/crates/pyo3-opentelemetry) - propagates
+//! * `pyo3-opentelemetry` - propagates
 //! `OpenTelemetry` contexts from Python into Rust.
-//! * [pyo3-tracing-subscriber-stubs](https://crates.io/crates/pyo3-tracing-subscriber-stubs) -
-//! evaluates Python stub templates for use in upstream pyo3 library build scripts.
+//! * `pyo3-tracing-subscriber-stubs` - evaluates Python stub templates for use in upstream pyo3 library build scripts.
 //!
 //! # Examples
 //!

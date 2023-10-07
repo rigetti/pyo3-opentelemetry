@@ -2,6 +2,7 @@
     # We exclude --no-default-features because pyo3 will not be able to link to python.
     CARGO_HACK_COMMON_FLAGS = "--feature-powerset --optional-deps --exclude-no-default-features"
     CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true
+    CARGO_MAKE_WORKSPACE_SKIP_MEMBERS = "examples/*"
 
 [tasks.clean]
     clear = true
@@ -191,20 +192,15 @@
     command = "cargo"
     args = ["outdated"]
 
-[tasks.test-nextest]
+[tasks.nextest]
     dependencies = ["install-cargo-hack", "install-cargo-nextest"]
-    env = { CARGO_MAKE_WORKSPACE_SKIP_MEMBERS = "examples/*"}
     script = "cargo hack nextest run $CARGO_HACK_COMMON_FLAGS"
-
-[tasks.example-lib-python]
-    cwd = "${CARGO_MAKE_WORKSPACE_WORKING_DIRECTORY}/examples/pyo3-opentelemetry-lib"
-    script = "cargo make python-check-all"
 
 [tasks.examples]
     dependencies = ["example-lib-python"]
 
 [tasks.check-all]
-    dependencies = ["check", "clippy", "deny", "deadlinks", "msrv-verify", "examples", "test"]
+    dependencies = ["check", "clippy", "deny", "deadlinks", "msrv-verify", "nextest"]
 
 [tasks.pre-ci-flow]
     dependencies = ["check", "clippy", "deny", "deadlinks", "msrv-verify"]

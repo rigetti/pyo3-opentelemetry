@@ -66,9 +66,8 @@
 //!
 //! # Related Crates
 //!
-//! * [pyo3-opentelemetry-macros](https://crates.io/crates/pyo3-opentelemetry-macros) - a crate
-//! defining the `pypropagate` macro.
-//! * [`pyo3-tracing-subscriber`](https://crates.io/crates/pyo3-tracing-subscriber) - a crate supporting
+//! * `pyo3-opentelemetry-macros` - a crate defining the `pypropagate` macro.
+//! * `pyo3-tracing-subscriber` - a crate supporting
 //! a `pyo3::PyModule` for configuring and setting tracing subscribers.
 //!
 //! # Examples
