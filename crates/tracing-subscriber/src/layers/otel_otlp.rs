@@ -384,7 +384,7 @@ impl From<PySampler> for Sampler {
     }
 }
 
-/// The Rust OpenTelemetry SDK does not support the official OTLP headers environment variables.
+/// The Rust `OpenTelemetry` SDK does not support the official OTLP headers environment variables.
 /// Here we include a custom implementation.
 // https://opentelemetry.io/docs/specs/otel/protocol/exporter/
 const OTEL_EXPORTER_OTLP_HEADERS: &str = "OTEL_EXPORTER_OTLP_HEADERS";
