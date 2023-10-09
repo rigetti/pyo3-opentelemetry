@@ -50,9 +50,7 @@ jobs:
       - name: Install poetry
         uses: snok/install-poetry@v1
       - name: Run Python Example
-        uses: actions-rs/cargo@v1
-        with:
-          command: make
-          args: --makefile Makefile.toml python-check-all 
-          working-directory: ./examples/pyo3-opentelemetry-lib
+        run: |
+          cd ./examples/pyo3-opentelemetry-lib
+          cargo make --makefile Makefile.toml python-check-all 
 
