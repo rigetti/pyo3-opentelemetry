@@ -175,8 +175,9 @@ pub fn write_stub_files(
     include_stub_and_init!(directory, "", hb);
     include_stub_and_init!(directory, "subscriber/", hb);
     include_stub_and_init!(directory, "layers/", hb);
+    include_stub_and_init!(directory, "layers/file/", hb);
     if layer_otel_file {
-        include_stub_and_init!(directory, "layers/otel_file/", hb);
+        include_stub_and_init!(directory, "layers/otel_otlp_file/", hb);
     }
     if layer_otel_otlp {
         include_stub_and_init!(directory, "layers/otel_otlp/", hb);

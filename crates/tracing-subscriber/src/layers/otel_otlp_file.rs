@@ -1,8 +1,9 @@
 use opentelemetry_api::trace::TracerProvider;
 use pyo3::prelude::*;
 use rigetti_pyo3::create_init_submodule;
+use tracing_subscriber::Layer;
 
-use super::{force_flush_provider_as_shutdown, LayerBuildResult, WithShutdown};
+use super::{build_env_filter, force_flush_provider_as_shutdown, LayerBuildResult, WithShutdown};
 
 /// Configures the [`opentelemetry-stdout`] crate layer. If [`file_path`] is None, the layer
 /// will write to stdout.
@@ -10,14 +11,15 @@ use super::{force_flush_provider_as_shutdown, LayerBuildResult, WithShutdown};
 #[derive(Clone, Debug, Default)]
 pub(crate) struct Config {
     pub(crate) file_path: Option<String>,
+    pub(crate) filter: Option<String>,
 }
 
 #[pymethods]
 impl Config {
     #[new]
-    #[pyo3(signature = (/, file_path = None))]
-    const fn new(file_path: Option<String>) -> Self {
-        Self { file_path }
+    #[pyo3(signature = (/, file_path = None, filter = None))]
+    const fn new(file_path: Option<String>, filter: Option<String>) -> Self {
+        Self { file_path, filter }
     }
 }
 
@@ -48,7 +50,10 @@ impl crate::layers::Config for Config {
                 .build()
         };
         let tracer = provider.tracer("stdout");
-        let layer = tracing_opentelemetry::layer().with_tracer(tracer);
+        let env_filter = build_env_filter(self.filter.clone())?;
+        let layer = tracing_opentelemetry::layer()
+            .with_tracer(tracer)
+            .with_filter(env_filter);
         Ok(WithShutdown {
             layer: Box::new(layer),
             shutdown: force_flush_provider_as_shutdown(provider, None),

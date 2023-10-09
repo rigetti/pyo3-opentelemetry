@@ -1,10 +1,12 @@
-{{#if any_layer}}from typing import Union{{/if}}
-{{#if layer_otel_file }}from .otel_file import Config as FileConfig{{/if}}
+from typing import Union
+ from .file import Config as FileConfig
+{{#if layer_otel_file }}from .otel_otlp_file import Config as OtlpFileConfig{{/if}}
 {{#if layer_otel_otlp}}from .otel_otlp import Config as OtlpConfig{{/if}}
 
  {{#if any_layer }}
 Config = Union[
- {{#if layer_otel_file }}FileConfig,{{/if}} 
+  FileConfig,
+ {{#if layer_otel_file }}OtlpFileConfig,{{/if}} 
  {{#if layer_otel_otlp }}OtlpConfig,{{/if}}
 ]
 {{else}}

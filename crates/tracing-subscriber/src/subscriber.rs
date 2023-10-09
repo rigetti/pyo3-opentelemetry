@@ -99,7 +99,6 @@ pub(crate) struct PyConfig {
     pub(crate) subscriber_config: Box<dyn Config>,
 }
 
-#[cfg(any(feature = "layer-otel-file", feature = "layer-otel-otlp"))]
 impl Default for PyConfig {
     fn default() -> Self {
         let layer = super::layers::PyConfig::default();
@@ -123,10 +122,7 @@ impl PyConfig {
     #[pyo3(signature = (/, layer = None))]
     #[allow(clippy::pedantic)]
     fn new(layer: Option<super::layers::PyConfig>) -> PyResult<Self> {
-        #[cfg(any(feature = "layer-otel-file", feature = "layer-otel-otlp"))]
         let layer = layer.unwrap_or_default();
-        #[cfg(all(not(feature = "layer-otel-file"), not(feature = "layer-otel-otlp")))]
-        let layer = crate::unsupported_default_initialization(layer)?;
         Ok(Self {
             subscriber_config: Box::new(TracingSubscriberRegistryConfig {
                 layer_config: Box::new(layer),

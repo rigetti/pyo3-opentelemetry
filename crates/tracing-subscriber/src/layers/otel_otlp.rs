@@ -1,4 +1,4 @@
-use std::{collections::HashMap, env, time::Duration};
+use std::{collections::HashMap, time::Duration};
 
 use opentelemetry_api::{trace::TraceError, KeyValue};
 use opentelemetry_otlp::{TonicExporterBuilder, WithExportConfig};
@@ -16,10 +16,10 @@ use tonic::metadata::{
 };
 use tracing_subscriber::{
     filter::{FromEnvError, ParseError},
-    EnvFilter, Layer,
+    Layer,
 };
 
-use super::{force_flush_provider_as_shutdown, LayerBuildResult, WithShutdown};
+use super::{build_env_filter, force_flush_provider_as_shutdown, LayerBuildResult, WithShutdown};
 
 /// Configures the [`opentelemetry-otlp`] crate layer.
 #[derive(Clone, Debug)]
@@ -42,7 +42,7 @@ pub(crate) struct Config {
     /// is shutdown. Ensures that spans are flushed before the program exits.
     pre_shutdown_timeout: Duration,
     /// The filter to use for the [`EnvFilter`] layer.
-    env_filter: Option<String>,
+    filter: Option<String>,
 }
 
 impl Config {
@@ -72,11 +72,6 @@ impl crate::layers::Config for PyConfig {
     }
 }
 
-/// An environment variable that can be used to set an [`EnvFilter`] for the OTLP layer.
-/// This supersedes the `RUST_LOG` environment variable, but is superseded by the
-/// [`Config::env_filter`] field.
-const PYO3_OPENTELEMETRY_ENV_FILTER: &str = "PYO3_OPENTELEMETRY_ENV_FILTER";
-
 impl Config {
     const fn requires_runtime() -> bool {
         true
@@ -102,14 +97,7 @@ impl Config {
         let provider = tracer
             .provider()
             .ok_or(BuildError::ProviderNotSetOnTracer)?;
-        let env_filter = self
-            .env_filter
-            .clone()
-            .or_else(|| env::var(PYO3_OPENTELEMETRY_ENV_FILTER).ok())
-            .map_or_else(
-                || EnvFilter::try_from_default_env().map_err(BuildError::from),
-                |filter| EnvFilter::try_new(filter).map_err(BuildError::from),
-            )?;
+        let env_filter = build_env_filter(self.filter.clone())?;
         let layer = tracing_opentelemetry::layer()
             .with_tracer(tracer)
             .with_filter(env_filter);
@@ -445,7 +433,7 @@ impl TryFrom<PyConfig> for Config {
             endpoint: config.endpoint,
             timeout: config.timeout_millis.map(Duration::from_millis),
             pre_shutdown_timeout: Duration::from_millis(config.pre_shutdown_timeout_millis),
-            env_filter: config.env_filter,
+            filter: config.env_filter,
         })
     }
 }

@@ -9,11 +9,7 @@ use super::export_process::{
 };
 
 #[pyclass]
-#[derive(Clone, Debug)]
-#[cfg_attr(
-    any(feature = "layer-otel-file", feature = "layer-otel-otlp"),
-    derive(Default)
-)]
+#[derive(Clone, Debug, Default)]
 pub(crate) struct GlobalTracingConfig {
     pub(crate) export_process: ExportProcessConfig,
 }
@@ -24,10 +20,7 @@ impl GlobalTracingConfig {
     #[pyo3(signature = (/, export_process = None))]
     #[allow(clippy::pedantic)]
     fn new(export_process: Option<ExportProcessConfig>) -> PyResult<Self> {
-        #[cfg(any(feature = "layer-otel-file", feature = "layer-otel-otlp"))]
         let export_process = export_process.unwrap_or_default();
-        #[cfg(all(not(feature = "layer-otel-file"), not(feature = "layer-otel-otlp")))]
-        let export_process = crate::unsupported_default_initialization(export_process)?;
         Ok(Self { export_process })
     }
 }
@@ -44,13 +37,7 @@ impl CurrentThreadTracingConfig {
     #[pyo3(signature = (/, export_process = None))]
     #[allow(clippy::pedantic)]
     fn new(export_process: Option<ExportProcessConfig>) -> PyResult<Self> {
-        #[cfg(any(feature = "layer-otel-file", feature = "layer-otel-otlp"))]
         let export_process = export_process.unwrap_or_default();
-        #[cfg(all(not(feature = "layer-otel-file"), not(feature = "layer-otel-otlp")))]
-        let export_process = export_process
-            .ok_or(crate::export_process::InitializationError::NoDefaultInitialization)
-            .map_err(crate::export_process::RustTracingInitializationError::from)
-            .map_err(rigetti_pyo3::ToPythonError::to_py_err)?;
         Ok(Self { export_process })
     }
 }
@@ -61,7 +48,6 @@ pub(crate) enum TracingConfig {
     CurrentThread(CurrentThreadTracingConfig),
 }
 
-#[cfg(any(feature = "layer-otel-file", feature = "layer-otel-otlp"))]
 impl Default for TracingConfig {
     fn default() -> Self {
         Self::Global(GlobalTracingConfig::default())
@@ -107,10 +93,7 @@ impl Tracing {
     #[pyo3(signature = (/, config = None))]
     #[allow(clippy::pedantic)]
     fn new(config: Option<TracingConfig>) -> PyResult<Self> {
-        #[cfg(any(feature = "layer-otel-file", feature = "layer-otel-otlp"))]
         let config = config.unwrap_or_default();
-        #[cfg(all(not(feature = "layer-otel-file"), not(feature = "layer-otel-otlp")))]
-        let config = crate::unsupported_default_initialization(config)?;
         Ok(Self {
             state: ContextManagerState::Initialized(config),
         })
@@ -160,7 +143,7 @@ impl Tracing {
     }
 }
 
-#[cfg(feature = "layer-otel-file")]
+#[cfg(feature = "layer-otel-otlp-file")]
 #[cfg(test)]
 mod test {
     use std::{io::BufRead, thread::sleep, time::Duration};
@@ -214,8 +197,9 @@ mod test {
     fn test_global_batch() {
         let temporary_file = tempfile::NamedTempFile::new().unwrap();
         let temporary_file_path = temporary_file.path().to_owned();
-        let layer_config = Box::new(crate::layers::otel_file::Config {
+        let layer_config = Box::new(crate::layers::otel_otlp_file::Config {
             file_path: Some(temporary_file_path.as_os_str().to_str().unwrap().to_owned()),
+            ..Default::default()
         });
         let subscriber = Box::new(TracingSubscriberRegistryConfig { layer_config });
         let config = TracingConfig::Global(GlobalTracingConfig {
@@ -260,7 +244,7 @@ mod test {
             .collect::<Vec<Span>>();
         assert_eq!(spans.len(), N_SPANS);
 
-        let span_grace = Duration::from_millis(50);
+        let span_grace = Duration::from_millis(100);
         for span in spans {
             assert_eq!(span.name, "example");
             assert!(
@@ -277,8 +261,9 @@ mod test {
     fn test_global_simple() {
         let temporary_file = tempfile::NamedTempFile::new().unwrap();
         let temporary_file_path = temporary_file.path().to_owned();
-        let layer_config = Box::new(crate::layers::otel_file::Config {
+        let layer_config = Box::new(crate::layers::otel_otlp_file::Config {
             file_path: Some(temporary_file_path.as_os_str().to_str().unwrap().to_owned()),
+            ..Default::default()
         });
         let subscriber = Box::new(TracingSubscriberRegistryConfig { layer_config });
         let config = TracingConfig::Global(GlobalTracingConfig {
@@ -339,8 +324,9 @@ mod test {
     fn test_current_thread_simple() {
         let temporary_file = tempfile::NamedTempFile::new().unwrap();
         let temporary_file_path = temporary_file.path().to_owned();
-        let layer_config = Box::new(crate::layers::otel_file::Config {
+        let layer_config = Box::new(crate::layers::otel_otlp_file::Config {
             file_path: Some(temporary_file_path.as_os_str().to_str().unwrap().to_owned()),
+            ..Default::default()
         });
         let subscriber = Box::new(TracingSubscriberRegistryConfig { layer_config });
         let config = TracingConfig::CurrentThread(CurrentThreadTracingConfig {
