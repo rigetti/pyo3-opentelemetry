@@ -1,12 +1,10 @@
 from __future__ import annotations
-from contextlib import contextmanager
 
 import os
 from base64 import urlsafe_b64encode
 from collections import Counter
-import multiprocessing as mp
 from time import time
-from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, List, MutableSequence, Optional, Tuple, Type, TypedDict
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, MutableMapping, Optional
 
 import pytest
 from google.protobuf import json_format
@@ -26,8 +24,8 @@ from pyo3_opentelemetry_lib._tracing_subscriber import (
     Tracing,
     subscriber,
 )
-from pyo3_opentelemetry_lib._tracing_subscriber.layers import otel_file as file
 from pyo3_opentelemetry_lib._tracing_subscriber.layers import otel_otlp as otlp
+from pyo3_opentelemetry_lib._tracing_subscriber.layers import otel_otlp_file as file
 
 if TYPE_CHECKING:
     from pyo3_opentelemetry_lib._tracing_subscriber import TracingConfig
@@ -37,7 +35,9 @@ _TEST_ARTIFACTS_DIR = os.path.join(os.path.dirname(__file__), "__artifacts__")
 
 
 def require_force(param: Any):
-    return pytest.param(param, marks=pytest.mark.skipif(not bool(os.getenv("PYTEST_FORCE", None)), reason="must force test"))
+    return pytest.param(
+        param, marks=pytest.mark.skipif(not bool(os.getenv("PYTEST_FORCE", None)), reason="must force test")
+    )
 
 
 async def _test_file_export(config_builder: Callable[[str], TracingConfig], tracer: Tracer):
@@ -86,19 +86,27 @@ async def _test_file_export(config_builder: Callable[[str], TracingConfig], trac
                 subscriber=subscriber.Config(layer=file.Config(file_path=os.path.join(_TEST_ARTIFACTS_DIR, filename)))
             )
         ),
-        require_force(lambda filename: GlobalTracingConfig(
-            export_process=SimpleConfig(
-                subscriber=subscriber.Config(layer=file.Config(file_path=os.path.join(_TEST_ARTIFACTS_DIR, filename)))
+        require_force(
+            lambda filename: GlobalTracingConfig(
+                export_process=SimpleConfig(
+                    subscriber=subscriber.Config(
+                        layer=file.Config(file_path=os.path.join(_TEST_ARTIFACTS_DIR, filename))
+                    )
+                )
             )
-        )),
-        require_force(lambda filename: GlobalTracingConfig(
-            export_process=BatchConfig(
-                subscriber=subscriber.Config(layer=file.Config(file_path=os.path.join(_TEST_ARTIFACTS_DIR, filename)))
+        ),
+        require_force(
+            lambda filename: GlobalTracingConfig(
+                export_process=BatchConfig(
+                    subscriber=subscriber.Config(
+                        layer=file.Config(file_path=os.path.join(_TEST_ARTIFACTS_DIR, filename))
+                    )
+                )
             )
-        )),
+        ),
     ],
 )
-async def test_file_export(config_builder: Callable[[str], TracingConfig], tracer: Tracer):
+async def test_file_export(config_builder: Callable[[str], TracingConfig], tracer: Tracer, file_export_filter: None):
     await _test_file_export(config_builder, tracer)
 
 
@@ -117,7 +125,7 @@ async def test_file_export(config_builder: Callable[[str], TracingConfig], trace
         ),
     ],
 )
-async def test_file_export_multi_threads(config_builder: Callable[[str], TracingConfig], tracer: Tracer):
+async def test_file_export_multi_threads(config_builder: Callable[[str], TracingConfig], tracer: Tracer, file_export_filter: None):
     for _ in range(3):
         await _test_file_export(config_builder, tracer)
 
@@ -125,19 +133,27 @@ async def test_file_export_multi_threads(config_builder: Callable[[str], Tracing
 @pytest.mark.parametrize(
     "config_builder",
     [
-        require_force(lambda filename: GlobalTracingConfig(
-            export_process=SimpleConfig(
-                subscriber=subscriber.Config(layer=file.Config(file_path=os.path.join(_TEST_ARTIFACTS_DIR, filename)))
+        require_force(
+            lambda filename: GlobalTracingConfig(
+                export_process=SimpleConfig(
+                    subscriber=subscriber.Config(
+                        layer=file.Config(file_path=os.path.join(_TEST_ARTIFACTS_DIR, filename))
+                    )
+                )
             )
-        )),
-        require_force(lambda filename: GlobalTracingConfig(
-            export_process=BatchConfig(
-                subscriber=subscriber.Config(layer=file.Config(file_path=os.path.join(_TEST_ARTIFACTS_DIR, filename)))
+        ),
+        require_force(
+            lambda filename: GlobalTracingConfig(
+                export_process=BatchConfig(
+                    subscriber=subscriber.Config(
+                        layer=file.Config(file_path=os.path.join(_TEST_ARTIFACTS_DIR, filename))
+                    )
+                )
             )
-        )),
+        ),
     ],
 )
-async def test_file_export_async(config_builder: Callable[[str], TracingConfig], tracer: Tracer):
+async def test_file_export_async(config_builder: Callable[[str], TracingConfig], tracer: Tracer, file_export_filter: None):
     filename = f"test_file_export_async-{time()}.txt"
     config = config_builder(filename)
     async with Tracing(config=config):
@@ -194,11 +210,20 @@ def _16b_json_encoded_bytes_to_int(b: bytes) -> Optional[int]:
     [
         CurrentThreadTracingConfig(export_process=SimpleConfig(subscriber=subscriber.Config(layer=otlp.Config()))),
         CurrentThreadTracingConfig(export_process=BatchConfig(subscriber=subscriber.Config(layer=otlp.Config()))),
-        require_force(GlobalTracingConfig(export_process=SimpleConfig(subscriber=subscriber.Config(layer=otlp.Config())))),
-        require_force(GlobalTracingConfig(export_process=BatchConfig(subscriber=subscriber.Config(layer=otlp.Config())))),
+        require_force(
+            GlobalTracingConfig(export_process=SimpleConfig(subscriber=subscriber.Config(layer=otlp.Config())))
+        ),
+        require_force(
+            GlobalTracingConfig(export_process=BatchConfig(subscriber=subscriber.Config(layer=otlp.Config())))
+        ),
     ],
 )
-async def test_otlp_export(config: TracingConfig, tracer: Tracer, otlp_service: MutableSequence[ResourceSpans]):
+async def test_otlp_export(
+    config: TracingConfig,
+    tracer: Tracer,
+    otlp_test_namespace: str,
+    otlp_service_data: MutableMapping[str, List[ResourceSpans]],
+):
     async with Tracing(config=config):
         with tracer.start_as_current_span("test_file_export_tracing"):
             current_span = get_current_span()
@@ -211,7 +236,9 @@ async def test_otlp_export(config: TracingConfig, tracer: Tracer, otlp_service: 
     _assert_propagated_trace_id_eq(result, trace_id)
 
     counter = Counter()
-    for resource_span in otlp_service:
+    data = otlp_service_data.get(otlp_test_namespace, None)
+    assert data is not None
+    for resource_span in data:
         for scope_span in resource_span.scope_spans:
             for span in scope_span.spans:
                 assert int.from_bytes(span.trace_id, "big") == trace_id, trace_id
@@ -228,7 +255,10 @@ async def test_otlp_export(config: TracingConfig, tracer: Tracer, otlp_service: 
     ],
 )
 async def test_otlp_export_multi_threads(
-    config: TracingConfig, tracer: Tracer, otlp_service: MutableSequence[ResourceSpans]
+    config: TracingConfig,
+    tracer: Tracer,
+    otlp_test_namespace: str,
+    otlp_service_data: MutableMapping[str, List[ResourceSpans]],
 ):
     for _ in range(3):
         async with Tracing(config=config):
@@ -242,8 +272,10 @@ async def test_otlp_export_multi_threads(
 
         _assert_propagated_trace_id_eq(result, trace_id)
 
+        data = otlp_service_data.get(otlp_test_namespace, None)
+        assert data is not None
         counter = Counter()
-        for resource_span in otlp_service:
+        for resource_span in data:
             for scope_span in resource_span.scope_spans:
                 for span in scope_span.spans:
                     if int.from_bytes(span.trace_id, "big") == trace_id:
@@ -255,11 +287,20 @@ async def test_otlp_export_multi_threads(
 @pytest.mark.parametrize(
     "config",
     [
-        require_force(GlobalTracingConfig(export_process=SimpleConfig(subscriber=subscriber.Config(layer=otlp.Config())))),
-        require_force(GlobalTracingConfig(export_process=BatchConfig(subscriber=subscriber.Config(layer=otlp.Config())))),
+        require_force(
+            GlobalTracingConfig(export_process=SimpleConfig(subscriber=subscriber.Config(layer=otlp.Config())))
+        ),
+        require_force(
+            GlobalTracingConfig(export_process=BatchConfig(subscriber=subscriber.Config(layer=otlp.Config())))
+        ),
     ],
 )
-async def test_otlp_export_async(config: TracingConfig, tracer: Tracer, otlp_service: MutableSequence[ResourceSpans]):
+async def test_otlp_export_async(
+    config: TracingConfig,
+    tracer: Tracer,
+    otlp_test_namespace: str,
+    otlp_service_data: MutableMapping[str, List[ResourceSpans]],
+):
     async with Tracing(config=config):
         with tracer.start_as_current_span("test_file_export_tracing"):
             current_span = get_current_span()
@@ -271,8 +312,10 @@ async def test_otlp_export_async(config: TracingConfig, tracer: Tracer, otlp_ser
 
     _assert_propagated_trace_id_eq(result, trace_id)
 
+    data = otlp_service_data.get(otlp_test_namespace, None)
+    assert data is not None
     counter = Counter()
-    for resource_span in otlp_service:
+    for resource_span in data:
         for scope_span in resource_span.scope_spans:
             for span in scope_span.spans:
                 counter[span.name] += 1
@@ -292,4 +335,3 @@ def _assert_propagated_trace_id_eq(carrier: Dict[str, str], trace_id: int):
     token = attach(new_context)
     assert get_current_span().get_span_context().trace_id == trace_id
     detach(token)
-
