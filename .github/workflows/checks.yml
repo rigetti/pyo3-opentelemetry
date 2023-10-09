@@ -40,7 +40,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: make
-          args: --makefile Makefile.toml ci-flow
+          args: --makefile Makefile.toml check-all 
 
       # Setup Python and run Python example
       - name: Setup python
