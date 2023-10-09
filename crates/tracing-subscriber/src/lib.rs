@@ -61,7 +61,7 @@
 //!
 //! # Features
 //!
-//! * `layer-otel-otlp-file` - exports trace data with [opentelemetry-stdout](https://lib.rs/crates/opentelemetry-stdout). See [`crate::layers::otel_file`].
+//! * `layer-otel-otlp-file` - exports trace data with [opentelemetry-stdout](https://lib.rs/crates/opentelemetry-stdout). See [`crate::layers::otel_otlp_file`].
 //! * `layer-otel-otlp` - exports trace data with [opentelemetry-otlp](https://lib.rs/crates/opentelemetry-otlp). See [`crate::layers::otel_otlp`].
 //!
 //! # Requirements and Limitations

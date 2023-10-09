@@ -3,7 +3,7 @@
 //!
 //! Currently, the following layers are supported:
 //!
-//! * [`crate::layers::otel_file::Config`] - a layer which writes spans to a file (or stdout) in the `OpenTelemetry` OTLP
+//! * [`crate::layers::otel_otlp_file::Config`] - a layer which writes spans to a file (or stdout) in the `OpenTelemetry` OTLP
 //! JSON-serialized format.
 //! * [`crate::layers::otel_otlp::Config`] - a layer which exports spans to an `OpenTelemetry` collector.
 pub(crate) mod fmt_file;
