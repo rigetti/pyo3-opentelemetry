@@ -47,11 +47,22 @@ def tracer() -> trace.Tracer:
 
 
 class TraceServiceServicer(trace_service_pb2_grpc.TraceServiceServicer):
+    """
+    A mock implementation of the OpenTelemetry OTLP collector service. This
+    will keep track of all the spans that are sent to it in memory. It should
+    be run in a separate process to avoid blocking the main process.
+
+
+    """
+
     def __init__(self, data: MutableMapping[str, List[ResourceSpans]]):
         self.lock = asyncio.Lock()
         self.resource_spans = data
 
     def _are_headers_set(self, metadata: Metadata) -> bool:
+        """
+        Asserts that all `_SERVICE_TEST_HEADERS` are set in the metadata.
+        """
         for k, v in _SERVICE_TEST_HEADERS.items():
             value = next((value for key, value in metadata if key == k), None)
             if value != v:
@@ -61,6 +72,10 @@ class TraceServiceServicer(trace_service_pb2_grpc.TraceServiceServicer):
     async def Export(
         self, request: trace_service_pb2.ExportTraceServiceRequest, context: ServicerContext
     ) -> trace_service_pb2.ExportTraceServiceResponse:
+        """
+        Verify the client metadata. Add the exported spans to `resource_spans` under the
+        namespace set by the `x-test-namespace` header.
+        """
         metadata = context.invocation_metadata()
         if metadata is None or not self._are_headers_set(metadata):
             context.set_code(grpc.StatusCode.PERMISSION_DENIED)
@@ -108,6 +123,9 @@ def _start_otlp_service(data, port):
 
 @pytest.fixture(scope="session")
 def event_loop():
+    """
+    Required for async fixtures that use the "session" scope.
+    """
     loop = asyncio.get_event_loop()
     try:
         yield loop
@@ -117,6 +135,9 @@ def event_loop():
 
 @pytest.fixture(scope="session")
 def file_export_filter() -> Generator[None, None, None]:
+    """
+    Sets environment variables to set the desired `EnvFilter` for the OTLP file export layer.
+    """
     with mock.patch.dict(
         os.environ,
         {
@@ -128,16 +149,25 @@ def file_export_filter() -> Generator[None, None, None]:
 
 @pytest.fixture(scope="session")
 async def otlp_service_data() -> AsyncGenerator[MutableMapping[str, List[ResourceSpans]], None]:
+    """
+    Runs the `TraceServiceServicer` in a separate process, waits for a valid connection, and
+    yields the `resource_spans` dict.
+    """
     manager = mp.Manager()
     data = manager.dict()
+    # find an available port for the `TraceServiceServicer` to use.
     sock = socket.socket()
     sock.bind(("", 0))
-    address = f"localhost:{sock.getsockname()[1]}"
+    port = sock.getsockname()[1]
+    # close the port so the `TraceServiceServicer` can use it.
+    sock.close()
+
+    address = f"localhost:{port}"
     process = mp.Process(
         target=_start_otlp_service,
         args=(
             data,
-            sock.getsockname()[1],
+            port,
         ),
     )
     process.start()
@@ -165,6 +195,10 @@ async def otlp_service_data() -> AsyncGenerator[MutableMapping[str, List[Resourc
 
 @pytest.fixture(scope="function")
 def otlp_test_namespace() -> Generator[str, None, None]:
+    """
+    Generates a new namespace per test function. `TraceServiceServicer` will store spans
+    under key of this generated namespace.
+    """
     namespace = str(uuid4())
     env = os.environ.copy()
     env["OTEL_EXPORTER_OTLP_HEADERS"] += f",x-test-namespace={namespace}"
