@@ -6,16 +6,19 @@
 //! * [`crate::layers::otel_file::Config`] - a layer which writes spans to a file (or stdout) in the `OpenTelemetry` OTLP
 //! JSON-serialized format.
 //! * [`crate::layers::otel_otlp::Config`] - a layer which exports spans to an `OpenTelemetry` collector.
-#[cfg(feature = "layer-otel-file")]
-pub(crate) mod otel_file;
+pub(crate) mod fmt_file;
 #[cfg(feature = "layer-otel-otlp")]
 pub(crate) mod otel_otlp;
+#[cfg(feature = "layer-otel-otlp-file")]
+pub(crate) mod otel_otlp_file;
 
-use std::{fmt::Debug, time::Duration};
+use std::fmt::Debug;
 
-use opentelemetry_sdk::trace::TracerProvider;
 use pyo3::prelude::*;
-use tracing_subscriber::{Layer, Registry};
+use tracing_subscriber::{
+    filter::{FromEnvError, ParseError},
+    EnvFilter, Layer, Registry,
+};
 
 pub(super) type Shutdown = Box<
     dyn (FnOnce() -> std::pin::Pin<
@@ -39,12 +42,18 @@ impl core::fmt::Debug for WithShutdown {
 
 #[derive(thiserror::Error, Debug)]
 pub(crate) enum BuildError {
-    #[cfg(feature = "layer-otel-file")]
+    #[cfg(feature = "layer-otel-otlp-file")]
     #[error("file layer: {0}")]
-    File(#[from] otel_file::BuildError),
+    File(#[from] otel_otlp_file::BuildError),
     #[cfg(feature = "layer-otel-otlp")]
     #[error("otlp layer: {0}")]
     Otlp(#[from] otel_otlp::BuildError),
+    #[error("fmt layer: {0}")]
+    FmtFile(#[from] fmt_file::BuildError),
+    #[error("failed to parse specified trace filter: {0}")]
+    TraceFilterParseError(#[from] ParseError),
+    #[error("failed to parse trace filter from RUST_LOG: {0}")]
+    TraceFilterEnvError(#[from] FromEnvError),
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -82,9 +91,10 @@ impl Clone for Box<dyn Config> {
     }
 }
 
+#[cfg(any(feature = "layer-otel-otlp", feature = "layer-otel-otlp-file"))]
 pub(super) fn force_flush_provider_as_shutdown(
-    provider: TracerProvider,
-    timeout: Option<Duration>,
+    provider: opentelemetry_sdk::trace::TracerProvider,
+    timeout: Option<std::time::Duration>,
 ) -> Shutdown {
     Box::new(
         move || -> std::pin::Pin<Box<dyn std::future::Future<Output = ShutdownResult<()>> + Send + Sync>> {
@@ -99,46 +109,55 @@ pub(super) fn force_flush_provider_as_shutdown(
     )
 }
 
+/// An environment variable that can be used to set an [`EnvFilter`] for the OTLP layer.
+/// This supersedes the `RUST_LOG` environment variable, but is superseded by the
+/// [`Config::env_filter`] field.
+const PYO3_OPENTELEMETRY_ENV_FILTER: &str = "PYO3_OPENTELEMETRY_ENV_FILTER";
+
+pub(super) fn build_env_filter(env_filter: Option<String>) -> Result<EnvFilter, BuildError> {
+    env_filter
+        .or_else(|| std::env::var(PYO3_OPENTELEMETRY_ENV_FILTER).ok())
+        .map_or_else(
+            || EnvFilter::try_from_default_env().map_err(BuildError::from),
+            |filter| EnvFilter::try_new(filter).map_err(BuildError::from),
+        )
+}
+
 /// A Python union of one of the supported layers.
 #[derive(FromPyObject, Clone, Debug)]
 #[allow(variant_size_differences, clippy::large_enum_variant)]
 pub(crate) enum PyConfig {
-    #[cfg(feature = "layer-otel-file")]
-    File(otel_file::Config),
+    #[cfg(feature = "layer-otel-otlp-file")]
+    OtlpFile(otel_otlp_file::Config),
     #[cfg(feature = "layer-otel-otlp")]
     Otlp(otel_otlp::PyConfig),
+    File(fmt_file::Config),
 }
 
-#[cfg(any(feature = "layer-otel-file", feature = "layer-otel-otlp"))]
 impl Default for PyConfig {
     fn default() -> Self {
-        #[cfg(feature = "layer-otel-file")]
-        {
-            Self::File(otel_file::Config::default())
-        }
-        #[cfg(all(feature = "layer-otel-otlp", not(feature = "layer-otel-file")))]
-        {
-            Self::Otlp(otel_otlp::PyConfig::default())
-        }
+        Self::File(fmt_file::Config::default())
     }
 }
 
 impl Config for PyConfig {
     fn build(&self, batch: bool) -> LayerBuildResult<WithShutdown> {
         match self {
-            #[cfg(feature = "layer-otel-file")]
-            Self::File(config) => config.build(batch),
+            #[cfg(feature = "layer-otel-otlp-file")]
+            Self::OtlpFile(config) => config.build(batch),
             #[cfg(feature = "layer-otel-otlp")]
             Self::Otlp(config) => config.build(batch),
+            Self::File(config) => config.build(batch),
         }
     }
 
     fn requires_runtime(&self) -> bool {
         match self {
-            #[cfg(feature = "layer-otel-file")]
-            Self::File(config) => config.requires_runtime(),
+            #[cfg(feature = "layer-otel-otlp-file")]
+            Self::OtlpFile(config) => config.requires_runtime(),
             #[cfg(feature = "layer-otel-otlp")]
             Self::Otlp(config) => config.requires_runtime(),
+            Self::File(config) => config.requires_runtime(),
         }
     }
 }
@@ -148,11 +167,11 @@ impl Config for PyConfig {
 pub(crate) fn init_submodule(name: &str, py: Python, m: &PyModule) -> PyResult<()> {
     let modules = py.import("sys")?.getattr("modules")?;
 
-    #[cfg(feature = "layer-otel-file")]
+    #[cfg(feature = "layer-otel-otlp-file")]
     {
-        let submod = pyo3::types::PyModule::new(py, "otel_file")?;
-        let qualified_name = format!("{name}.otel_file");
-        otel_file::init_submodule(qualified_name.as_str(), py, submod)?;
+        let submod = pyo3::types::PyModule::new(py, "otel_otlp_file")?;
+        let qualified_name = format!("{name}.otel_otlp_file");
+        otel_otlp_file::init_submodule(qualified_name.as_str(), py, submod)?;
         modules.set_item(qualified_name, submod)?;
         m.add_submodule(submod)?;
     }
@@ -164,6 +183,12 @@ pub(crate) fn init_submodule(name: &str, py: Python, m: &PyModule) -> PyResult<(
         modules.set_item(qualified_name, submod)?;
         m.add_submodule(submod)?;
     }
+
+    let submod = pyo3::types::PyModule::new(py, "file")?;
+    let qualified_name = format!("{name}.file");
+    fmt_file::init_submodule(qualified_name.as_str(), py, submod)?;
+    modules.set_item(qualified_name, submod)?;
+    m.add_submodule(submod)?;
 
     Ok(())
 }

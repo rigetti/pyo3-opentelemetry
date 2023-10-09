@@ -61,7 +61,7 @@
 //!
 //! # Features
 //!
-//! * `layer-otel-file` - exports trace data with [opentelemetry-stdout](https://lib.rs/crates/opentelemetry-stdout). See [`crate::layers::otel_file`].
+//! * `layer-otel-otlp-file` - exports trace data with [opentelemetry-stdout](https://lib.rs/crates/opentelemetry-stdout). See [`crate::layers::otel_file`].
 //! * `layer-otel-otlp` - exports trace data with [opentelemetry-otlp](https://lib.rs/crates/opentelemetry-otlp). See [`crate::layers::otel_otlp`].
 //!
 //! # Requirements and Limitations
@@ -171,7 +171,7 @@ create_init_submodule! {
 /// requires an asynchronous runtime to export trace data (ie the `opentelemetry-otlp` layer).
 /// * [`layers`] - a submodule which contains different layers to add to the tracing subscriber.
 /// Currently supported:
-///     * `opentelemetry-stdout` - a layer which exports trace data to stdout (requires the `layer-otel-file` feature).
+///     * `opentelemetry-stdout` - a layer which exports trace data to stdout (requires the `layer-otel-otlp-file` feature).
 ///     * `opentelemetry-otlp` - a layer which exports trace data to an `OpenTelemetry` collector (requires the `layer-otel-otlp` feature).
 /// * [`subscriber`] - a submodule which contains utilities for initialing the tracing subscriber
 /// with the configured layer. Currently, the tracing subscriber is initialized as
@@ -204,13 +204,4 @@ pub fn add_submodule(name: &str, py: Python, m: &PyModule) -> PyResult<()> {
     let modules = py.import("sys")?.getattr("modules")?;
     modules.set_item(name, m)?;
     Ok(())
-}
-
-#[cfg(all(not(feature = "layer-otel-file"), not(feature = "layer-otel-otlp")))]
-fn unsupported_default_initialization<T>(value: Option<T>) -> PyResult<T> {
-    value.ok_or_else(|| {
-        pyo3::exceptions::PyValueError::new_err(
-            "this package does not support default file or otlp layers",
-        )
-    })
 }
