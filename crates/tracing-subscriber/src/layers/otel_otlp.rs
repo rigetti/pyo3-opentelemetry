@@ -224,7 +224,7 @@ pub(crate) struct PyConfig {
     endpoint: Option<String>,
     timeout_millis: Option<u64>,
     pre_shutdown_timeout_millis: u64,
-    env_filter: Option<String>,
+    filter: Option<String>,
 }
 
 #[pymethods]
@@ -239,7 +239,7 @@ impl PyConfig {
         endpoint = None,
         timeout_millis = None,
         pre_shutdown_timeout_millis = 2000,
-        env_filter = None
+        filter = None
     ))]
     #[allow(clippy::too_many_arguments)]
     fn new(
@@ -250,7 +250,7 @@ impl PyConfig {
         endpoint: Option<&str>,
         timeout_millis: Option<u64>,
         pre_shutdown_timeout_millis: u64,
-        env_filter: Option<&str>,
+        filter: Option<&str>,
     ) -> PyResult<Self> {
         Ok(Self {
             span_limits: span_limits.unwrap_or_default(),
@@ -260,7 +260,7 @@ impl PyConfig {
             endpoint: endpoint.map(String::from),
             timeout_millis,
             pre_shutdown_timeout_millis,
-            env_filter: env_filter.map(String::from),
+            filter: filter.map(String::from),
         })
     }
 }
@@ -433,7 +433,7 @@ impl TryFrom<PyConfig> for Config {
             endpoint: config.endpoint,
             timeout: config.timeout_millis.map(Duration::from_millis),
             pre_shutdown_timeout: Duration::from_millis(config.pre_shutdown_timeout_millis),
-            filter: config.env_filter,
+            filter: config.filter,
         })
     }
 }

@@ -8,3 +8,6 @@ Config = Union[
  {{#if layer_otel_otlp_file }}OtlpFileConfig,{{/if}} 
  {{#if layer_otel_otlp }}OtlpConfig,{{/if}}
 ]
+"""
+One of the supported layer configurations that may be set on the subscriber configuration.
+"""
