@@ -199,7 +199,7 @@ mod test {
         let temporary_file_path = temporary_file.path().to_owned();
         let layer_config = Box::new(crate::layers::otel_otlp_file::Config {
             file_path: Some(temporary_file_path.as_os_str().to_str().unwrap().to_owned()),
-            ..Default::default()
+            filter: Some("error,pyo3_tracing_subscriber=info".to_string()),
         });
         let subscriber = Box::new(TracingSubscriberRegistryConfig { layer_config });
         let config = TracingConfig::Global(GlobalTracingConfig {
@@ -263,7 +263,7 @@ mod test {
         let temporary_file_path = temporary_file.path().to_owned();
         let layer_config = Box::new(crate::layers::otel_otlp_file::Config {
             file_path: Some(temporary_file_path.as_os_str().to_str().unwrap().to_owned()),
-            ..Default::default()
+            filter: Some("error,pyo3_tracing_subscriber=info".to_string()),
         });
         let subscriber = Box::new(TracingSubscriberRegistryConfig { layer_config });
         let config = TracingConfig::Global(GlobalTracingConfig {
@@ -326,7 +326,7 @@ mod test {
         let temporary_file_path = temporary_file.path().to_owned();
         let layer_config = Box::new(crate::layers::otel_otlp_file::Config {
             file_path: Some(temporary_file_path.as_os_str().to_str().unwrap().to_owned()),
-            ..Default::default()
+            filter: Some("error,pyo3_tracing_subscriber=info".to_string()),
         });
         let subscriber = Box::new(TracingSubscriberRegistryConfig { layer_config });
         let config = TracingConfig::CurrentThread(CurrentThreadTracingConfig {
