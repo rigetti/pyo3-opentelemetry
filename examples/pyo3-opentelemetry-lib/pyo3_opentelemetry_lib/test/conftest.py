@@ -70,7 +70,7 @@ class TraceServiceServicer(trace_service_pb2_grpc.TraceServiceServicer):
         if namespace is None:
             context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
             return trace_service_pb2.ExportTraceServiceResponse()
-        namespace = namespace.decode("utf-8") if isinstance(namespace, bytes) else namespace
+        namespace = namespace.decode("utf-8") if isinstance(namespace, bytes) else str(namespace)
         async with self.lock:
             if namespace not in self.resource_spans:
                 self.resource_spans[namespace] = []

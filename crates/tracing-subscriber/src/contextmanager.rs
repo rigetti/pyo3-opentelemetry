@@ -126,13 +126,19 @@ impl Tracing {
         let state = std::mem::replace(&mut self.state, ContextManagerState::Exited);
         if let ContextManagerState::Entered(export_process) = state {
             let py_rt = pyo3_asyncio::tokio::get_runtime();
-            py_rt.block_on(async move {
+            let export_runtime = py_rt.block_on(async move {
                 export_process
                     .shutdown()
                     .await
                     .map_err(RustTracingShutdownError::from)
                     .map_err(ToPythonError::to_py_err)
             })?;
+            if let Some(export_runtime) = export_runtime {
+                // This immediately shuts the runtime down. The expectation here is that the
+                // process shutdown is responsible for cleaning up all background tasks and
+                // shutting down gracefully.
+                export_runtime.shutdown_background();
+            }
         } else {
             return Err(ContextManagerError::Exit)
                 .map_err(RustContextManagerError::from)
