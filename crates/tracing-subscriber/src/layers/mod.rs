@@ -117,8 +117,9 @@ const PYO3_OPENTELEMETRY_ENV_FILTER: &str = "PYO3_OPENTELEMETRY_ENV_FILTER";
 pub(super) fn build_env_filter(env_filter: Option<String>) -> Result<EnvFilter, BuildError> {
     env_filter
         .or_else(|| std::env::var(PYO3_OPENTELEMETRY_ENV_FILTER).ok())
+        .or_else(|| std::env::var(EnvFilter::DEFAULT_ENV).ok())
         .map_or_else(
-            || EnvFilter::try_from_default_env().map_err(BuildError::from),
+            || Ok(EnvFilter::from_default_env()),
             |filter| EnvFilter::try_new(filter).map_err(BuildError::from),
         )
 }
