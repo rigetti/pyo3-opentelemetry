@@ -125,7 +125,9 @@ async def test_file_export(config_builder: Callable[[str], TracingConfig], trace
         ),
     ],
 )
-async def test_file_export_multi_threads(config_builder: Callable[[str], TracingConfig], tracer: Tracer, file_export_filter: None):
+async def test_file_export_multi_threads(
+    config_builder: Callable[[str], TracingConfig], tracer: Tracer, file_export_filter: None
+):
     for _ in range(3):
         await _test_file_export(config_builder, tracer)
 
@@ -153,7 +155,9 @@ async def test_file_export_multi_threads(config_builder: Callable[[str], Tracing
         ),
     ],
 )
-async def test_file_export_async(config_builder: Callable[[str], TracingConfig], tracer: Tracer, file_export_filter: None):
+async def test_file_export_async(
+    config_builder: Callable[[str], TracingConfig], tracer: Tracer, file_export_filter: None
+):
     filename = f"test_file_export_async-{time()}.txt"
     config = config_builder(filename)
     async with Tracing(config=config):
