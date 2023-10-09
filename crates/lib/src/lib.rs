@@ -68,7 +68,7 @@
 //!
 //! * `pyo3-opentelemetry-macros` - a crate defining the `pypropagate` macro.
 //! * `pyo3-tracing-subscriber` - a crate supporting
-//! a `pyo3::PyModule` for configuring and setting tracing subscribers.
+//! a `pyo3::types::PyModule` for configuring and setting tracing subscribers.
 //!
 //! # Examples
 //!
