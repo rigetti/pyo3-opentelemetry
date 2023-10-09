@@ -35,42 +35,16 @@ _TEST_ARTIFACTS_DIR = os.path.join(os.path.dirname(__file__), "__artifacts__")
 
 
 def require_force(param: Any):
+    """
+    Do not run these tests unless the PYTEST_FORCE environment variable is set. This is helpful
+    for running tests that use `GlobalTracingConfig`, which can only be run once per process.
+
+    Alternative solutions such as `pytest-forked <https://github.com/pytest-dev/pytest-forked>`_
+    did not work with the `otel_service_data` fixture.
+    """
     return pytest.param(
         param, marks=pytest.mark.skipif(not bool(os.getenv("PYTEST_FORCE", None)), reason="must force test")
     )
-
-
-async def _test_file_export(config_builder: Callable[[str], TracingConfig], tracer: Tracer):
-    filename = f"test_file_export-{time()}.txt"
-    config = config_builder(filename)
-    async with Tracing(config=config):
-        with tracer.start_as_current_span("test_file_export_tracing"):
-            current_span = get_current_span()
-            span_context = current_span.get_span_context()
-            assert span_context.is_valid
-            trace_id = span_context.trace_id
-            assert trace_id != 0
-            result = pyo3_opentelemetry_lib.example_function()
-
-    _assert_propagated_trace_id_eq(result, trace_id)
-
-    file_path = os.path.join(_TEST_ARTIFACTS_DIR, filename)
-    with open(file_path, "r") as f:
-        resource_spans: List[ResourceSpans] = []
-        for line in f.readlines():
-            request = ExportTraceServiceRequest()
-            json_format.Parse(line, request)
-            resource_spans += request.resource_spans
-
-    counter = Counter()
-    for resource_span in resource_spans:
-        for scoped_span in resource_span.scope_spans:
-            for span in scoped_span.spans:
-                span_trace_id = _16b_json_encoded_bytes_to_int(span.trace_id)
-                assert span_trace_id is None or span_trace_id == trace_id, filename
-                counter[span.name] += 1
-    assert len(counter) == 1
-    assert counter["example_function_impl"] == 1
 
 
 @pytest.mark.parametrize(
@@ -107,6 +81,9 @@ async def _test_file_export(config_builder: Callable[[str], TracingConfig], trac
     ],
 )
 async def test_file_export(config_builder: Callable[[str], TracingConfig], tracer: Tracer, file_export_filter: None):
+    """
+    Test that OTLP spans are accurately exported to a file.
+    """
     await _test_file_export(config_builder, tracer)
 
 
@@ -128,8 +105,52 @@ async def test_file_export(config_builder: Callable[[str], TracingConfig], trace
 async def test_file_export_multi_threads(
     config_builder: Callable[[str], TracingConfig], tracer: Tracer, file_export_filter: None
 ):
+    """
+    Test that `CurrentThreadTracingConfig` can be initialized and used multiple times within the
+    same process.
+    """
     for _ in range(3):
         await _test_file_export(config_builder, tracer)
+
+
+async def _test_file_export(config_builder: Callable[[str], TracingConfig], tracer: Tracer):
+    """
+    Implements a single test for file export.
+    """
+    filename = f"test_file_export-{time()}.txt"
+    config = config_builder(filename)
+    async with Tracing(config=config):
+        with tracer.start_as_current_span("test_file_export_tracing"):
+            current_span = get_current_span()
+            span_context = current_span.get_span_context()
+            assert span_context.is_valid
+            trace_id = span_context.trace_id
+            assert trace_id != 0
+            # This function is implemented and instrumented in `examples/pyo3-opentelemetry-lib/src/lib.rs`.
+            result = pyo3_opentelemetry_lib.example_function()
+
+    _assert_propagated_trace_id_eq(result, trace_id)
+
+    # Read the OTLP spans written to file.
+    file_path = os.path.join(_TEST_ARTIFACTS_DIR, filename)
+    with open(file_path, "r") as f:
+        resource_spans: List[ResourceSpans] = []
+        for line in f.readlines():
+            request = ExportTraceServiceRequest()
+            json_format.Parse(line, request)
+            resource_spans += request.resource_spans
+
+    counter = Counter()
+    for resource_span in resource_spans:
+        for scoped_span in resource_span.scope_spans:
+            for span in scoped_span.spans:
+                span_trace_id = _16b_json_encoded_bytes_to_int(span.trace_id)
+                assert span_trace_id is None or span_trace_id == trace_id, filename
+                counter[span.name] += 1
+    # Assert that only the spans we expect are present. This makes use of the Rust `EnvFilter`,
+    # which we configure in the `file_export_filter` fixture (ie the `RUST_LOG` environment variable).
+    assert len(counter) == 1
+    assert counter["example_function_impl"] == 1
 
 
 @pytest.mark.parametrize(
@@ -158,6 +179,9 @@ async def test_file_export_multi_threads(
 async def test_file_export_async(
     config_builder: Callable[[str], TracingConfig], tracer: Tracer, file_export_filter: None
 ):
+    """
+    Test that the `GlobalTracingConfig` supports async spans.
+    """
     filename = f"test_file_export_async-{time()}.txt"
     config = config_builder(filename)
     async with Tracing(config=config):
@@ -167,6 +191,7 @@ async def test_file_export_async(
             assert span_context.is_valid
             trace_id = span_context.trace_id
             assert trace_id != 0
+            # This function is implemented and instrumented in `examples/pyo3-opentelemetry-lib/src/lib.rs`.
             result = await pyo3_opentelemetry_lib.example_function_async()
 
     _assert_propagated_trace_id_eq(result, trace_id)
@@ -191,12 +216,19 @@ async def test_file_export_async(
                     expected_duration_ms = 100
                     assert duration_ns > (expected_duration_ms * 10**6)
                     assert duration_ns < (1.5 * expected_duration_ms * 10**6)
+    # Assert that only the spans we expect are present. This makes use of the Rust `EnvFilter`,
+    # which we configure in the `file_export_filter` fixture (ie the `RUST_LOG` environment variable).
     assert len(counter) == 2
     assert counter["example_function_impl"] == 1
     assert counter["example_function_impl_async"] == 1
 
 
 def _16b_json_encoded_bytes_to_int(b: bytes) -> Optional[int]:
+    """
+    Rust's `opentelemetry-stdout` crate does not properly encode 16 byte trace ids in base64 properly.
+    Here, rather than allowing tests to flake, we just give up on the trace id assertion if the produced
+    trace id is not valid.
+    """
     decoded = urlsafe_b64encode(b).decode("utf-8")
     try:
         return int(decoded, 16)
@@ -228,6 +260,10 @@ async def test_otlp_export(
     otlp_test_namespace: str,
     otlp_service_data: MutableMapping[str, List[ResourceSpans]],
 ):
+    """
+    Test that the `otlp.Config` can be used to export spans to an OTLP collector. Here, we use a mock
+    gRPC service (see `otlp_service_data` fixture) to collect spans and make assertions on them.
+    """
     async with Tracing(config=config):
         with tracer.start_as_current_span("test_file_export_tracing"):
             current_span = get_current_span()
@@ -235,6 +271,7 @@ async def test_otlp_export(
             assert span_context.is_valid
             trace_id = span_context.trace_id
             assert trace_id != 0
+            # This function is implemented and instrumented in `examples/pyo3-opentelemetry-lib/src/lib.rs`.
             result = pyo3_opentelemetry_lib.example_function()
 
     _assert_propagated_trace_id_eq(result, trace_id)
@@ -247,6 +284,8 @@ async def test_otlp_export(
             for span in scope_span.spans:
                 assert int.from_bytes(span.trace_id, "big") == trace_id, trace_id
                 counter[span.name] += 1
+    # Assert that only the spans we expect are present. This makes use of the Rust `EnvFilter`,
+    # which we configure in the `otel_service_data` fixture (ie the `RUST_LOG` environment variable).
     assert len(counter) == 1
     assert counter["example_function_impl"] == 1
 
@@ -264,6 +303,10 @@ async def test_otlp_export_multi_threads(
     otlp_test_namespace: str,
     otlp_service_data: MutableMapping[str, List[ResourceSpans]],
 ):
+    """
+    Test that `CurrentThreadTracingConfig` can be used to export spans to an OTLP collector multiple times
+    within the same process.
+    """
     for _ in range(3):
         async with Tracing(config=config):
             with tracer.start_as_current_span("test_file_export_tracing"):
@@ -272,6 +315,7 @@ async def test_otlp_export_multi_threads(
                 assert span_context.is_valid
                 trace_id = span_context.trace_id
                 assert trace_id != 0
+                # This function is implemented and instrumented in `examples/pyo3-opentelemetry-lib/src/lib.rs`.
                 result = pyo3_opentelemetry_lib.example_function()
 
         _assert_propagated_trace_id_eq(result, trace_id)
@@ -284,6 +328,8 @@ async def test_otlp_export_multi_threads(
                 for span in scope_span.spans:
                     if int.from_bytes(span.trace_id, "big") == trace_id:
                         counter[span.name] += 1
+        # Assert that only the spans we expect are present. This makes use of the Rust `EnvFilter`,
+        # which we configure in the `otel_service_data` fixture (ie the `RUST_LOG` environment variable).
         assert len(counter) == 1
         assert counter["example_function_impl"] == 1
 
@@ -305,6 +351,9 @@ async def test_otlp_export_async(
     otlp_test_namespace: str,
     otlp_service_data: MutableMapping[str, List[ResourceSpans]],
 ):
+    """
+    Test that the `GlobalTracingConfig` supports async spans when using the OTLP layer.
+    """
     async with Tracing(config=config):
         with tracer.start_as_current_span("test_file_export_tracing"):
             current_span = get_current_span()
@@ -312,6 +361,7 @@ async def test_otlp_export_async(
             assert span_context.is_valid
             trace_id = span_context.trace_id
             assert trace_id != 0
+            # This function is implemented and instrumented in `examples/pyo3-opentelemetry-lib/src/lib.rs`.
             result = await pyo3_opentelemetry_lib.example_function_async()
 
     _assert_propagated_trace_id_eq(result, trace_id)
@@ -329,12 +379,19 @@ async def test_otlp_export_async(
                     expected_duration_ms = 100
                     assert duration_ns > (expected_duration_ms * 10**6)
                     assert duration_ns < (1.5 * expected_duration_ms * 10**6)
+    # Assert that only the spans we expect are present. This makes use of the Rust `EnvFilter`,
+    # which we configure in the `otel_service_data` fixture (ie the `RUST_LOG` environment variable).
     assert len(counter) == 2
     assert counter["example_function_impl"] == 1
     assert counter["example_function_impl_async"] == 1
 
 
 def _assert_propagated_trace_id_eq(carrier: Dict[str, str], trace_id: int):
+    """
+    The rust code is configured to return a hash map of the current span context. Here we
+    parse that map and assert that the trace id is the same as the one we initialized on the
+    Python side.
+    """
     new_context = propagate.extract(carrier=carrier)
     token = attach(new_context)
     assert get_current_span().get_span_context().trace_id == trace_id
