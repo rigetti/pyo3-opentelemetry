@@ -1,31 +1,31 @@
 from types import TracebackType
 from typing import Optional, Type, Union
-
-from . import layers as layers
 from . import subscriber as subscriber
+from . import layers as layers
+
 
 class TracingContextManagerError(RuntimeError):
     """
     Raised if the initialization, enter, and exit of the tracing context manager was
     invoked in an invalid order.
     """
-
     ...
+
 
 class TracingStartError(RuntimeError):
     """
     Raised if the tracing subscriber configuration is invalid or if a background export task
     fails to start.
     """
-
     ...
+
 
 class TracingShutdownError(RuntimeError):
     """
     Raised if the tracing subscriber fails to shutdown cleanly.
     """
-
     ...
+
 
 class BatchConfig:
     """
@@ -34,8 +34,9 @@ class BatchConfig:
 
     This configuration is typically favorable unless the tracing context manager is short lived.
     """
+    def __init__(self, *, subscriber: subscriber.Config):
+        ... 
 
-    def __init__(self, *, subscriber: subscriber.Config): ...
 
 class SimpleConfig:
     """
@@ -43,17 +44,19 @@ class SimpleConfig:
     unless it is required by the configured export layer. `BatchConfig` is typically favorable
     unless the tracing context manager is short lived.
 
-    Note, some export layers may require a background task to be spawned, despite exporting simply.
+    Note, some export layers may require a background task to be spawned, despite exporting simply. 
     This is the case for the OTLP export layer, which makes gRPC export requests within the
     background Tokio runtime.
     """
+    def __init__(self, *, subscriber: subscriber.Config):
+        ...
 
-    def __init__(self, *, subscriber: subscriber.Config): ...
 
 ExportConfig = Union[BatchConfig, SimpleConfig]
 """
 One of `BatchConfig` or `SimpleConfig`.
 """
+
 
 class CurrentThreadTracingConfig:
     """
@@ -63,8 +66,9 @@ class CurrentThreadTracingConfig:
 
     Note, this configuration is currently incompatible with async methods defined with `pyo3_asyncio`.
     """
+    def __init__(self, *, export_process: ExportConfig):
+        ... 
 
-    def __init__(self, *, export_process: ExportConfig): ...
 
 class GlobalTracingConfig:
     """
@@ -74,13 +78,15 @@ class GlobalTracingConfig:
     This is typically favorable, as it only requires a single initialization across your entire Python
     application.
     """
+    def __init__(self, *, export_process: ExportConfig):
+        ... 
 
-    def __init__(self, *, export_process: ExportConfig): ...
 
 TracingConfig = Union[CurrentThreadTracingConfig, GlobalTracingConfig]
 """
 One of `CurrentThreadTracingConfig` or `GlobalTracingConfig`.
 """
+
 
 class Tracing:
     """
@@ -89,12 +95,12 @@ class Tracing:
 
     Each instance of this context manager should be used once and only once.
     """
+    def __init__(self, *, config: TracingConfig):
+        ...
 
-    def __init__(self, *, config: TracingConfig): ...
-    async def __aenter__(self): ...
-    async def __aexit__(
-        self,
-        exc_type: Optional[Type[BaseException]],
-        exc_value: Optional[BaseException],
-        traceback: Optional[TracebackType],
-    ): ...
+    async def __aenter__(self):
+        ... 
+
+    async def __aexit__(self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]):
+        ...
+
