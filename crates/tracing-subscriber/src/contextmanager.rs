@@ -1,3 +1,16 @@
+// Copyright 2023 Rigetti Computing
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 use std::fmt::Debug;
 
 use pyo3::{exceptions::PyRuntimeError, prelude::*};
@@ -54,6 +67,8 @@ impl Default for TracingConfig {
     }
 }
 
+/// Represents the current state of the context manager. This state is used to ensure the
+/// context manager methods are invoked in the correct order and multiplicity.
 #[derive(Debug)]
 enum ContextManagerState {
     Initialized(TracingConfig),
@@ -73,7 +88,7 @@ pub struct Tracing {
 
 #[derive(thiserror::Error, Debug)]
 enum ContextManagerError {
-    #[error("entered tracing context manager with no export process defined")]
+    #[error("entered tracing context manager with no configuration defined")]
     Enter,
     #[error("exited tracing context manager with no export process defined")]
     Exit,
@@ -198,7 +213,7 @@ mod test {
     }
 
     #[test]
-    /// Test that the `BatchExportProcess` can be started and stopped and that it exports
+    /// Test that a global batch process can be started and stopped and that it exports
     /// accurate spans as configured.
     fn test_global_batch() {
         let temporary_file = tempfile::NamedTempFile::new().unwrap();
@@ -264,6 +279,8 @@ mod test {
     }
 
     #[test]
+    /// Test that a global simple export process can be started and stopped and that it
+    /// exports accurate spans as configured.
     fn test_global_simple() {
         let temporary_file = tempfile::NamedTempFile::new().unwrap();
         let temporary_file_path = temporary_file.path().to_owned();
@@ -327,6 +344,8 @@ mod test {
     }
 
     #[test]
+    /// Test that a current thread simple export process can be started and stopped and that it
+    /// exports accurate spans as configured.
     fn test_current_thread_simple() {
         let temporary_file = tempfile::NamedTempFile::new().unwrap();
         let temporary_file_path = temporary_file.path().to_owned();

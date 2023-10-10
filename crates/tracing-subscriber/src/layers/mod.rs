@@ -1,10 +1,25 @@
+// Copyright 2023 Rigetti Computing
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 //! This module contains a limited set of tracing layers which can be used to configure the
-//! [`tracing_subscriber::Registry`] for use with the [`Tracing`] context manager.
+//! [`tracing_subscriber::Registry`] for use with the [`crate::Tracing`] context manager.
 //!
 //! Currently, the following layers are supported:
 //!
-//! * [`crate::layers::otel_otlp_file::Config`] - a layer which writes spans to a file (or stdout) in the `OpenTelemetry` OTLP
-//! JSON-serialized format.
+//! * [`crate::layers::fmt_file::Config`] - a layer which writes spans to a file (or stdout) in
+//! * [`crate::layers::otel_otlp_file::Config`] - a layer which writes spans to a file (or stdout) in
+//! the `OpenTelemetry` OTLP JSON-serialized format.
 //! * [`crate::layers::otel_otlp::Config`] - a layer which exports spans to an `OpenTelemetry` collector.
 pub(crate) mod fmt_file;
 #[cfg(feature = "layer-otel-otlp")]
@@ -110,8 +125,8 @@ pub(super) fn force_flush_provider_as_shutdown(
 }
 
 /// An environment variable that can be used to set an [`EnvFilter`] for the OTLP layer.
-/// This supersedes the `RUST_LOG` environment variable, but is superseded by the
-/// [`Config::env_filter`] field.
+/// This supersedes the `RUST_LOG` environment variable, but is superseded by an explicit
+/// `env_filter` argument specified on any layer configuration.
 const PYO3_OPENTELEMETRY_ENV_FILTER: &str = "PYO3_OPENTELEMETRY_ENV_FILTER";
 
 pub(super) fn build_env_filter(env_filter: Option<String>) -> Result<EnvFilter, BuildError> {

@@ -1,3 +1,17 @@
+// Copyright 2023 Rigetti Computing
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 use std::{collections::HashMap, time::Duration};
 
 use opentelemetry_api::{trace::TraceError, KeyValue};
@@ -41,7 +55,7 @@ pub(crate) struct Config {
     /// manager upon exiting, before the underlying [`opentelemetry::sdk::trace::TracerProvider`]
     /// is shutdown. Ensures that spans are flushed before the program exits.
     pre_shutdown_timeout: Duration,
-    /// The filter to use for the [`EnvFilter`] layer.
+    /// The filter to use for the [`tracing_subscriber::filter::EnvFilter`] layer.
     filter: Option<String>,
 }
 
@@ -372,9 +386,8 @@ impl From<PySampler> for Sampler {
     }
 }
 
-/// The Rust `OpenTelemetry` SDK does not support the official OTLP headers environment variables.
+/// The Rust `OpenTelemetry` SDK does not support the official OTLP headers [environment variables](https://opentelemetry.io/docs/specs/otel/protocol/exporter/).
 /// Here we include a custom implementation.
-// https://opentelemetry.io/docs/specs/otel/protocol/exporter/
 const OTEL_EXPORTER_OTLP_HEADERS: &str = "OTEL_EXPORTER_OTLP_HEADERS";
 const OTEL_EXPORTER_OTLP_TRACES_HEADERS: &str = "OTEL_EXPORTER_OTLP_TRACES_HEADERS";
 

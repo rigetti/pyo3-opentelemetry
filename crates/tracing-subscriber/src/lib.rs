@@ -67,20 +67,14 @@
 //! # Requirements and Limitations
 //!
 //! * The tracing subscribers initialized and configured _only_ capture tracing data for the pyo3
-//! library which adds the `pyo3-tracing-subscriber` module. Separate crates require separate
+//! library which adds the `pyo3-tracing-subscriber` module. Separate Python libraries require separate
 //! bootstrapping.
 //! * Python users can initialize tracing subscribers using context managers either globally, in
-//! which case they can only initialize once, or per-thread which is incompatible with Python
+//! which case they can only initialize once, or per-thread, which is incompatible with Python
 //! `async/await`.
 //! * The `OTel` OTLP layer requires a heuristic based timeout upon context manager exit to ensure
-//! trace data on the Rust side is flushed to the OTLP collector. This issue persists despite calls
+//! trace data on the Rust side is flushed to the OTLP collector. This issue currently persists despite calls
 //! to `force_flush` on the `opentelemetry_sdk::trace::TracerProvider` and `opentelemetry::global::shutdown_tracer_provider`.
-//!
-//! # Related Crates
-//!
-//! * `pyo3-opentelemetry` - propagates
-//! `OpenTelemetry` contexts from Python into Rust.
-//! * `pyo3-tracing-subscriber-stubs` - evaluates Python stub templates for use in upstream pyo3 library build scripts.
 //!
 //! # Examples
 //!
@@ -90,14 +84,14 @@
 //! use tracing::instrument;
 //!
 //! const MY_PACKAGE_NAME: &str = "example";
-//! const TRACING_SUBSCRIBER_SUBPACKAGE_NAME: &str = "tracing_subscriber";
+//! const TRACING_SUBSCRIBER_SUBMODULE_NAME: &str = "tracing_subscriber";
 //!
 //! #[pymodule]
 //! fn example(_py: Python, m: &PyModule) -> PyResult<()> {
 //!     // add your functions, modules, and classes
-//!     let tracing_subscriber = PyModule::new(py, TRACING_SUBSCRIBER_SUBPACKAGE_NAME)?;
+//!     let tracing_subscriber = PyModule::new(py, TRACING_SUBSCRIBER_SUBMODULE_NAME)?;
 //!     pyo3_tracing_subscriber::add_submodule(
-//!         format!("{MY_PACKAGE_NAME}.{TRACING_SUBSCRIBER_SUBPACKAGE_NAME}"),
+//!         format!("{MY_PACKAGE_NAME}.{TRACING_SUBSCRIBER_SUBMODULE_NAME}"),
 //!         py,
 //!         tracing_subscriber,
 //!     )?;
@@ -122,6 +116,11 @@
 //! if __name__ == "__main__":
 //!     asyncio.run(main())
 //! ```
+//!
+//! # Related Crates
+//!
+//! * `pyo3-opentelemetry` - propagates `OpenTelemetry` contexts from Python into Rust.
+//! * `pyo3-tracing-subscriber-stubs` - evaluates Handlebar templates to produce Python stub files; this may be used in upstream pyo3 library build scripts.
 use pyo3::{types::PyModule, PyResult, Python};
 use rigetti_pyo3::create_init_submodule;
 
@@ -157,11 +156,11 @@ create_init_submodule! {
 /// * `Tracing` - a Python context manager which initializes the configured tracing subscriber.
 /// * `GlobalTracingConfig` - a Python context manager which sets the configured tracing subscriber
 /// as the global default (ie `tracing::subscriber::set_global_default`). The `Tracing` context
-/// manager can be used _only once_ with this configuration per process.
+/// manager can be used _only once_ per process with this configuration.
 /// * `CurrentThreadTracingConfig` - a Python context manager which sets the configured tracing
 /// subscriber as the current thread default (ie `tracing::subscriber::set_default`). As the
 /// context manager exits, the guard is dropped and the tracing subscriber can be re-initialized
-/// with another default. Note, the default tracing subscriber will _not_ capture threads across
+/// with another default. Note, the default tracing subscriber will _not_ capture traces across
 /// `async/await` boundaries that call `pyo3_asyncio::tokio::future_into_py`.
 /// * `BatchConfig` - a Python context manager which configures the tracing subscriber to export
 /// trace data in batch. As the `Tracing` context manager enters, a Tokio runtime is initialized
@@ -171,6 +170,7 @@ create_init_submodule! {
 /// requires an asynchronous runtime to export trace data (ie the `opentelemetry-otlp` layer).
 /// * `layers` - a submodule which contains different layers to add to the tracing subscriber.
 /// Currently supported:
+///     * `tracing::fmt` - a layer which exports trace data to stdout in a non-OpenTelemetry data format.
 ///     * `opentelemetry-stdout` - a layer which exports trace data to stdout (requires the `layer-otel-otlp-file` feature).
 ///     * `opentelemetry-otlp` - a layer which exports trace data to an `OpenTelemetry` collector (requires the `layer-otel-otlp` feature).
 /// * `subscriber` - a submodule which contains utilities for initialing the tracing subscriber
@@ -181,12 +181,11 @@ create_init_submodule! {
 ///
 /// * `TracingContextManagerError` - raised when the `Tracing` context manager's methods are not
 /// invoked in the correct order or multiplicity.
-/// * `TracingStartError` - raised if the user specified tracing layer or subscriber fails to build
-/// and initialize properly on context manager entry.
+/// * `TracingStartError` - raised if the user-specified tracing layer or subscriber fails to build
+/// and initialize properly upon context manager entry.
 /// * `TracingShutdownError` - raised if the tracing layer or subscriber fails to shutdown properly on context manager exit.
 ///
-/// For detailed documentation on usage from the Python side, see the
-/// `pyo3-tracing-subscriber-stubs` crate.
+/// For detailed Python usage documentation, see the `pyo3-tracing-subscriber-stubs` crate.
 ///
 /// # Arguments
 ///
