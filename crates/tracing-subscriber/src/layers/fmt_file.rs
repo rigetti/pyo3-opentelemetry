@@ -87,7 +87,10 @@ impl crate::layers::Config for Config {
                     .with_filter(filter)
                     .boxed()
             } else {
-                tracing_subscriber::fmt::layer().with_writer(file).with_filter(filter).boxed()
+                tracing_subscriber::fmt::layer()
+                    .with_writer(file)
+                    .with_filter(filter)
+                    .boxed()
             }
         } else if self.json && self.pretty {
             tracing_subscriber::fmt::layer()
@@ -111,7 +114,7 @@ impl crate::layers::Config for Config {
 
         Ok(WithShutdown {
             layer: Box::new(layer),
-            shutdown:     Box::new(
+            shutdown: Box::new(
                 move || -> std::pin::Pin<Box<dyn std::future::Future<Output = ShutdownResult<()>> + Send + Sync>> {
                     Box::pin(async move {
                         Ok(())
