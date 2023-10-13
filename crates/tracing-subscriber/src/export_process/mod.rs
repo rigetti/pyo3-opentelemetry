@@ -26,7 +26,10 @@ use super::{
 
 mod background;
 
-/// Configuration for batch export processes.
+/// Configuration for batch export processes. Batch export processes typically accumulate
+/// trace data in memory and export that data in batch. This is favorable in
+/// most situations to reduce the amount of I/O required to export trace data. See
+/// `opentelemetry_sdk::trace::BatchSpanProcessor` for more details.
 #[pyclass]
 #[derive(Clone, Debug, Default)]
 pub(crate) struct BatchConfig {
@@ -44,7 +47,11 @@ impl BatchConfig {
     }
 }
 
-/// Configuration for simple export processes.
+/// Configuration for simple export processes. A simple export process does not accumulate
+/// trace data in memory, but instead exports each trace event as it is received. This may
+/// be favorable in situations where the amount of trace data is expected to be small and
+/// the overhead of background processing is not worth it. See
+/// `opentelemetry_sdk::trace::SimpleSpanProcessor` for more details.
 #[pyclass]
 #[derive(Clone, Debug, Default)]
 pub(crate) struct SimpleConfig {
