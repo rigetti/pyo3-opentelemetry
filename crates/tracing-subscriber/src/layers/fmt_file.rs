@@ -87,7 +87,7 @@ impl crate::layers::Config for Config {
                     .with_filter(filter)
                     .boxed()
             } else {
-                tracing_subscriber::fmt::layer().with_writer(file).boxed()
+                tracing_subscriber::fmt::layer().with_writer(file).with_filter(filter).boxed()
             }
         } else if self.json && self.pretty {
             tracing_subscriber::fmt::layer()
