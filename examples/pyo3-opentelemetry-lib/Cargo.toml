@@ -34,5 +34,5 @@ extension-module = ["pyo3/extension-module"]
 default = ["extension-module"]
 
 [build-dependencies]
-pyo3-tracing-subsciber-stubs = { version = "0.1.0", path = "../../crates/tracing-subscriber-stubs" }
+pyo3-tracing-subscriber-stubs = { version = "0.1.0", path = "../../crates/tracing-subscriber-stubs" }
 
