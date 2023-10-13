@@ -72,6 +72,7 @@ pub(crate) enum BuildError {
 }
 
 #[derive(thiserror::Error, Debug)]
+#[non_exhaustive]
 pub(crate) enum ShutdownError {
     // TODO: This will eventually accept a `CustomError` that can be set by upstream libraries.
 }
