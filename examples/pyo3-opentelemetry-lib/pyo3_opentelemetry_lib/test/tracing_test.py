@@ -238,6 +238,8 @@ def _16b_json_encoded_bytes_to_int(b: bytes) -> Optional[int]:
         # Rust: format(":x", 15769111199087022768103192234192075546) -> bdd05355c559cbb7c36ee676b58fb1a
         # Python: format(15769111199087022768103192234192075546, "032x") -> 0bdd05355c559cbb7c36ee676b58fb1a
         # Python will fail to base64 round trip the Rust encoded value because it is missing a leading 0.
+        # See https://github.com/open-telemetry/opentelemetry-rust/issues/1296 for the current status of this
+        # issue.
         return None
 
 

@@ -74,7 +74,8 @@ pub(crate) enum BuildError {
 #[derive(thiserror::Error, Debug)]
 #[non_exhaustive]
 pub(crate) enum ShutdownError {
-    // TODO: This will eventually accept a `CustomError` that can be set by upstream libraries.
+    // This will eventually accept a `CustomError` that can be set by upstream libraries.
+    // See https://github.com/rigetti/pyo3-opentelemetry/issues/4
 }
 
 pub(crate) type ShutdownResult<T> = Result<T, ShutdownError>;
