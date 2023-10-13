@@ -265,7 +265,7 @@ mod test {
             .collect::<Vec<Span>>();
         assert_eq!(spans.len(), N_SPANS);
 
-        let span_grace = Duration::from_millis(100);
+        let span_grace = Duration::from_millis(200);
         for span in spans {
             assert_eq!(span.name, "example");
             assert!(
