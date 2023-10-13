@@ -1,5 +1,5 @@
 [package]
-name = "pyo3-tracing-subsciber-stubs"
+name = "pyo3-tracing-subscriber-stubs"
 version = "0.1.0"
 edition = "2021"
 categories = ["Python bindings", "OpenTelemetry", "Tracing", "Macros"]
