@@ -123,7 +123,9 @@
 [tasks.deadlinks]
     dependencies = ["install-cargo-deadlinks"]
     command = "cargo"
-    args = ["deadlinks", "--check-http", "--check-intra-doc-links", "--ignore-fragments"]
+    # we removed "--check-intra-doc-links" due to flaky and opaque failures such
+    # as https://github.com/rigetti/pyo3-opentelemetry/actions/runs/6723277856/job/18273013287?pr=7.
+    args = ["deadlinks", "--check-http", "--ignore-fragments"]
 
 [tasks.deny]
     workspace = false
