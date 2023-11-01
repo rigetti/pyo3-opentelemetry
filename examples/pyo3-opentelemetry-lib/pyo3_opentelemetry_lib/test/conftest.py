@@ -39,11 +39,22 @@ mp.set_start_method("fork")
 
 
 @pytest.fixture(scope="session")
-def tracer() -> trace.Tracer:
+def tracer() -> Generator[trace.Tracer, None, None]:
+    """
+    Initializes a Python tracer. Because OpenTelemetry spans collected from Python are not of
+    concern to this library, we simply export them to `/dev/null`.
+    """
     provider = TracerProvider()
-    processor = BatchSpanProcessor(ConsoleSpanExporter())
-    provider.add_span_processor(processor)
-    return provider.get_tracer("integration-test")
+    with open(os.devnull, "w") as f:
+        processor = BatchSpanProcessor(ConsoleSpanExporter(out=f))
+        provider.add_span_processor(processor)
+        try:
+            yield provider.get_tracer("integration-test")
+        finally:
+            # Even though we don't care about the exported spans from Python, we still flush the
+            # provider to ensure that all spans are exported before the process exits to avoid
+            # extraneous warnings.
+            provider.force_flush()
 
 
 class TraceServiceServicer(trace_service_pb2_grpc.TraceServiceServicer):
