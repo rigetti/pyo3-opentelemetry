@@ -87,7 +87,7 @@ async fn example_function_impl_async() -> PyResult<HashMap<String, String>> {
 
 /// An example function that will call a function containing and span and returns a
 /// HashMap with the propagated OTel context.
-#[pypropagate(on_context_extraction_failure = "print")]
+#[pypropagate]
 #[pyfunction]
 pub fn example_function(py: Python<'_>) -> HashMap<String, String> {
     example_function_impl()
@@ -95,7 +95,7 @@ pub fn example_function(py: Python<'_>) -> HashMap<String, String> {
 
 /// An example async function that will call a function containing and span and returns a
 /// HashMap with the propagated OTel context.
-#[pypropagate(on_context_extraction_failure = "print")]
+#[pypropagate]
 #[pyfunction]
 pub fn example_function_async<'a>(py: Python<'a>) -> PyResult<&'a PyAny> {
     pyo3_asyncio::tokio::future_into_py(py, example_function_impl_async().with_current_context())
@@ -107,7 +107,7 @@ pub fn example_function_async<'a>(py: Python<'a>) -> PyResult<&'a PyAny> {
 #[derive(Debug)]
 pub struct ExampleStruct;
 
-#[pypropagate(on_context_extraction_failure = "print")]
+#[pypropagate]
 #[pymethods]
 impl ExampleStruct {
     #[new]
