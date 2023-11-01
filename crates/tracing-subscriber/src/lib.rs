@@ -151,7 +151,24 @@ create_init_submodule! {
 }
 
 /// Add the tracing submodule to the given module. This will add the submodule to the `sys.modules`
-/// dictionary so that it can be imported from Python. This function will add the folloiwng:
+/// dictionary so that it can be imported from Python.
+///
+/// # Arguments
+///
+/// * `name` - the fully qualified name of the tracing subscriber submodule within your Python
+/// package. For instance, if your package is named `my_package` and you want to add the tracing
+/// subscriber submodule `tracing_subscriber`, then `name` should be
+/// `my_package.tracing_subscriber`.
+/// * `py` - the Python GIL token.
+/// * `m` - the parent module to which the tracing subscriber submodule should be added.
+///
+/// # Errors
+///
+/// * `PyErr` if the submodule cannot be added.
+///
+/// # Additional Details
+///
+/// This function will add the following:
 ///
 /// * `Tracing` - a Python context manager which initializes the configured tracing subscriber.
 /// * `GlobalTracingConfig` - a Python context manager which sets the configured tracing subscriber
@@ -177,7 +194,7 @@ create_init_submodule! {
 /// with the configured layer. Currently, the tracing subscriber is initialized as
 /// `tracing::subscriber::Registry::default().with(layer)`.
 ///
-/// Additionally, the following exceptions are added to the submodule:
+/// The following exceptions are added to the submodule:
 ///
 /// * `TracingContextManagerError` - raised when the `Tracing` context manager's methods are not
 /// invoked in the correct order or multiplicity.
@@ -186,18 +203,6 @@ create_init_submodule! {
 /// * `TracingShutdownError` - raised if the tracing layer or subscriber fails to shutdown properly on context manager exit.
 ///
 /// For detailed Python usage documentation, see the `pyo3-tracing-subscriber-stubs` crate.
-///
-/// # Arguments
-///
-/// * `name` - the fully qualified name of the submodule tracing subscriber module. For instance,
-/// if your package is named `my_package` and you want to add the tracing subscriber submodule
-/// `tracing_subscriber`, then `name` should be `my_package.tracing_subscriber`.
-/// * `py` - the Python GIL token.
-/// * `m` - the parent module to which the tracing subscriber submodule should be added.
-///
-/// # Errors
-///
-/// * `PyErr` if the submodule cannot be added.
 pub fn add_submodule(name: &str, py: Python, m: &PyModule) -> PyResult<()> {
     init_submodule(name, py, m)?;
     let modules = py.import("sys")?.getattr("modules")?;
