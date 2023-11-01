@@ -5,7 +5,6 @@ This repository contains four crates to support the ability of upstream `pyo3` e
 * [crates/opentelemetry](./crates/opentelemetry): propagates OpenTelemetry context from Python into Rust.
 * [crates/opentelemetry-macros](./crates/opentelemetry-macros): defines proc macros for `pyo3-opentelemetry`.
 * [crates/tracing-subscriber](./crates/tracing-subscriber): supports configuration and initialization of Rust tracing subscribers from Python.
-* [crates/tracing-subscriber-stubs](./crates/tracing-subscriber-stubs/): Writes Python stub files for upstream `pyo3` extension modules that expose tracing subscriber module from `pyo3-tracing-subscriber`. 
 
 For a functional example of usage of all of these crates, see [examples/pyo3-opentelemetry-lib](./examples/pyo3-opentelemetry-lib).
 

@@ -63,6 +63,7 @@
 //!
 //! * `layer-otel-otlp-file` - exports trace data with `opentelemetry-stdout`. See `crate::layers::otel_otlp_file`.
 //! * `layer-otel-otlp` - exports trace data with `opentelemetry-otlp`. See `crate::layers::otel_otlp`.
+//! * `stubs` - supports writing stub files in your Python source code from your Rust build scripts. See `crates::stubs` 
 //!
 //! # Requirements and Limitations
 //!
@@ -120,7 +121,6 @@
 //! # Related Crates
 //!
 //! * `pyo3-opentelemetry` - propagates `OpenTelemetry` contexts from Python into Rust.
-//! * `pyo3-tracing-subscriber-stubs` - evaluates Handlebar templates to produce Python stub files; this may be used in upstream pyo3 library build scripts.
 use pyo3::{types::PyModule, PyResult, Python};
 use rigetti_pyo3::create_init_submodule;
 
@@ -133,6 +133,8 @@ pub use contextmanager::Tracing;
 mod contextmanager;
 mod export_process;
 pub(crate) mod layers;
+#[cfg(feature = "stubs")]
+pub mod stubs;
 pub(crate) mod subscriber;
 
 create_init_submodule! {
@@ -202,7 +204,8 @@ create_init_submodule! {
 /// and initialize properly upon context manager entry.
 /// * `TracingShutdownError` - raised if the tracing layer or subscriber fails to shutdown properly on context manager exit.
 ///
-/// For detailed Python usage documentation, see the `pyo3-tracing-subscriber-stubs` crate.
+/// For detailed Python usage documentation, see the stub files written by
+/// [`pyo3_tracing_subscriber::stubs::write_stub_files`].
 pub fn add_submodule(name: &str, py: Python, m: &PyModule) -> PyResult<()> {
     init_submodule(name, py, m)?;
     let modules = py.import("sys")?.getattr("modules")?;

@@ -55,16 +55,16 @@
     variant_size_differences,
     while_true
 )]
-//! This crates provides a function to evaluate Python stub file templates for the
-//! `pyo3-tracing-subscriber` crate. If may be used in upstream build scripts to write
-//! the Python stub files.
+//! This module provides a function to evaluate Python stub file templates for the Python module
+//! added by `pyo3_tracing_subscriber::add_submodule`. Upstream build scripts may use this to write
+//! the Python stub files in their build scripts.
 //!
 //! # Example
 //!
-//! In `build.rs` with `example` containing Python source code.
+//! In `build.rs` with the `example/` directory containing Python source code.
 //!
 //! ```rust
-//! use tracing_subscriber_stubs::write_stubs;
+//! use tracing_subscriber::stubs::write_stub_files;
 //!
 //! write_stub_files(
 //!     "example",

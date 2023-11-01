@@ -10,7 +10,9 @@ opentelemetry = { version = "0.20.0" }
 opentelemetry_api = { version = "0.20.0" }
 opentelemetry_sdk = { version = "0.20.0" }
 pyo3 = { version = "0.19.0", features = ["macros"], default-features = false }
+rstest = "0.17.0"
 tokio = { version = "1.27.0", features = [] }
 tracing = "0.1.37"
 tracing-opentelemetry = "0.21.0"
 tracing-subscriber = "0.3.17"
+

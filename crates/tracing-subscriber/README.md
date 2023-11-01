@@ -68,3 +68,28 @@ if __name__ == '__main__':
     main()
 ```
 
+### Building Python Stub Files
+
+This crate provides a convenient method for adding stub files to your Python source code with the `stubs` feature.
+
+Given a `pyo3` extension module named "my_module" that uses the `pyo3-tracing-subscriber` crate to expose tracing subscriber configuration and context manager classes from "my_module._tracing_subscriber", in the upstream `build.rs` file:
+
+```rs
+use pyo3_tracing_subscriber_stubs::write_stub_files;
+
+fn main() {
+    let target_dir = std::path::Path::new("./my_module/_tracing_subscriber");
+    std::fs::remove_dir_all(target_dir).unwrap();
+    write_stub_files(
+        "my_module",
+        "_tracing_subscriber",
+        target_dir,
+        true, // layer_otel_otlp_file feature enabled
+        true, // layer_otel_otlp feature enabled
+    )
+    .unwrap();
+}
+```
+
+
+

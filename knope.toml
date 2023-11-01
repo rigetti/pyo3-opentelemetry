@@ -13,11 +13,6 @@ versioned_files = ["crates/tracing-subscriber/Cargo.toml"]
 changelog = "crates/tracing-subscriber/CHANGELOG.md"
 scopes = ["tracing-subscriber", "pyo3-tracing-subscriber"]
 
-[packages.tracing-subscriber-stubs]
-versioned_files = ["crates/tracing-subscriber-stubs/Cargo.toml"]
-changelog = "crates/tracing-subscriber-stubs/CHANGELOG.md"
-scopes = ["tracing-subscriber-stubs", "pyo3-tracing-subscriber-stubs"]
-
 [[workflows]]
 name = "release"
 
