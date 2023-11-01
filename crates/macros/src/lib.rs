@@ -122,7 +122,7 @@ struct Configuration {
 impl Default for Configuration {
     fn default() -> Self {
         Self {
-            on_context_extraction_failure: RuntimeErrorHandler::Trace,
+            on_context_extraction_failure: RuntimeErrorHandler::Print,
             context_guard_name: "_pyo3_opentelemetry_context_guard".to_string(),
             exclude: HashSet::new(),
         }
@@ -334,10 +334,10 @@ fn get_item_impl_method_names(item_impl: &syn::ItemImpl) -> HashSet<String> {
 /// The macro can be configured with the following attributes:
 /// - `context_guard_name`: The name of the variable that will be used to guard the context. Defaults to `_pyo3_opentelemetry_context_guard`.
 ///   - must be a valid Rust identifier.
-/// - `on_context_extraction_failure`: What to do when the context cannot be extracted from Python. Defaults to `trace`.
+/// - `on_context_extraction_failure`: What to do when the context cannot be extracted from Python. Defaults to `print`.
+///   - `print`: Print the error to stderr and continue.
 ///   - `trace`: Record the error on the current span using `opentelemetry_api::trace::TraceContextExt::record_error`.
 ///   - `py_error`: Return a `pyo3::PyErr`.
-///   - `print`: Print the error to stderr and continue.
 ///   - `ignore`: Ignore the error.
 /// - `exclude`: A list of method names to exclude. Only valid on `impl` items.
 ///
