@@ -58,7 +58,7 @@ def global_tracing(param: Any):
             export_process=BatchConfig(
                 subscriber=subscriber.Config(layer=file.Config(file_path=os.path.join(_TEST_ARTIFACTS_DIR, filename)))
             )
-    ),
+        ),
         global_tracing(
             lambda filename: GlobalTracingConfig(
                 export_process=SimpleConfig(

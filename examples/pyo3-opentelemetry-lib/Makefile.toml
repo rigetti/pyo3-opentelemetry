@@ -12,7 +12,7 @@
   '''
     
 [tasks.python-format]
-  dependencies = ["python-build"]
+  dependencies = []
   script = '''
   poetry run black .
   poetry run ruff . --fix
