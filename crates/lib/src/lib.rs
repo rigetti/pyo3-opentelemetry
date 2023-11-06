@@ -67,8 +67,8 @@
 //! # Related Crates
 //!
 //! * `pyo3-opentelemetry-macros` - a crate defining the `pypropagate` macro.
-//! * `pyo3-tracing-subscriber` - a crate supporting
-//! a `pyo3::types::PyModule` for configuring and setting tracing subscribers.
+//! * `pyo3-tracing-subscriber` - a crate supporting configuration and initialization of Rust
+//! tracing subscribers from Python.
 //!
 //! # Examples
 //!
