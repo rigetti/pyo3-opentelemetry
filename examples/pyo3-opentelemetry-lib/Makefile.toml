@@ -31,15 +31,15 @@
   script = '''
   poetry run pytest .
 
-  PYTEST_FORCE=1 poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_file_export[<lambda>2]'
-  PYTEST_FORCE=1 poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_file_export[<lambda>3]'
-  PYTEST_FORCE=1 poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_file_export_async[<lambda>0]'
-  PYTEST_FORCE=1 poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_file_export_async[<lambda>1]'
+  poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_file_export[<lambda>2]' --with-global-tracing-configuration
+  poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_file_export[<lambda>3]' --with-global-tracing-configuration
+  poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_file_export_async[<lambda>0]' --with-global-tracing-configuration
+  poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_file_export_async[<lambda>1]' --with-global-tracing-configuration
 
-  PYTEST_FORCE=1 poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_otlp_export[config2]'
-  PYTEST_FORCE=1 poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_otlp_export[config3]'
-  PYTEST_FORCE=1 poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_otlp_export_async[config0]'
-  PYTEST_FORCE=1 poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_otlp_export_async[config1]'
+  poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_otlp_export[config2]' --with-global-tracing-configuration
+  poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_otlp_export[config3]' --with-global-tracing-configuration
+  poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_otlp_export_async[config0]' --with-global-tracing-configuration
+  poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_otlp_export_async[config1]' --with-global-tracing-configuration
   '''
 
 [tasks.python-check-all]

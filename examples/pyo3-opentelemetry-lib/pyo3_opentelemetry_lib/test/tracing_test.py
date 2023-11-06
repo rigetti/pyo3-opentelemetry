@@ -34,17 +34,16 @@ if TYPE_CHECKING:
 _TEST_ARTIFACTS_DIR = os.path.join(os.path.dirname(__file__), "__artifacts__")
 
 
-def require_force(param: Any):
+def global_tracing(param: Any):
     """
-    Do not run these tests unless the PYTEST_FORCE environment variable is set. This is helpful
-    for running tests that use `GlobalTracingConfig`, which can only be run once per process.
+    Do not run these tests unless the `global_tracing_configuration` option is set (see conftest.py).
+    It is necessary to run each test with global tracing configuration separately because
+    `GlobalTracingConfig` can only be initialized once per process.
 
     Alternative solutions such as `pytest-forked <https://github.com/pytest-dev/pytest-forked>`_
     did not work with the `otel_service_data` fixture.
     """
-    return pytest.param(
-        param, marks=pytest.mark.skipif(not bool(os.getenv("PYTEST_FORCE", None)), reason="must force test")
-    )
+    return pytest.param(param, marks=pytest.mark.global_tracing_configuration)
 
 
 @pytest.mark.parametrize(
@@ -60,7 +59,7 @@ def require_force(param: Any):
                 subscriber=subscriber.Config(layer=file.Config(file_path=os.path.join(_TEST_ARTIFACTS_DIR, filename)))
             )
         ),
-        require_force(
+        global_tracing(
             lambda filename: GlobalTracingConfig(
                 export_process=SimpleConfig(
                     subscriber=subscriber.Config(
@@ -69,7 +68,7 @@ def require_force(param: Any):
                 )
             )
         ),
-        require_force(
+        global_tracing(
             lambda filename: GlobalTracingConfig(
                 export_process=BatchConfig(
                     subscriber=subscriber.Config(
@@ -156,7 +155,7 @@ async def _test_file_export(config_builder: Callable[[str], TracingConfig], trac
 @pytest.mark.parametrize(
     "config_builder",
     [
-        require_force(
+        global_tracing(
             lambda filename: GlobalTracingConfig(
                 export_process=SimpleConfig(
                     subscriber=subscriber.Config(
@@ -165,7 +164,7 @@ async def _test_file_export(config_builder: Callable[[str], TracingConfig], trac
                 )
             )
         ),
-        require_force(
+        global_tracing(
             lambda filename: GlobalTracingConfig(
                 export_process=BatchConfig(
                     subscriber=subscriber.Config(
@@ -248,10 +247,10 @@ def _16b_json_encoded_bytes_to_int(b: bytes) -> Optional[int]:
     [
         CurrentThreadTracingConfig(export_process=SimpleConfig(subscriber=subscriber.Config(layer=otlp.Config()))),
         CurrentThreadTracingConfig(export_process=BatchConfig(subscriber=subscriber.Config(layer=otlp.Config()))),
-        require_force(
+        global_tracing(
             GlobalTracingConfig(export_process=SimpleConfig(subscriber=subscriber.Config(layer=otlp.Config())))
         ),
-        require_force(
+        global_tracing(
             GlobalTracingConfig(export_process=BatchConfig(subscriber=subscriber.Config(layer=otlp.Config())))
         ),
     ],
@@ -339,10 +338,10 @@ async def test_otlp_export_multi_threads(
 @pytest.mark.parametrize(
     "config",
     [
-        require_force(
+        global_tracing(
             GlobalTracingConfig(export_process=SimpleConfig(subscriber=subscriber.Config(layer=otlp.Config())))
         ),
-        require_force(
+        global_tracing(
             GlobalTracingConfig(export_process=BatchConfig(subscriber=subscriber.Config(layer=otlp.Config())))
         ),
     ],

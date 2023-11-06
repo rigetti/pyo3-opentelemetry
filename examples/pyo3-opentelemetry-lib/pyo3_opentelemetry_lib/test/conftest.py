@@ -24,6 +24,9 @@ from uuid import uuid4
 
 import grpc
 import pytest
+from _pytest.config import Config
+from _pytest.config.argparsing import Parser
+from _pytest.nodes import Item
 from grpc.aio import Metadata, ServicerContext, insecure_channel
 from grpc.aio import server as create_grpc_server
 from opentelemetry import trace
@@ -36,6 +39,37 @@ from opentelemetry.sdk.trace.export import (
 )
 
 mp.set_start_method("fork")
+
+
+def pytest_addoption(parser: Parser):
+    parser.addoption(
+        "--with-global-tracing-configuration",
+        action="store_true",
+        default=False,
+        help="Run tests that use global tracing configuration.",
+    )
+
+
+def pytest_configure(config: Config):
+    config.addinivalue_line(
+        "markers",
+        (
+            "global_tracing_configuration: mark test as using global tracing configuration (which can only be"
+            " initialized once per process)."
+        ),
+    )
+
+
+def pytest_collection_modifyitems(config: Config, items: List[Item]):
+    with_global_tracing_configuration = config.getoption("--with-global-tracing-configuration")
+    skip_global_tracing_configuration = pytest.mark.skip(
+        reason="requires --with-global-tracing-configuration pytest option to be true."
+    )
+
+    for item in items:
+        if not with_global_tracing_configuration:
+            if "global_tracing_configuration" in item.keywords:
+                item.add_marker(skip_global_tracing_configuration)
 
 
 @pytest.fixture(scope="session")
