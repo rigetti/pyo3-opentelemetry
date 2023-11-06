@@ -88,10 +88,10 @@ pub struct Tracing {
 
 #[derive(thiserror::Error, Debug)]
 enum ContextManagerError {
-    #[error("entered tracing context manager with no configuration defined")]
-    Enter,
-    #[error("exited tracing context manager with no export process defined")]
-    Exit,
+    #[error("entered tracing context manager with no configuration defined; ensure contextmanager only enters once")]
+    EnterWithoutConfiguration,
+    #[error("exited tracing context manager with no export process defined; ensure contextmanager only exits once after being entered")]
+    ExitWithoutExportProcess,
 }
 
 wrap_error!(RustContextManagerError(ContextManagerError));
@@ -123,7 +123,7 @@ impl Tracing {
                     .map_err(ToPythonError::to_py_err)?,
             );
         } else {
-            return Err(ContextManagerError::Enter)
+            return Err(ContextManagerError::EnterWithoutConfiguration)
                 .map_err(RustContextManagerError::from)
                 .map_err(ToPythonError::to_py_err)?;
         }
@@ -155,7 +155,7 @@ impl Tracing {
                 export_runtime.shutdown_background();
             }
         } else {
-            return Err(ContextManagerError::Exit)
+            return Err(ContextManagerError::ExitWithoutExportProcess)
                 .map_err(RustContextManagerError::from)
                 .map_err(ToPythonError::to_py_err)?;
         }
