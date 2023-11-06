@@ -114,7 +114,7 @@ impl Tracing {
         })
     }
 
-    fn __aenter__<'a>(&'a mut self, py: Python<'a>) -> PyResult<&'a PyAny> {
+    fn __enter__(&mut self) -> PyResult<()> {
         let state = std::mem::replace(&mut self.state, ContextManagerState::Starting);
         if let ContextManagerState::Initialized(config) = state {
             self.state = ContextManagerState::Entered(
@@ -127,20 +127,27 @@ impl Tracing {
                 .map_err(RustContextManagerError::from)
                 .map_err(ToPythonError::to_py_err)?;
         }
+        Ok(())
+    }
 
+    fn __aenter__<'a>(&'a mut self, py: Python<'a>) -> PyResult<&'a PyAny> {
+        self.__enter__()?;
         pyo3_asyncio::tokio::future_into_py(py, async { Ok(()) })
     }
 
-    fn __aexit__<'a>(
-        &'a mut self,
-        py: Python<'a>,
+    fn __exit__(
+        &mut self,
         _exc_type: Option<&PyAny>,
         _exc_value: Option<&PyAny>,
         _traceback: Option<&PyAny>,
-    ) -> PyResult<&'a PyAny> {
+    ) -> PyResult<()> {
         let state = std::mem::replace(&mut self.state, ContextManagerState::Exited);
         if let ContextManagerState::Entered(export_process) = state {
             let py_rt = pyo3_asyncio::tokio::get_runtime();
+            // Why block and not run this in a future within aexit? The `shutdown`
+            // method returns a Tokio runtime, which cannot be dropped within another
+            // runtime. Additionally, `pyo3_asyncio::tokio::future_into_py` futures
+            // must resolve to something that implements `IntoPy`.
             let export_runtime = py_rt.block_on(async move {
                 export_process
                     .shutdown()
@@ -160,6 +167,17 @@ impl Tracing {
                 .map_err(ToPythonError::to_py_err)?;
         }
 
+        Ok(())
+    }
+
+    fn __aexit__<'a>(
+        &'a mut self,
+        py: Python<'a>,
+        exc_type: Option<&PyAny>,
+        exc_value: Option<&PyAny>,
+        traceback: Option<&PyAny>,
+    ) -> PyResult<&'a PyAny> {
+        self.__exit__(exc_type, exc_value, traceback)?;
         pyo3_asyncio::tokio::future_into_py(py, async { Ok(()) })
     }
 }

@@ -84,13 +84,21 @@ One of `CurrentThreadTracingConfig` or `GlobalTracingConfig`.
 
 class Tracing:
     """
-    An asynchronous context manager that initializes a tracing subscriber and exports spans
-    emitted from within the parent Rust-Python package.
+    A context manager that initializes a tracing subscriber and exports spans
+    emitted from within the parent Rust-Python package. It may be used synchonously
+    or asynchronously.
 
     Each instance of this context manager can only be used once and only once.
     """
 
     def __init__(self, *, config: TracingConfig): ...
+    def __enter__(self): ...
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_value: Optional[BaseException],
+        traceback: Optional[TracebackType],
+    ): ...
     async def __aenter__(self): ...
     async def __aexit__(
         self,

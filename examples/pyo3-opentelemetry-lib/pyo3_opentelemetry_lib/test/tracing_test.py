@@ -118,7 +118,7 @@ async def _test_file_export(config_builder: Callable[[str], TracingConfig], trac
     """
     filename = f"test_file_export-{time()}.txt"
     config = config_builder(filename)
-    async with Tracing(config=config):
+    with Tracing(config=config):
         with tracer.start_as_current_span("test_file_export_tracing"):
             current_span = get_current_span()
             span_context = current_span.get_span_context()
@@ -183,7 +183,7 @@ async def test_file_export_async(
     """
     filename = f"test_file_export_async-{time()}.txt"
     config = config_builder(filename)
-    async with Tracing(config=config):
+    with Tracing(config=config):
         with tracer.start_as_current_span("test_file_export_tracing"):
             current_span = get_current_span()
             span_context = current_span.get_span_context()
@@ -266,7 +266,7 @@ async def test_otlp_export(
     Test that the `otlp.Config` can be used to export spans to an OTLP collector. Here, we use a mock
     gRPC service (see `otlp_service_data` fixture) to collect spans and make assertions on them.
     """
-    async with Tracing(config=config):
+    with Tracing(config=config):
         with tracer.start_as_current_span("test_file_export_tracing"):
             current_span = get_current_span()
             span_context = current_span.get_span_context()
@@ -310,7 +310,7 @@ async def test_otlp_export_multi_threads(
     within the same process.
     """
     for _ in range(3):
-        async with Tracing(config=config):
+        with Tracing(config=config):
             with tracer.start_as_current_span("test_file_export_tracing"):
                 current_span = get_current_span()
                 span_context = current_span.get_span_context()
@@ -356,7 +356,7 @@ async def test_otlp_export_async(
     """
     Test that the `GlobalTracingConfig` supports async spans when using the OTLP layer.
     """
-    async with Tracing(config=config):
+    with Tracing(config=config):
         with tracer.start_as_current_span("test_file_export_tracing"):
             current_span = get_current_span()
             span_context = current_span.get_span_context()
