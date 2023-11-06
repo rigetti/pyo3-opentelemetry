@@ -224,7 +224,9 @@ async def test_file_export_async(
 
 def _16b_json_encoded_bytes_to_int(b: bytes) -> Optional[int]:
     """
-    Rust's `opentelemetry-stdout` crate does not properly encode 16 byte trace ids in base64 properly.
+    Rust's `opentelemetry-stdout` crate does not encode 16 byte trace ids in base64. Currently, the
+    crate does not support matchine readable data.
+
     Here, rather than allowing tests to flake, we just give up on the trace id assertion if the produced
     trace id is not valid.
     """
@@ -232,7 +234,6 @@ def _16b_json_encoded_bytes_to_int(b: bytes) -> Optional[int]:
     try:
         return int(decoded, 16)
     except ValueError:
-        # 15769111199087022768103192234192075546.
         # https://github.com/open-telemetry/opentelemetry-rust/blob/6713143b59659dc509b7815404ebb57ad41cfe3a/opentelemetry-stdout/src/trace/transform.rs#L96
         # Rust: format(":x", 15769111199087022768103192234192075546) -> bdd05355c559cbb7c36ee676b58fb1a
         # Python: format(15769111199087022768103192234192075546, "032x") -> 0bdd05355c559cbb7c36ee676b58fb1a

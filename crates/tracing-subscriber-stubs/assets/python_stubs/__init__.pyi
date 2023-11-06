@@ -41,10 +41,10 @@ class BatchConfig:
 class SimpleConfig:
     """
     Configuration for exporting spans in a simple manner. This does not spawn a background task
-    unless it is required by the configured export layer. `BatchConfig` is typically favorable
+    unless it is required by the configured export layer. Generally favor `BatchConfig` instead,
     unless the tracing context manager is short lived.
 
-    Note, some export layers may require a background task to be spawned, despite exporting simply. 
+    Note, some export layers still spawn a background task even when `SimpleConfig` is used. 
     This is the case for the OTLP export layer, which makes gRPC export requests within the
     background Tokio runtime.
     """
@@ -73,7 +73,7 @@ class CurrentThreadTracingConfig:
 class GlobalTracingConfig:
     """
     This tracing configuration will export spans emitted on any thread in the current process. Because
-    it sets a tracing subscriber at the global level, it should only be initialized once per process.
+    it sets a tracing subscriber at the global level, it can only be initialized once per process.
 
     This is typically favorable, as it only requires a single initialization across your entire Python
     application.
@@ -93,7 +93,7 @@ class Tracing:
     An asynchronous context manager that initializes a tracing subscriber and exports spans
     emitted from within the parent Rust-Python package.
 
-    Each instance of this context manager should be used once and only once.
+    Each instance of this context manager can only be used once and only once.
     """
     def __init__(self, *, config: TracingConfig):
         ...
