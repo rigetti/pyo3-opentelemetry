@@ -6,22 +6,9 @@ on:
       - '**'
     
 jobs:
-  release-macros:
+  opentelemetry:
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/macros')
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.PAT }}
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-      - run: cargo publish -p pyo3-opentelemetry-macros --token ${{ secrets.CRATES_IO_TOKEN }}
-  release-lib:
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/lib')
+    if: startsWith(github.ref, 'refs/tags/opentelemetry')
     steps:
       - uses: actions/checkout@v3
         with:
@@ -40,3 +27,42 @@ jobs:
       # in the case that the new lib crate depends on the new, yet to be published macros crate.
       - run: timeout 15m bash -c 'until ./scripts/ci/assert-macros-crate-published.sh; do sleep 10; done'
       - run: cargo publish -p pyo3-opentelemetry --token ${{ secrets.CRATES_IO_TOKEN }}
+  opentelemetry-macros:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/opentelemetry-macros')
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PAT }}
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - run: cargo publish -p pyo3-opentelemetry-macros --token ${{ secrets.CRATES_IO_TOKEN }}
+  tracing-subscriber:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/tracing-subscriber')
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PAT }}
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - run: cargo publish -p pyo3-tracing-subscriber --token ${{ secrets.CRATES_IO_TOKEN }}
+  tracing-subscriber-stubs:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/tracing-subscriber-stubs')
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PAT }}
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - run: cargo publish -p pyo3-tracing-subscriber-stubs --token ${{ secrets.CRATES_IO_TOKEN }}

@@ -5,7 +5,7 @@ edition = "2021"
 categories = ["Python bindings", "OpenTelemetry", "Tracing", "Macros"]
 keywords = ["python", "pyo3", "opentelemetry", "tracing"]
 license = "Apache-2.0"
-readme = "../../README.md"
+readme = "./README.md"
 description = "Macro and utilities for passing OpenTelemetry context from Python to Rust"
 repository = "https://github.com/rigetti/pyo3-opentelemetry"
 rust-version = "1.65.0"
@@ -20,7 +20,7 @@ opentelemetry = { workspace = true }
 opentelemetry_api = { workspace = true }
 opentelemetry_sdk = { workspace = true }
 pyo3 = { workspace = true }
-pyo3-opentelemetry-macros = { path = "../macros", version = "0.1.0" }
+pyo3-opentelemetry-macros = { path = "../opentelemetry-macros", version = "0.1.0" }
 
 [dev-dependencies]
 futures-util = "0.3.28"
