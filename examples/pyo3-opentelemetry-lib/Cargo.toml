@@ -34,5 +34,5 @@ extension-module = ["pyo3/extension-module"]
 default = ["extension-module"]
 
 [build-dependencies]
-pyo3-tracing-subscriber = { path = "../../crates/tracing-subscriber", features = ["stubs"] }
+pyo3-tracing-subscriber = { path = "../../crates/tracing-subscriber", features = ["layer-otel-otlp-file", "layer-otel-otlp", "stubs"] }
 

@@ -59,6 +59,10 @@
 //! added by `pyo3_tracing_subscriber::add_submodule`. Upstream build scripts may use this to write
 //! the Python stub files in their build scripts.
 //!
+//! <div class="warning">This function will render stubs based on the enabled features. In most
+//! cases, this means you need to include any `pyo3_tracing_subscriber` features from your main
+//! dependencies in your build dependencies as well.</div>
+//!
 //! # Example
 //!
 //! In `build.rs` with the `example/` directory containing Python source code.
@@ -70,8 +74,6 @@
 //!     "example",
 //!     "tracing_subscriber",
 //!     std::path::Path::new("example/tracing_subscriber"),
-//!     true,
-//!     true,
 //! ).unwrap();
 //!
 use std::path::Path;
@@ -85,21 +87,19 @@ struct Data {
     version: String,
     layer_otel_otlp_file: bool,
     layer_otel_otlp: bool,
+    any_additional_layer: bool,
 }
 
 impl Data {
-    fn new(
-        host_package: String,
-        tracing_subscriber_module_name: String,
-        layer_otel_otlp_file: bool,
-        layer_otel_otlp: bool,
-    ) -> Self {
+    fn new(host_package: String, tracing_subscriber_module_name: String) -> Self {
         Self {
             host_package,
             tracing_subscriber_module_name,
             version: env!("CARGO_PKG_VERSION").to_string(),
-            layer_otel_otlp_file,
-            layer_otel_otlp,
+            layer_otel_otlp_file: cfg!(feature = "layer-otel-otlp-file"),
+            layer_otel_otlp: cfg!(feature = "layer-otel-otlp"),
+            any_additional_layer: cfg!(feature = "layer-otel-otlp-file")
+                || cfg!(feature = "layer-otel-otlp"),
         }
     }
 }
@@ -166,25 +166,19 @@ pub fn write_stub_files(
     host_package: &str,
     tracing_subscriber_module_name: &str,
     directory: &Path,
-    layer_otel_otlp_file: bool,
-    layer_otel_otlp: bool,
 ) -> Result<(), Error> {
     let mut hb = handlebars::Handlebars::new();
     include_stub_and_init!(directory, "", hb);
     include_stub_and_init!(directory, "subscriber/", hb);
     include_stub_and_init!(directory, "layers/", hb);
     include_stub_and_init!(directory, "layers/file/", hb);
-    if layer_otel_otlp_file {
-        include_stub_and_init!(directory, "layers/otel_otlp_file/", hb);
-    }
-    if layer_otel_otlp {
-        include_stub_and_init!(directory, "layers/otel_otlp/", hb);
-    }
+    #[cfg(feature = "layer-otel-otlp-file")]
+    include_stub_and_init!(directory, "layers/otel_otlp_file/", hb);
+    #[cfg(feature = "layer-otel-otlp")]
+    include_stub_and_init!(directory, "layers/otel_otlp/", hb);
     let data = Data::new(
         host_package.to_string(),
         tracing_subscriber_module_name.to_string(),
-        layer_otel_otlp_file,
-        layer_otel_otlp,
     );
     for name in hb.get_templates().keys() {
         let writer = std::fs::File::create(directory.join(name)).map_err(Error::from)?;
@@ -198,17 +192,11 @@ mod test {
     use rstest::rstest;
 
     #[rstest]
-    #[case(true, true)]
-    #[case(true, false)]
-    #[case(false, true)]
-    #[case(false, false)]
-    fn test_build_stub_files(#[case] layer_otel_otlp_file: bool, #[case] layer_otel_otlp: bool) {
+    fn test_build_stub_files() {
         super::write_stub_files(
             "example",
             "_tracing_subscriber",
             std::path::Path::new("target/stubs"),
-            layer_otel_otlp_file,
-            layer_otel_otlp,
         )
         .unwrap();
     }
