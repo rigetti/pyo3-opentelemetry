@@ -63,7 +63,7 @@
 //!
 //! * `layer-otel-otlp-file` - exports trace data with `opentelemetry-stdout`. See `crate::layers::otel_otlp_file`.
 //! * `layer-otel-otlp` - exports trace data with `opentelemetry-otlp`. See `crate::layers::otel_otlp`.
-//! * `stubs` - supports writing stub files in your Python source code from your Rust build scripts. See `crates::stubs` 
+//! * `stubs` - supports writing stub files in your Python source code from your Rust build scripts. See `crates::stubs`
 //!
 //! # Requirements and Limitations
 //!

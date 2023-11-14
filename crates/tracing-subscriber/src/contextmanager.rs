@@ -11,9 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-use std::fmt::Debug;
-
-use pyo3::{exceptions::PyRuntimeError, prelude::*};
+use pyo3::prelude::*;
 
 use rigetti_pyo3::{py_wrap_error, wrap_error, ToPythonError};
 
@@ -99,7 +97,7 @@ py_wrap_error!(
     contextmanager,
     RustContextManagerError,
     TracingContextManagerError,
-    PyRuntimeError
+    pyo3::exceptions::PyRuntimeError
 );
 
 #[pymethods]

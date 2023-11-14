@@ -49,7 +49,7 @@ pub(crate) struct WithShutdown {
     pub(crate) shutdown: Shutdown,
 }
 
-impl core::fmt::Debug for WithShutdown {
+impl Debug for WithShutdown {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "LayerWithShutdown {{ layer: Box<dyn Layer<Registry> + Send + Sync>, shutdown: Shutdown }}")
     }
