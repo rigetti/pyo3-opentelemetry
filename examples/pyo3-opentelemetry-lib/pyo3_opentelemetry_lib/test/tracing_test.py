@@ -1,16 +1,14 @@
 from __future__ import annotations
 
+import json
 import os
-from base64 import urlsafe_b64encode
 from collections import Counter
 from time import time
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, MutableMapping, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, MutableMapping
 
 import pytest
-from google.protobuf import json_format
 from opentelemetry import propagate
 from opentelemetry.context import attach, detach
-from opentelemetry.proto.collector.trace.v1.trace_service_pb2 import ExportTraceServiceRequest
 from opentelemetry.proto.trace.v1.trace_pb2 import ResourceSpans
 from opentelemetry.trace import Tracer
 from opentelemetry.trace.propagation import get_current_span
@@ -133,19 +131,18 @@ async def _test_file_export(config_builder: Callable[[str], TracingConfig], trac
     # Read the OTLP spans written to file.
     file_path = os.path.join(_TEST_ARTIFACTS_DIR, filename)
     with open(file_path, "r") as f:
-        resource_spans: List[ResourceSpans] = []
+        resource_spans: List[Dict[str, Any]] = []
         for line in f.readlines():
-            request = ExportTraceServiceRequest()
-            json_format.Parse(line, request)
-            resource_spans += request.resource_spans
+            datum = json.loads(line)
+            resource_spans += datum["resourceSpans"]
 
     counter = Counter()
     for resource_span in resource_spans:
-        for scoped_span in resource_span.scope_spans:
-            for span in scoped_span.spans:
-                span_trace_id = _16b_json_encoded_bytes_to_int(span.trace_id)
+        for scoped_span in resource_span["scopeSpans"]:
+            for span in scoped_span["spans"]:
+                span_trace_id = int(span["traceId"], 16)
                 assert span_trace_id is None or span_trace_id == trace_id, filename
-                counter[span.name] += 1
+                counter[span["name"]] += 1
     # Assert that only the spans we expect are present. This makes use of the Rust `EnvFilter`,
     # which we configure in the `file_export_filter` fixture (ie the `RUST_LOG` environment variable).
     assert len(counter) == 1
@@ -197,21 +194,20 @@ async def test_file_export_async(
 
     file_path = os.path.join(_TEST_ARTIFACTS_DIR, filename)
     with open(file_path, "r") as f:
-        resource_spans: List[ResourceSpans] = []
+        resource_spans: List[Dict[str, Any]] = []
         for line in f.readlines():
-            request = ExportTraceServiceRequest()
-            json_format.Parse(line, request)
-            resource_spans += request.resource_spans
+            datum = json.loads(line)
+            resource_spans += datum["resourceSpans"]
 
     counter = Counter()
     for resource_span in resource_spans:
-        for scoped_span in resource_span.scope_spans:
-            for span in scoped_span.spans:
-                counter[span.name] += 1
-                span_trace_id = _16b_json_encoded_bytes_to_int(span.trace_id)
+        for scoped_span in resource_span["scopeSpans"]:
+            for span in scoped_span["spans"]:
+                counter[span["name"]] += 1
+                span_trace_id = int(span["traceId"], 16)
                 assert span_trace_id is None or span_trace_id == trace_id, filename
-                if span.name == "example_function_impl_async":
-                    duration_ns = span.end_time_unix_nano - span.start_time_unix_nano
+                if span["name"] == "example_function_impl_async":
+                    duration_ns = span["endTimeUnixNano"] - span["startTimeUnixNano"]
                     expected_duration_ms = 100
                     assert duration_ns > (expected_duration_ms * 10**6)
                     assert duration_ns < (1.5 * expected_duration_ms * 10**6)
@@ -220,27 +216,6 @@ async def test_file_export_async(
     assert len(counter) == 2
     assert counter["example_function_impl"] == 1
     assert counter["example_function_impl_async"] == 1
-
-
-def _16b_json_encoded_bytes_to_int(b: bytes) -> Optional[int]:
-    """
-    Rust's `opentelemetry-stdout` crate does not encode 16 byte trace ids in base64. Currently, the
-    crate does not support matchine readable data.
-
-    Here, rather than allowing tests to flake, we just give up on the trace id assertion if the produced
-    trace id is not valid.
-    """
-    decoded = urlsafe_b64encode(b).decode("utf-8")
-    try:
-        return int(decoded, 16)
-    except ValueError:
-        # https://github.com/open-telemetry/opentelemetry-rust/blob/6713143b59659dc509b7815404ebb57ad41cfe3a/opentelemetry-stdout/src/trace/transform.rs#L96
-        # Rust: format(":x", 15769111199087022768103192234192075546) -> bdd05355c559cbb7c36ee676b58fb1a
-        # Python: format(15769111199087022768103192234192075546, "032x") -> 0bdd05355c559cbb7c36ee676b58fb1a
-        # Python will fail to base64 round trip the Rust encoded value because it is missing a leading 0.
-        # See https://github.com/open-telemetry/opentelemetry-rust/issues/1296 for the current status of this
-        # issue.
-        return None
 
 
 @pytest.mark.parametrize(
