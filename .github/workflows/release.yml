@@ -15,12 +15,8 @@ jobs:
       with:
         fetch-depth: 0
         token: ${{ secrets.PAT }}
-    # disabled after unexpected failures.
-    # - name: Install Knope
-    #   uses: knope-dev/action@v1
     - uses: actions-rs/toolchain@v1
-    - run: |
-      cargo install knope --version 0.13.2
+    - run: cargo install knope --version 0.13.2
     - run: |
         git config --global user.name "${{ github.triggering_actor }}"
         git config --global user.email "${{ github.triggering_actor}}@users.noreply.github.com"
