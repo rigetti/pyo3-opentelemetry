@@ -27,12 +27,16 @@ pytest = "^7.3.0"
 opentelemetry-api = "^1.17.0"
 opentelemetry-sdk = "^1.17.0"
 pytest-asyncio = "^0.21.0"
+opentelemetry-proto = "^1.20.0"
 
 [tool.poetry.group.dev.dependencies]
 maturin = "^0.14.17"
 black = "^23.3.0"
 pyright = "^1.1.303"
 ruff = "^0.0.261"
+pytest-asyncio = "^0.21.1"
+grpcio = "^1.59.0"
+pytest-forked = "^1.6.0"
 
 [tool.black]
 line-length = 120
@@ -41,8 +45,16 @@ include = '\.pyi?$'
 preview= true
 extend-exclude = '''
 (
+    "pyo3_opentelemetry_example\/__init__.py",
 )
 '''
+
+[tool.pyright]
+exclude = [
+    "pyo3_opentelemetry_lib/__init__.py",
+    ".venv"
+]
+reportUnsupportedDunderAll = false
 
 [tool.ruff]
 select = [

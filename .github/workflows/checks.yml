@@ -40,7 +40,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: make
-          args: --makefile Makefile.toml ci-flow
+          args: --makefile Makefile.toml check-all 
 
       # Setup Python and run Python example
       - name: Setup python
@@ -50,8 +50,7 @@ jobs:
       - name: Install poetry
         uses: snok/install-poetry@v1
       - name: Run Python Example
-        uses: actions-rs/cargo@v1
-        with:
-          command: make
-          args: --makefile Makefile.toml example-lib-python 
+        run: |
+          cd ./examples/pyo3-opentelemetry-lib
+          cargo make --makefile Makefile.toml python-check-all 
 
