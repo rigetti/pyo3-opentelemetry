@@ -90,13 +90,12 @@
 //! #[pymodule]
 //! fn example(_py: Python, m: &PyModule) -> PyResult<()> {
 //!     // add your functions, modules, and classes
-//!     let tracing_subscriber = PyModule::new(py, TRACING_SUBSCRIBER_SUBMODULE_NAME)?;
 //!     pyo3_tracing_subscriber::add_submodule(
-//!         format!("{MY_PACKAGE_NAME}.{TRACING_SUBSCRIBER_SUBMODULE_NAME}"),
+//!         MY_PACKAGE_NAME,
+//!         TRACING_SUBSCRIBER_SUBMODULE_NAME,
 //!         py,
-//!         tracing_subscriber,
+//!         m,
 //!     )?;
-//!     m.add_submodule(tracing_subscriber)?;
 //!     Ok(())
 //! }
 //! ```
@@ -157,12 +156,13 @@ create_init_submodule! {
 ///
 /// # Arguments
 ///
-/// * `name` - the fully qualified name of the tracing subscriber submodule within your Python
-/// package. For instance, if your package is named `my_package` and you want to add the tracing
-/// subscriber submodule `tracing_subscriber`, then `name` should be
-/// `my_package.tracing_subscriber`.
+/// * `fully_qualified_namespace` - the fully qualified namespace of the parent Python module to
+/// which the tracing submodule should be added. This may be a nested namespace, such as
+/// `my_package.my_module`.
+/// * `name` - the name of the tracing subscriber submodule within the specified parent module.
+/// This should not be a nested namespace.
 /// * `py` - the Python GIL token.
-/// * `m` - the parent module to which the tracing subscriber submodule should be added.
+/// * `parent_module` - the parent module to which the tracing subscriber submodule should be added.
 ///
 /// # Errors
 ///
@@ -206,9 +206,17 @@ create_init_submodule! {
 ///
 /// For detailed Python usage documentation, see the stub files written by
 /// [`pyo3_tracing_subscriber::stubs::write_stub_files`].
-pub fn add_submodule(name: &str, py: Python, m: &PyModule) -> PyResult<()> {
-    init_submodule(name, py, m)?;
+pub fn add_submodule(
+    fully_qualified_namespace: &str,
+    name: &str,
+    py: Python,
+    parent_module: &PyModule,
+) -> PyResult<()> {
+    let tracing_subscriber = PyModule::new(py, name)?;
+    let fully_qualified_name = format!("{fully_qualified_namespace}.{name}");
+    init_submodule(&fully_qualified_name, py, tracing_subscriber)?;
     let modules = py.import("sys")?.getattr("modules")?;
-    modules.set_item(name, m)?;
+    modules.set_item(fully_qualified_name, tracing_subscriber)?;
+    parent_module.add_submodule(tracing_subscriber)?;
     Ok(())
 }

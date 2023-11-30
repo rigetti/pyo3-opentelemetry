@@ -28,13 +28,12 @@ use pyo3::prelude::*;
 fn my_module(py: Python, m: &PyModule) -> PyResult<()> {
     // Add your own Python classes, functions and modules.
 
-    let tracing_subscriber = PyModule::new(py, "_tracing_subscriber")?;
     pyo3_tracing_subscriber::add_submodule(
-        "my_module._tracing_subscriber",
+        "my_module",
+        "_tracing_subscriber",
         py,
-        tracing_subscriber,
+        m,
     )?;
-    m.add_submodule(tracing_subscriber)?;
     Ok(())
 }
 ```
