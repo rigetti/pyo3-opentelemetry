@@ -117,14 +117,14 @@ class Tracing:
     ): ...
 
 if TYPE_CHECKING:
-    from typing import TypeAlias, Union
+    from typing import Union
 
-    ExportConfig: TypeAlias = Union[BatchConfig, SimpleConfig]
+    ExportConfig = Union[BatchConfig, SimpleConfig]
     """
     One of `BatchConfig` or `SimpleConfig`.
     """
 
-    TracingConfig: TypeAlias = Union[CurrentThreadTracingConfig, GlobalTracingConfig]
+    TracingConfig = Union[CurrentThreadTracingConfig, GlobalTracingConfig]
     """
     One of `CurrentThreadTracingConfig` or `GlobalTracingConfig`.
     """

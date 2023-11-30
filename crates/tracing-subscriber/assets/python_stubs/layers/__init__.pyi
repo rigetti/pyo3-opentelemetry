@@ -18,13 +18,13 @@ from . import file as file
 {{#if layer_otel_otlp}}from . import otel_otlp as otel_otlp{{/if}}
 
 if TYPE_CHECKING:
-  from typing import TypeAlias{{#if any_additional_layer}}, Union{{/if}}
+  {{#if any_additional_layer}}from typing import Union{{/if}}
 
-  {{#if any_additional_layer}}Config: TypeAlias = Union[
+  {{#if any_additional_layer}}Config = Union[
     file.Config,
     {{#if layer_otel_otlp_file }}otel_otlp_file.Config,{{/if}} 
     {{#if layer_otel_otlp }}otel_otlp.Config,{{/if}}
-      ]{{else}}Config: TypeAlias = file.Config{{/if}}
+      ]{{else}}Config = file.Config{{/if}}
   """
   One of the supported layer configurations that may be set on the subscriber configuration.
   """

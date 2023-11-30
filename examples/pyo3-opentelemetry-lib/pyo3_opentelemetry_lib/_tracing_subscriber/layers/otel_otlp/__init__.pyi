@@ -97,19 +97,19 @@ class Config:
         ...
 
 if TYPE_CHECKING:
-    from typing import List, TypeAlias, Union
+    from typing import List, Union
 
-    ResourceValueArray: TypeAlias = Union[List[bool], List[int], List[float], List[str]]
+    ResourceValueArray = Union[List[bool], List[int], List[float], List[str]]
     """
     An array of `ResourceValue`s. This array is homogenous, so all values must be of the same type.
     """
 
-    ResourceValue: TypeAlias = Union[bool, int, float, str, ResourceValueArray]
+    ResourceValue = Union[bool, int, float, str, ResourceValueArray]
     """
     A value that can be added to a `Resource`.
     """
 
-    Sampler: TypeAlias = Union[bool, float]
+    Sampler = Union[bool, float]
     """
     A `Sampler` is a representation of the sampling strategy to use. If this is a `bool`, it will
     either sample all traces (`True`) or none of them (`False`). If this is a `float`, it will sample

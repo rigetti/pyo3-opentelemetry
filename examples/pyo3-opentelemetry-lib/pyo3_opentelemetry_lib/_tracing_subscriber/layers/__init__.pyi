@@ -19,9 +19,9 @@ from . import otel_otlp as otel_otlp
 from . import otel_otlp_file as otel_otlp_file
 
 if TYPE_CHECKING:
-    from typing import TypeAlias, Union
+    from typing import Union
 
-    Config: TypeAlias = Union[
+    Config = Union[
         file.Config,
         otel_otlp_file.Config,
         otel_otlp.Config,
