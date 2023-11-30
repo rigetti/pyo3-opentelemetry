@@ -14,7 +14,7 @@ For a functional example of usage of all of these crates, see [examples/pyo3-ope
 
 It should be sufficient to [install the Rust toolchain](https://rustup.rs/) and [cargo-make](https://github.com/sagiegurari/cargo-make). Then:
 
-```sh
+```shell
 cargo make check-all
 ```
 

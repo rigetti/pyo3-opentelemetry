@@ -18,7 +18,7 @@ pyo3_opentelemetry provides a macro to simply and easily instrument your PyO3 bi
 
 From Rust:
 
-```rs
+```rust
 use pyo3_opentelemetry::prelude::*;
 use pyo3::prelude::*;
 use tracing::instrument;

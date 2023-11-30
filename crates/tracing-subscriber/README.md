@@ -21,7 +21,7 @@
 
 Given a `pyo3` extension module named "my_module" that would like to expose the tracing subscriber configuration and context manager classes from "my_module._tracing_subscriber", from Rust:
 
-```rs
+```rust
 use pyo3::prelude::*;
 
 #[pymodule]
@@ -41,7 +41,7 @@ fn my_module(py: Python, m: &PyModule) -> PyResult<()> {
 
 Then a user could initialize a tracing subscriber that logged to stdout from Python:
 
-```py
+```python
 import my_module
 from my_module._tracing_subscriber import (
     GlobalTracingConfig,
@@ -74,7 +74,7 @@ This crate provides a convenient method for adding stub files to your Python sou
 
 Given a `pyo3` extension module named "my_module" that uses the `pyo3-tracing-subscriber` crate to expose tracing subscriber configuration and context manager classes from "my_module._tracing_subscriber", in the upstream `build.rs` file:
 
-```rs
+```rust
 use pyo3_tracing_subscriber_stubs::write_stub_files;
 
 fn main() {
