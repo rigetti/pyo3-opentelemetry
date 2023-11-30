@@ -8,7 +8,7 @@ on:
 jobs:
   opentelemetry:
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/opentelemetry')
+    if: startsWith(github.ref, 'refs/tags/opentelemetry/v')
     steps:
       - uses: actions/checkout@v3
         with:
@@ -29,7 +29,7 @@ jobs:
       - run: cargo publish -p pyo3-opentelemetry --token ${{ secrets.CRATES_IO_TOKEN }}
   opentelemetry-macros:
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/opentelemetry-macros')
+    if: startsWith(github.ref, 'refs/tags/opentelemetry-macros/v')
     steps:
       - uses: actions/checkout@v3
         with:
