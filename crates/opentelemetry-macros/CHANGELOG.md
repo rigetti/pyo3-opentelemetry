@@ -1,3 +1,17 @@
+## 0.3.0-rc.0 (2023-11-30)
+
+### Breaking Changes
+
+#### initial implementation (#1)
+
+### Features
+
+#### support tracing subscriber
+
+### Fixes
+
+#### print by default on python ctx extraction failure (#7)
+
 ## 0.2.0 (2023-11-29)
 
 ### Breaking Changes
