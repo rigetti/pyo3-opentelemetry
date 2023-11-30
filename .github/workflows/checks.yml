@@ -17,7 +17,7 @@ jobs:
         rust:
           - stable
           # the scripts seem to inevitably involve building something that requires a newer version
-          # or rust, so we just run against stable for now.
+          # of rust, so we just run against stable for now.
           # - 1.60.0
     steps:
       # Checkout, setup Rust tools, etc.

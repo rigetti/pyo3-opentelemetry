@@ -121,9 +121,10 @@ impl Tracing {
                     .map_err(ToPythonError::to_py_err)?,
             );
         } else {
-            return Err(ContextManagerError::EnterWithoutConfiguration)
-                .map_err(RustContextManagerError::from)
-                .map_err(ToPythonError::to_py_err)?;
+            return Err(RustContextManagerError::from(
+                ContextManagerError::EnterWithoutConfiguration,
+            )
+            .to_py_err())?;
         }
         Ok(())
     }
@@ -160,9 +161,10 @@ impl Tracing {
                 export_runtime.shutdown_background();
             }
         } else {
-            return Err(ContextManagerError::ExitWithoutExportProcess)
-                .map_err(RustContextManagerError::from)
-                .map_err(ToPythonError::to_py_err)?;
+            return Err(RustContextManagerError::from(
+                ContextManagerError::ExitWithoutExportProcess,
+            )
+            .to_py_err())?;
         }
 
         Ok(())
