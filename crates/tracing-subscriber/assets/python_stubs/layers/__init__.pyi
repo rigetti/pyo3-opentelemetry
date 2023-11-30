@@ -10,16 +10,21 @@
 # * next time the code is generated.                                          *
 # *****************************************************************************
 
-from typing import Union
-from .file import Config as FileConfig
-{{#if layer_otel_otlp_file }}from .otel_otlp_file import Config as OtlpFileConfig{{/if}}
-{{#if layer_otel_otlp}}from .otel_otlp import Config as OtlpConfig{{/if}}
+from __future__ import annotations
+from typing import TYPE_CHECKING
 
-{{#if any_additional_layer}}Config = Union[
-  FileConfig,
- {{#if layer_otel_otlp_file }}OtlpFileConfig,{{/if}} 
- {{#if layer_otel_otlp }}OtlpConfig,{{/if}}
-]{{else}}Config = FileConfig{{/if}}
-"""
-One of the supported layer configurations that may be set on the subscriber configuration.
-"""
+from . import file as file 
+{{#if layer_otel_otlp_file }}from . import otel_otlp_file as otel_otlp_file{{/if}}
+{{#if layer_otel_otlp}}from . import otel_otlp as otel_otlp{{/if}}
+
+if TYPE_CHECKING:
+  from typing import TypeAlias{{#if any_additional_layer}}, Union{{/if}}
+
+  {{#if any_additional_layer}}Config: TypeAlias = Union[
+    file.Config,
+    {{#if layer_otel_otlp_file }}otel_otlp_file.Config,{{/if}} 
+    {{#if layer_otel_otlp }}otel_otlp.Config,{{/if}}
+      ]{{else}}Config: TypeAlias = file.Config{{/if}}
+  """
+  One of the supported layer configurations that may be set on the subscriber configuration.
+  """

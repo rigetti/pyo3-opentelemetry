@@ -136,7 +136,7 @@ async def _test_file_export(config_builder: Callable[[str], TracingConfig], trac
             datum = json.loads(line)
             resource_spans += datum["resourceSpans"]
 
-    counter = Counter()
+    counter: Counter[str] = Counter()
     for resource_span in resource_spans:
         for scoped_span in resource_span["scopeSpans"]:
             for span in scoped_span["spans"]:
@@ -199,7 +199,7 @@ async def test_file_export_async(
             datum = json.loads(line)
             resource_spans += datum["resourceSpans"]
 
-    counter = Counter()
+    counter: Counter[str] = Counter()
     for resource_span in resource_spans:
         for scoped_span in resource_span["scopeSpans"]:
             for span in scoped_span["spans"]:
@@ -253,7 +253,7 @@ async def test_otlp_export(
 
     _assert_propagated_trace_id_eq(result, trace_id)
 
-    counter = Counter()
+    counter: Counter[str] = Counter()
     data = otlp_service_data.get(otlp_test_namespace, None)
     assert data is not None
     for resource_span in data:
@@ -299,7 +299,7 @@ async def test_otlp_export_multi_threads(
 
         data = otlp_service_data.get(otlp_test_namespace, None)
         assert data is not None
-        counter = Counter()
+        counter: Counter[str] = Counter()
         for resource_span in data:
             for scope_span in resource_span.scope_spans:
                 for span in scope_span.spans:
@@ -345,7 +345,7 @@ async def test_otlp_export_async(
 
     data = otlp_service_data.get(otlp_test_namespace, None)
     assert data is not None
-    counter = Counter()
+    counter: Counter[str] = Counter()
     for resource_span in data:
         for scope_span in resource_span.scope_spans:
             for span in scope_span.spans:

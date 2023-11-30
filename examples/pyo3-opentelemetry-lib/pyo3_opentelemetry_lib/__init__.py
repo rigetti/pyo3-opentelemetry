@@ -18,4 +18,4 @@
 from .pyo3_opentelemetry_lib import *  # noqa: F403, W291 
 
 __doc__ = pyo3_opentelemetry_lib.__doc__  # noqa: F405
-__all__ = getattr(pyo3_opentelemetry_lib, "__all__", [])  # noqa: F405
+__all__ = getattr(pyo3_opentelemetry_lib, "__all__", []) # noqa: F405

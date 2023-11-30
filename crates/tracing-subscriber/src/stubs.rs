@@ -169,6 +169,12 @@ pub fn write_stub_files(
 ) -> Result<(), Error> {
     let mut hb = handlebars::Handlebars::new();
     include_stub_and_init!(directory, "", hb);
+    hb.register_template_string(
+        ".stubtest-allowlist",
+        include_str!("../assets/python_stubs/.stubtest-allowlist"),
+    )
+    .map_err(Box::new)
+    .map_err(Error::from)?;
     include_stub_and_init!(directory, "subscriber/", hb);
     include_stub_and_init!(directory, "layers/", hb);
     include_stub_and_init!(directory, "layers/file/", hb);

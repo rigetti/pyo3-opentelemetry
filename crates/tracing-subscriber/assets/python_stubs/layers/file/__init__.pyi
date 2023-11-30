@@ -10,16 +10,18 @@
 # * next time the code is generated.                                          *
 # *****************************************************************************
 
-from typing import Optional
+from typing import Optional, final
 
-
+@final
 class Config:
     """
     Configuration for a
     `tracing_subscriber::fmt::Layer <https://docs.rs/tracing-subscriber/latest/tracing_subscriber/fmt/struct.Layer.html>`_.
     """
-    
-    def __init__(self, *, file_path: Optional[str] = None, pretty: bool = False, filter: Optional[str] = None, json: bool = True) -> None:
+
+    def __new__(
+        cls, *, file_path: Optional[str] = None, pretty: bool = False, filter: Optional[str] = None, json: bool = True
+    ) -> "Config":
         """
         Create a new `Config`.
 
@@ -33,9 +35,8 @@ class Config:
 
             If not specified, this will first check the `PYO3_TRACING_SUBSCRIBER_ENV_FILTER` environment
             variable and then `RUST_LOG` environment variable. If all of these values are empty, no spans
-            will be exported. 
+            will be exported.
         :param json: Whether or not to format the output as JSON. Defaults to `True`.
         """
         ...
-
 

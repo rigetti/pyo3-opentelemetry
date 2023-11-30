@@ -3,7 +3,6 @@
   script = "poetry install"
 
 [tasks.python-build]
-  private = true
   dependencies = ["python-install-dependencies"]
   script = '''
   poetry run maturin develop
@@ -24,6 +23,7 @@
   poetry run black . --check
   poetry run ruff .
   poetry run pyright .
+  poetry run stubtest --allowlist .stubtest-allowlist --allowlist pyo3_opentelemetry_lib/_tracing_subscriber/.stubtest-allowlist --mypy-config-file ./mypy.ini pyo3_opentelemetry_lib
   '''
 
 [tasks.python-test]

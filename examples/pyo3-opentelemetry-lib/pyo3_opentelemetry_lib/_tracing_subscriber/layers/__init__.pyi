@@ -10,16 +10,22 @@
 # * next time the code is generated.                                          *
 # *****************************************************************************
 
-from typing import Union
-from .file import Config as FileConfig
-from .otel_otlp_file import Config as OtlpFileConfig
-from .otel_otlp import Config as OtlpConfig
+from __future__ import annotations
 
-Config = Union[
-  FileConfig,
- OtlpFileConfig, 
- OtlpConfig,
-]
-"""
-One of the supported layer configurations that may be set on the subscriber configuration.
-"""
+from typing import TYPE_CHECKING
+
+from . import file as file
+from . import otel_otlp as otel_otlp
+from . import otel_otlp_file as otel_otlp_file
+
+if TYPE_CHECKING:
+    from typing import TypeAlias, Union
+
+    Config: TypeAlias = Union[
+        file.Config,
+        otel_otlp_file.Config,
+        otel_otlp.Config,
+    ]
+    """
+  One of the supported layer configurations that may be set on the subscriber configuration.
+  """

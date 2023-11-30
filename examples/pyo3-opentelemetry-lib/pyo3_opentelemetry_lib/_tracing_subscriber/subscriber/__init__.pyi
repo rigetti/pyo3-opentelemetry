@@ -10,13 +10,15 @@
 # * next time the code is generated.                                          *
 # *****************************************************************************
 
+from typing import final
+
 from .. import layers
 
-
+@final
 class Config:
-   """
-   Configuration for the tracing subscriber. Currently, this only requires a single layer to be
-   set on the `tracing_subscriber::Registry`.
-   """
-   def __init__(self, *, layer: layers.Config):
-       ... 
+    """
+    Configuration for the tracing subscriber. Currently, this only requires a single layer to be
+    set on the `tracing_subscriber::Registry`.
+    """
+
+    def __new__(cls, *, layer: layers.Config) -> "Config": ...

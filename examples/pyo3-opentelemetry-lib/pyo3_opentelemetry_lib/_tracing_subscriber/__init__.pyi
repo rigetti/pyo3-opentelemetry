@@ -10,35 +10,38 @@
 # * next time the code is generated.                                          *
 # *****************************************************************************
 
-from types import TracebackType
-from typing import Optional, Type, Union
-from . import subscriber as subscriber
-from . import layers as layers
+from __future__ import annotations
 
+from types import TracebackType
+from typing import TYPE_CHECKING, Optional, Type, final
+
+from . import layers as layers
+from . import subscriber as subscriber
 
 class TracingContextManagerError(RuntimeError):
     """
     Raised if the initialization, enter, and exit of the tracing context manager was
     invoked in an invalid order.
     """
-    ...
 
+    ...
 
 class TracingStartError(RuntimeError):
     """
     Raised if the tracing subscriber configuration is invalid or if a background export task
     fails to start.
     """
-    ...
 
+    ...
 
 class TracingShutdownError(RuntimeError):
     """
     Raised if the tracing subscriber fails to shutdown cleanly.
     """
+
     ...
 
-
+@final
 class BatchConfig:
     """
     Configuration for exporting spans in batch. This will require a background task to be spawned
@@ -46,30 +49,24 @@ class BatchConfig:
 
     This configuration is typically favorable unless the tracing context manager is short lived.
     """
-    def __init__(self, *, subscriber: subscriber.Config):
-        ... 
 
+    def __new__(cls, *, subscriber: subscriber.Config) -> "BatchConfig": ...
 
+@final
 class SimpleConfig:
     """
     Configuration for exporting spans in a simple manner. This does not spawn a background task
     unless it is required by the configured export layer. Generally favor `BatchConfig` instead,
     unless the tracing context manager is short lived.
 
-    Note, some export layers still spawn a background task even when `SimpleConfig` is used. 
+    Note, some export layers still spawn a background task even when `SimpleConfig` is used.
     This is the case for the OTLP export layer, which makes gRPC export requests within the
     background Tokio runtime.
     """
-    def __init__(self, *, subscriber: subscriber.Config):
-        ...
 
+    def __new__(cls, *, subscriber: subscriber.Config) -> "SimpleConfig": ...
 
-ExportConfig = Union[BatchConfig, SimpleConfig]
-"""
-One of `BatchConfig` or `SimpleConfig`.
-"""
-
-
+@final
 class CurrentThreadTracingConfig:
     """
     This tracing configuration will export spans emitted only on the current thread. A `Tracing` context
@@ -78,10 +75,10 @@ class CurrentThreadTracingConfig:
 
     Note, this configuration is currently incompatible with async methods defined with `pyo3_asyncio`.
     """
-    def __init__(self, *, export_process: ExportConfig):
-        ... 
 
+    def __new__(cls, *, export_process: "ExportConfig") -> "CurrentThreadTracingConfig": ...
 
+@final
 class GlobalTracingConfig:
     """
     This tracing configuration will export spans emitted on any thread in the current process. Because
@@ -90,16 +87,10 @@ class GlobalTracingConfig:
     This is typically favorable, as it only requires a single initialization across your entire Python
     application.
     """
-    def __init__(self, *, export_process: ExportConfig):
-        ... 
 
+    def __new__(cls, *, export_process: "ExportConfig") -> "GlobalTracingConfig": ...
 
-TracingConfig = Union[CurrentThreadTracingConfig, GlobalTracingConfig]
-"""
-One of `CurrentThreadTracingConfig` or `GlobalTracingConfig`.
-"""
-
-
+@final
 class Tracing:
     """
     A context manager that initializes a tracing subscriber and exports spans
@@ -108,18 +99,32 @@ class Tracing:
 
     Each instance of this context manager can only be used once and only once.
     """
-    def __init__(self, *, config: TracingConfig):
-        ...
 
-    def __enter__(self):
-        ... 
+    def __new__(cls, *, config: "TracingConfig") -> "Tracing": ...
+    def __enter__(self): ...
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]] = None,
+        exc_value: Optional[BaseException] = None,
+        traceback: Optional[TracebackType] = None,
+    ): ...
+    async def __aenter__(self): ...
+    async def __aexit__(
+        self,
+        exc_type: Optional[Type[BaseException]] = None,
+        exc_value: Optional[BaseException] = None,
+        traceback: Optional[TracebackType] = None,
+    ): ...
 
-    def __exit__(self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]):
-        ...
+if TYPE_CHECKING:
+    from typing import TypeAlias, Union
 
-    async def __aenter__(self):
-        ... 
+    ExportConfig: TypeAlias = Union[BatchConfig, SimpleConfig]
+    """
+    One of `BatchConfig` or `SimpleConfig`.
+    """
 
-    async def __aexit__(self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]):
-        ...
-
+    TracingConfig: TypeAlias = Union[CurrentThreadTracingConfig, GlobalTracingConfig]
+    """
+    One of `CurrentThreadTracingConfig` or `GlobalTracingConfig`.
+    """

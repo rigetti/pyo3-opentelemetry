@@ -37,6 +37,7 @@ ruff = "^0.0.261"
 pytest-asyncio = "^0.21.1"
 grpcio = "^1.59.0"
 pytest-forked = "^1.6.0"
+mypy = "^1.7.1"
 
 [tool.black]
 line-length = 120
@@ -45,9 +46,18 @@ include = '\.pyi?$'
 preview= true
 extend-exclude = '''
 (
-    "pyo3_opentelemetry_example\/__init__.py",
+    "pyo3_opentelemetry_lib\/__init__.py",
 )
 '''
+
+[tool.mypy]
+
+[[tool.mypy.overrides]]
+module = [
+    "grpc",
+    "grpc.aio",
+] 
+ignore_missing_imports = true
 
 [tool.pyright]
 exclude = [
@@ -66,7 +76,7 @@ select = [
     # isort
     "I001"
 ]
-src = ["pyo3_opentelemetry_example", "tests"]
+src = ["pyo3_opentelemetry_lib", "tests"]
 exclude = [
     ".bzr",
     ".direnv",
