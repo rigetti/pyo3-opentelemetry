@@ -24,8 +24,8 @@ opentelemetry-proto = { version = "0.3.0", optional = true, features = ["tonic"]
 opentelemetry-stdout = { version = "0.1.0", optional = true, features = ["trace"] }
 opentelemetry_api = { workspace = true }
 opentelemetry_sdk = { workspace = true, features = ["rt-tokio-current-thread"] }
-pyo3-asyncio = { version = "0.19.0", features = ["tokio-runtime"] }
-rigetti-pyo3 = { version = "0.2.0" }
+pyo3-asyncio = { workspace = true, features = ["tokio-runtime"] }
+rigetti-pyo3 = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["rt-multi-thread"] }
