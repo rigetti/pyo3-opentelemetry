@@ -52,7 +52,6 @@
     unused_import_braces,
     unused_lifetimes,
     unused_parens,
-    unused_qualifications,
     variant_size_differences,
     while_true
 )]
@@ -70,9 +69,6 @@ use tracing::instrument;
 
 #[instrument]
 fn example_function_impl() -> HashMap<String, String> {
-    let span = tracing::info_span!("example_function");
-    let _guard = span.enter();
-
     let propagator = opentelemetry_sdk::propagation::TraceContextPropagator::new();
     let mut injector = HashMap::new();
     propagator.inject(&mut injector);
@@ -132,9 +128,11 @@ impl ExampleStruct {
 }
 
 #[pymodule]
-fn pyo3_opentelemetry_lib(_py: Python, m: &PyModule) -> PyResult<()> {
+fn pyo3_opentelemetry_lib(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<ExampleStruct>()?;
     m.add_function(wrap_pyfunction!(example_function, m)?)?;
     m.add_function(wrap_pyfunction!(example_function_async, m)?)?;
+
+    pyo3_tracing_subscriber::add_submodule("pyo3_opentelemetry_lib", "_tracing_subscriber", py, m)?;
     Ok(())
 }

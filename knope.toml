@@ -1,12 +1,17 @@
-[packages.lib]
-versioned_files = ["crates/lib/Cargo.toml"]
-changelog = "crates/lib/CHANGELOG.md"
-scopes = ["lib", "pyo3-opentelemetry"]
+[packages.opentelemetry]
+versioned_files = ["crates/opentelemetry/Cargo.toml"]
+changelog = "crates/opentelemetry/CHANGELOG.md"
+scopes = ["lib", "opentelemetry", "pyo3-opentelemetry"]
 
-[packages.macros]
-versioned_files = ["crates/macros/Cargo.toml"]
-changelog = "crates/macros/CHANGELOG.md"
-scopes = ["macros", "pyo3-opentelemetry-macros"]
+[packages.opentelemetry-macros]
+versioned_files = ["crates/opentelemetry-macros/Cargo.toml"]
+changelog = "crates/opentelemetry-macros/CHANGELOG.md"
+scopes = ["macros", "opentelemetry-macros", "pyo3-opentelemetry-macros"]
+
+[packages.tracing-subscriber]
+versioned_files = ["crates/tracing-subscriber/Cargo.toml"]
+changelog = "crates/tracing-subscriber/CHANGELOG.md"
+scopes = ["tracing-subscriber", "pyo3-tracing-subscriber"]
 
 [[workflows]]
 name = "release"

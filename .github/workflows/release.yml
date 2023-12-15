@@ -1,7 +1,6 @@
 name: Release
 
-on:
-  workflow_dispatch: {} 
+on: workflow_dispatch 
 
 jobs:
   release:
@@ -15,10 +14,10 @@ jobs:
       with:
         fetch-depth: 0
         token: ${{ secrets.PAT }}
-    - uses: actions-rs/toolchain@v1
+    - name: Install Knope
+      uses: knope-dev/action@v2.0.0
       with:
-        toolchain: stable
-    - run: cargo install knope --version 0.13.2
+          version: 0.13.2 
     - run: |
         git config --global user.name "${{ github.triggering_actor }}"
         git config --global user.email "${{ github.triggering_actor}}@users.noreply.github.com"

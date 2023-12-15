@@ -3,33 +3,44 @@
   script = "poetry install"
 
 [tasks.python-build]
-  private = true
   dependencies = ["python-install-dependencies"]
   script = '''
   poetry run maturin develop
+  poetry run black pyo3_opentelemetry_lib/_tracing_subscriber
+  poetry run ruff pyo3_opentelemetry_lib/_tracing_subscriber --fix
   '''
     
 [tasks.python-format]
-  private = true
-  dependencies = ["python-build"]
+  dependencies = []
   script = '''
   poetry run black .
   poetry run ruff . --fix
   '''
 
 [tasks.python-check]
-  private = true
   dependencies = ["python-build"]
   script = '''
   poetry run black . --check
   poetry run ruff .
   poetry run pyright .
+  poetry run stubtest --allowlist .stubtest-allowlist --allowlist pyo3_opentelemetry_lib/_tracing_subscriber/.stubtest-allowlist --mypy-config-file ./mypy.ini pyo3_opentelemetry_lib
   '''
 
 [tasks.python-test]
-  private = true
   dependencies = ["python-build"]
-  script = "poetry run pytest ."
+  script = '''
+  poetry run pytest .
+
+  poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_file_export[<lambda>2]' --with-global-tracing-configuration
+  poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_file_export[<lambda>3]' --with-global-tracing-configuration
+  poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_file_export_async[<lambda>0]' --with-global-tracing-configuration
+  poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_file_export_async[<lambda>1]' --with-global-tracing-configuration
+
+  poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_otlp_export[config2]' --with-global-tracing-configuration
+  poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_otlp_export[config3]' --with-global-tracing-configuration
+  poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_otlp_export_async[config0]' --with-global-tracing-configuration
+  poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_otlp_export_async[config1]' --with-global-tracing-configuration
+  '''
 
 [tasks.python-check-all]
   dependencies = ["python-check", "python-test"]

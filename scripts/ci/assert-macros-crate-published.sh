@@ -7,7 +7,7 @@
 set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-cd ${DIR}/../../crates/macros
+cd ${DIR}/../../crates/opentelemetry-macros
 
 CRATE_ID=pyo3-opentelemetry-macros
 VERSION=$(yq -r -oj .package.version Cargo.toml)

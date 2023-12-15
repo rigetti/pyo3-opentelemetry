@@ -52,7 +52,6 @@
     unused_import_braces,
     unused_lifetimes,
     unused_parens,
-    unused_qualifications,
     variant_size_differences,
     while_true
 )]
@@ -64,6 +63,12 @@
 //!
 //! * All functionality here requires the calling Python code to have [opentelemetry-api](https://pypi.org/project/opentelemetry-api/) to be installed.
 //! * See `pypropagate` for additional requirements and limitations.
+//!
+//! # Related Crates
+//!
+//! * `pyo3-opentelemetry-macros` - a crate defining the `pypropagate` macro.
+//! * `pyo3-tracing-subscriber` - a crate supporting configuration and initialization of Rust
+//! tracing subscribers from Python.
 //!
 //! # Examples
 //!
@@ -85,6 +90,9 @@
 //!    Ok(())
 //! }
 //! ```
+//!
+//! For a more comprehensive example, see the `pyo3-opentelemetry-lib` example in this repository.
+//! Specifically, see the `pyo3-opentelemetry-lib/src/lib.rs` for the Rust code and `pyo3-opentelemetry-lib/pyo3_opentelemetry_lib/tests/test_tracing.py` for the Python code and behavioural assertions.
 use std::collections::HashMap;
 
 use pyo3::{prelude::*, types::IntoPyDict};
