@@ -21,5 +21,5 @@ jobs:
         git config --global user.name "${{ github.triggering_actor }}"
         git config --global user.email "${{ github.triggering_actor}}@users.noreply.github.com"
     - name: Prepare Prerelease
-      run: knope release --prerelease-label=rc
+      run: knope release --prerelease-label=rc --verbose
 
