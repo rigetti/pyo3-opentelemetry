@@ -13,6 +13,7 @@ jobs:
       with:
         fetch-depth: 0
         token: ${{ secrets.PAT }}
+    - run: cargo install cargo-edit --version 0.12.2
     - name: Install Knope
       uses: knope-dev/action@v2.0.0
       with:
