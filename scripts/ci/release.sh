@@ -25,11 +25,5 @@ fi
 echo "Running release on branch $GITHUB_REF_NAME (default branch: $DEFAULT_BRANCH)"
 
 git push --tags
-
-if [ -n "$GITHUB_REF_NAME" ]; then
-  # DEFAULT_BRANCH should be defined in .github/workflows/release.yml
-  if [ "$GITHUB_REF_NAME" = "$DEFAULT_BRANCH" ]; then
-    git push -o ci.skip
-  fi
-fi 
+git push -o ci.skip
 
