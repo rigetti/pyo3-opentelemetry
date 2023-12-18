@@ -1,3 +1,11 @@
+## 0.3.1 (2023-12-18)
+
+### Fixes
+
+#### update opentelemetry-macros
+
+#### ci release flow (#11)
+
 ## 0.3.1-rc.1 (2023-12-18)
 
 ### Fixes
