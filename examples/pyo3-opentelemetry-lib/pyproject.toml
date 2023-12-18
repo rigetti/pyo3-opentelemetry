@@ -38,6 +38,7 @@ pytest-asyncio = "^0.21.1"
 grpcio = "^1.59.0"
 pytest-forked = "^1.6.0"
 mypy = "^1.7.1"
+pytest-timeout = "^2.2.0"
 
 [tool.black]
 line-length = 120
@@ -103,3 +104,6 @@ line-length = 120
 [tool.ruff.mccabe]
 # Unlike Flake8, default to a complexity level of 10.
 max-complexity = 10
+
+[tool.pytest.ini_options]
+timeout = 900

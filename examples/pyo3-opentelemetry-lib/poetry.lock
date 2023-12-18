@@ -519,6 +519,20 @@ py = "*"
 pytest = ">=3.10"
 
 [[package]]
+name = "pytest-timeout"
+version = "2.2.0"
+description = "pytest plugin to abort hanging tests"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "pytest-timeout-2.2.0.tar.gz", hash = "sha256:3b0b95dabf3cb50bac9ef5ca912fa0cfc286526af17afc806824df20c2f72c90"},
+    {file = "pytest_timeout-2.2.0-py3-none-any.whl", hash = "sha256:bde531e096466f49398a59f2dde76fa78429a09a12411466f88a07213e220de2"},
+]
+
+[package.dependencies]
+pytest = ">=5.0.0"
+
+[[package]]
 name = "ruff"
 version = "0.0.261"
 description = "An extremely fast Python linter, written in Rust."
@@ -684,4 +698,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8"
-content-hash = "b7af9b3579574b4eab556366e09743cb6ce42642258fbb3da4370a2d31ff8e8b"
+content-hash = "28ed59337002c889f1c7b35545df31fb97990cdc47b0691871af5c90f8c3e373"
