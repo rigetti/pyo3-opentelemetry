@@ -13,7 +13,7 @@ rust-version = "1.67.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
 name = "pyo3_tracing_subscriber"
-crate-type = ["lib"]
+crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 handlebars = { version = "4.4.0", optional = true }
@@ -38,8 +38,10 @@ tracing-subscriber = { workspace = true, features = ["env-filter", "fmt", "json"
 layer-otel-otlp = ["dep:opentelemetry-otlp", "dep:opentelemetry-proto", "dep:tonic"]
 layer-otel-otlp-file = ["dep:opentelemetry-stdout"]
 stubs = ["dep:handlebars"]
+extension-module = ["pyo3/extension-module"]
 
 [dev-dependencies]
 rstest = { workspace = true }
 serde_json = "1.0.107"
 tempfile = "3.8.0"
+

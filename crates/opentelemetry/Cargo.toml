@@ -13,7 +13,7 @@ rust-version = "1.65.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
 name = "pyo3_opentelemetry"
-crate-type = ["lib"]
+crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 opentelemetry = { workspace = true }
@@ -21,6 +21,9 @@ opentelemetry_api = { workspace = true }
 opentelemetry_sdk = { workspace = true }
 pyo3 = { workspace = true }
 pyo3-opentelemetry-macros = { path = "../opentelemetry-macros", version = "0.3.1" }
+
+[features]
+extension-module = ["pyo3/extension-module"]
 
 [dev-dependencies]
 futures-util = "0.3.28"
@@ -30,6 +33,4 @@ tokio = { workspace = true, features = ["sync", "parking_lot", "macros"] }
 tracing = { workspace = true }
 tracing-opentelemetry = { workspace = true }
 tracing-subscriber = { workspace = true }
-
-[features]
 

@@ -9,7 +9,8 @@ serde = { version = "1.0.188", features = ["derive"] }
 opentelemetry = { version = "0.20.0" }
 opentelemetry_api = { version = "0.20.0" }
 opentelemetry_sdk = { version = "0.20.0" }
-pyo3 = { version = "0.20.0", features = ["macros"], default-features = false }
+pyo3 = { version = "0.20.2", features = ["macros"], default-features = false }
+pyo3-build-config = "0.20.2"
 pyo3-asyncio = "0.20.0"
 rigetti-pyo3 = "0.3.1"
 rstest = "0.17.0"

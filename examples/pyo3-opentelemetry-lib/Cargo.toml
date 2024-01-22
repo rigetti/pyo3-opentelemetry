@@ -15,13 +15,13 @@ resolver = "2"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
 name = "pyo3_opentelemetry_lib"
-crate-type = ["cdylib", "lib"]
+crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 opentelemetry = "0.20.0"
 opentelemetry_api = "0.20.0"
 opentelemetry_sdk = "0.20.0"
-pyo3 = { workspace = true }
+pyo3 = { workspace = true, features = ["extension-module"] }
 pyo3-asyncio = { workspace = true, features = ["tokio", "tokio-runtime"] }
 pyo3-opentelemetry = { path = "../../crates/opentelemetry" }
 pyo3-tracing-subscriber = { path = "../../crates/tracing-subscriber", features = ["layer-otel-otlp-file", "layer-otel-otlp"] }
@@ -29,10 +29,7 @@ tokio = { version = "1.27.0", features = ["sync", "parking_lot", "macros"] }
 tracing = "0.1.37"
 tracing-subscriber = { version = "0.3.17", features = ["env-filter"], optional = true }
 
-[features]
-extension-module = ["pyo3/extension-module"]
-default = ["extension-module"]
-
 [build-dependencies]
 pyo3-tracing-subscriber = { path = "../../crates/tracing-subscriber", features = ["layer-otel-otlp-file", "layer-otel-otlp", "stubs"] }
+pyo3-build-config.workspace = true
 
