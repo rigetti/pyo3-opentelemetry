@@ -83,7 +83,7 @@ jobs:
         pip install pyo3-opentelemetry-lib --find-links dist --force-reinstall
 
   linux_wheels:
-    name: Test manylinux ARM and x86 wheel builds
+    name: Test manylinux wheel builds
     runs-on: ubuntu-latest
     env:
       CXXFLAGS: "-std=c++11"
@@ -114,18 +114,17 @@ jobs:
         manylinux: auto
         args: -i ${{ matrix.python-version }} --release --manifest-path examples/pyo3-opentelemetry-lib/Cargo.toml --out dist
     - name: Install wheel
-      # We're using an x86_64 image to cross-compile a wheel for aarch64, so we can only easily test installing the x86_64 wheel.
+      # We use an x86_64 image to cross-compile a wheel for aarch64, so we can only easily test installing the x86_64 wheel.
       if: ${{matrix.target}} == x86_64
       run: |
         pip install pyo3-opentelemetry-lib --find-links dist --force-reinstall
 
   windows_wheels:
-    name: Test Windows x64 wheel builds
+    name: Test Windows wheel builds
     runs-on: windows-latest
     strategy: 
       matrix: 
         python-version: ['3.8']
-        target: [x64] 
     steps: 
       - uses: actions/checkout@v3 
       - uses: actions/setup-python@v2 
@@ -144,7 +143,7 @@ jobs:
       - name: Build wheels 
         uses: messense/maturin-action@v1 
         with: 
-          target: ${{ matrix.target }} 
+          target: x64
           args: -i python --release --manifest-path examples/pyo3-opentelemetry-lib/Cargo.toml --out dist 
       - name: Install wheel 
         run: | 

@@ -24,12 +24,12 @@ opentelemetry_sdk = "0.20.0"
 pyo3 = { workspace = true, features = ["extension-module"] }
 pyo3-asyncio = { workspace = true, features = ["tokio", "tokio-runtime"] }
 pyo3-opentelemetry = { path = "../../crates/opentelemetry" }
-pyo3-tracing-subscriber = { path = "../../crates/tracing-subscriber", features = ["layer-otel-otlp-file", "layer-otel-otlp"] }
+pyo3-tracing-subscriber = { path = "../../crates/tracing-subscriber", features = ["layer-otel-otlp-file", "layer-otel-otlp", "extension-module"] }
 tokio = { version = "1.27.0", features = ["sync", "parking_lot", "macros"] }
 tracing = "0.1.37"
 tracing-subscriber = { version = "0.3.17", features = ["env-filter"], optional = true }
 
 [build-dependencies]
-pyo3-tracing-subscriber = { path = "../../crates/tracing-subscriber", features = ["layer-otel-otlp-file", "layer-otel-otlp", "stubs"] }
+pyo3-tracing-subscriber = { path = "../../crates/tracing-subscriber", features = ["layer-otel-otlp-file", "layer-otel-otlp", "stubs", "extension-module"] }
 pyo3-build-config.workspace = true
 
