@@ -121,6 +121,7 @@ jobs:
 
   windows_wheels:
     name: Test Windows x64 wheel builds
+    runs-on: windows-latest
     strategy: 
       matrix: 
         python-version: ['3.8']
