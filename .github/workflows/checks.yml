@@ -54,3 +54,97 @@ jobs:
           cd ./examples/pyo3-opentelemetry-lib
           cargo make --makefile Makefile.toml python-check-all 
 
+  macos_wheels:
+    name: Test macOS universal2 wheel builds
+    runs-on: macos-12
+    env:
+      CXXFLAGS: "-std=c++11 -stdlib=libc++"
+    strategy:
+      matrix:
+        python-version: ['3.8']
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        target: aarch64-apple-darwin
+        profile: minimal
+        default: true
+    - name: Build wheels - universal2
+      uses: messense/maturin-action@v1
+      with:
+        args: -i python --release --target universal2-apple-darwin --manifest-path examples/pyo3-opentelemetry-lib/Cargo.toml --out dist
+    - name: Install wheel
+      run: |
+        pip install pyo3-opentelemetry-lib --find-links dist --force-reinstall
+
+  linux_wheels:
+    name: Test manylinux ARM and x86 wheel builds
+    runs-on: ubuntu-latest
+    env:
+      CXXFLAGS: "-std=c++11"
+    strategy:
+      matrix:
+        python-version: ['3.8']
+        target: [x86_64, aarch64]
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        default: true
+    - uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install protoc
+      uses: arduino/setup-protoc@v1
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        version: '3.20.1'
+    - name: Build wheels
+      uses: messense/maturin-action@v1
+      with:
+        target: ${{ matrix.target }}
+        manylinux: auto
+        args: -i ${{ matrix.python-version }} --release --manifest-path examples/pyo3-opentelemetry-lib/Cargo.toml --out dist
+    - name: Install wheel
+      # We're using an x86_64 image to cross-compile a wheel for aarch64, so we can only easily test installing the x86_64 wheel.
+      if: ${{matrix.target}} == x86_64
+      run: |
+        pip install pyo3-opentelemetry-lib --find-links dist --force-reinstall
+
+  windows_wheels:
+    name: Test Windows x64 wheel builds
+    strategy: 
+      matrix: 
+        python-version: ['3.8']
+        target: [x64] 
+    steps: 
+      - uses: actions/checkout@v3 
+      - uses: actions/setup-python@v2 
+        with: 
+          python-version: ${{ matrix.python-version }} 
+          architecture: ${{ matrix.target }} 
+      - name: Update rustup 
+        run: rustup self update 
+      - name: Install Rust toolchain 
+        uses: actions-rs/toolchain@v1 
+        with: 
+          toolchain: stable 
+          target: x86_64-pc-windows-msvc 
+          profile: minimal 
+          default: true 
+      - name: Build wheels 
+        uses: messense/maturin-action@v1 
+        with: 
+          target: ${{ matrix.target }} 
+          args: -i python --release --manifest-path examples/pyo3-opentelemetry-lib/Cargo.toml --out dist 
+      - name: Install wheel 
+        run: | 
+          pip install pyo3-opentelemetry-lib --find-links dist --force-reinstall --no-deps --no-index
