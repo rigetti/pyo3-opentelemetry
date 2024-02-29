@@ -60,7 +60,7 @@ jobs:
         maturin-version: 1.4.0
         target: ${{ matrix.target }}
         manylinux: '2_28'
-        args: -i ${{ matrix.python-version }} --find-interpreter --release --manifest-path examples/pyo3-opentelemetry-lib/Cargo.toml --out dist
+        args: --find-interpreter --release --manifest-path examples/pyo3-opentelemetry-lib/Cargo.toml --out dist
 
   windows: 
     runs-on: windows-latest 
