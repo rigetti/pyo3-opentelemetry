@@ -58,7 +58,7 @@ jobs:
       with:
         target: ${{ matrix.target }}
         manylinux: '2_28'
-        args: -i python --release --manifest-path examples/pyo3-opentelemetry-lib/Cargo.toml --out dist
+        args: -i {{  }} --release --manifest-path examples/pyo3-opentelemetry-lib/Cargo.toml --out dist
 
   windows: 
     runs-on: windows-latest 
@@ -85,7 +85,7 @@ jobs:
         uses: messense/maturin-action@v1 
         with: 
           target: ${{ matrix.target }} 
-          args: -i python --release --manifest-path examples/pyo3-opentelemetry-lib/Cargo.toml --out dist 
+          args: -i ${{ matrix.python-version }} --release --manifest-path examples/pyo3-opentelemetry-lib/Cargo.toml --out dist 
       - name: Install built wheel 
         run: | 
           pip install pyo3-opentelemetry-lib --find-links dist --force-reinstall --no-deps --no-index

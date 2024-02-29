@@ -40,6 +40,12 @@ pytest-forked = "^1.6.0"
 mypy = "^1.7.1"
 pytest-timeout = "^2.2.0"
 
+[tool.maturin]
+features = ["pyo3/extension-module"]
+bindings = "pyo3"
+compatibility = "linux"
+sdist-include = ["README.md"]
+
 [tool.black]
 line-length = 120
 target-version = ['py310']
