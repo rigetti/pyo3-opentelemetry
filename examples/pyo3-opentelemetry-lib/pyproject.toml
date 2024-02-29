@@ -1,5 +1,5 @@
 [build-system]
-requires = ["maturin>=0.14,<0.15"]
+requires = ["maturin>=1.0.0,<2.0.0"]
 build-backend = "maturin"
 
 [project]
@@ -30,7 +30,7 @@ pytest-asyncio = "^0.21.0"
 opentelemetry-proto = "^1.20.0"
 
 [tool.poetry.group.dev.dependencies]
-maturin = "^0.14.17"
+maturin = "^1.4.0"
 black = "^23.3.0"
 pyright = "^1.1.303"
 ruff = "^0.0.261"
