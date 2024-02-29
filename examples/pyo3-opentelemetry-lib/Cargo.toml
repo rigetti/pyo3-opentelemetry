@@ -15,7 +15,7 @@ resolver = "2"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
 name = "pyo3_opentelemetry_lib"
-crate-type = ["cdylib", "lib"]
+crate-type = ["cdylib"]
 
 [dependencies]
 opentelemetry = "0.20.0"
@@ -33,4 +33,5 @@ tracing-subscriber = { version = "0.3.17", features = ["env-filter"], optional =
 
 [build-dependencies]
 pyo3-tracing-subscriber = { path = "../../crates/tracing-subscriber", features = ["layer-otel-otlp-file", "layer-otel-otlp", "stubs"] }
+pyo3-build-config.workspace = true
 
