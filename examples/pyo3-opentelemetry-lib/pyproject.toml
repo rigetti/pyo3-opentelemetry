@@ -30,7 +30,6 @@ pytest-asyncio = "^0.21.0"
 opentelemetry-proto = "^1.20.0"
 
 [tool.poetry.group.dev.dependencies]
-maturin = "^1.4.0"
 black = "^23.3.0"
 pyright = "^1.1.303"
 ruff = "^0.0.261"
@@ -39,6 +38,7 @@ grpcio = "^1.59.0"
 pytest-forked = "^1.6.0"
 mypy = "^1.7.1"
 pytest-timeout = "^2.2.0"
+maturin = "^1.2.3"
 
 [tool.maturin]
 features = ["pyo3/extension-module"]
