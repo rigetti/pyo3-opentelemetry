@@ -152,6 +152,7 @@ pub(crate) enum ConfigError {
 
 #[pyclass(name = "SpanLimits")]
 #[derive(Clone, Debug)]
+#[allow(clippy::struct_field_names)]
 struct PySpanLimits {
     /// The max events that can be added to a `Span`.
     max_events_per_span: u32,

@@ -38,7 +38,8 @@
     path_statements,
     patterns_in_fns_without_body,
     pointer_structural_match,
-    private_in_public,
+    private_interfaces,
+    private_bounds,
     semicolon_in_expressions_from_macros,
     trivial_casts,
     trivial_numeric_casts,
@@ -271,7 +272,7 @@ fn get_python_parameter_name(signature: &Signature) -> syn::Result<proc_macro2::
 }
 
 fn pypropagate_signature_and_method(
-    signature: &mut Signature,
+    signature: &Signature,
     block: &mut syn::Block,
     config: &Configuration,
 ) -> Result<(), syn::Error> {
@@ -285,7 +286,7 @@ fn pypropagate_signature_and_method(
 fn pypropagate_impl(item: syn::Item, config: &Configuration) -> Result<syn::Item, syn::Error> {
     match item {
         syn::Item::Fn(mut item_fn) => {
-            pypropagate_signature_and_method(&mut item_fn.sig, &mut item_fn.block, config)?;
+            pypropagate_signature_and_method(&item_fn.sig, &mut item_fn.block, config)?;
 
             Ok(syn::Item::Fn(item_fn))
         }
@@ -296,7 +297,7 @@ fn pypropagate_impl(item: syn::Item, config: &Configuration) -> Result<syn::Item
                         continue;
                     }
                     pypropagate_signature_and_method(
-                        &mut item_method.sig,
+                        &item_method.sig,
                         &mut item_method.block,
                         config,
                     )?;

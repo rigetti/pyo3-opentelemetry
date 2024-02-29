@@ -6,8 +6,7 @@
   dependencies = ["python-install-dependencies"]
   script = '''
   poetry run maturin develop
-  poetry run black pyo3_opentelemetry_lib/_tracing_subscriber
-  poetry run ruff pyo3_opentelemetry_lib/_tracing_subscriber --fix
+  cargo make python-format
   '''
     
 [tasks.python-format]
@@ -30,6 +29,11 @@
   dependencies = ["python-build"]
   script = '''
   poetry run pytest .
+
+  # Note, the follow are all tests that initialize a global tracing subscriber, which is only possible to do
+  # once per process. The alternative here would be to use `pytest-xdist` in order to run each test in a
+  # separate process; that proved non-trivial on a first attempt, as the tests ran into sevaral unexpected
+  # failures.
 
   poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_file_export[<lambda>2]' --with-global-tracing-configuration
   poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_file_export[<lambda>3]' --with-global-tracing-configuration
