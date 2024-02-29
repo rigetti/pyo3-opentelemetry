@@ -29,6 +29,7 @@ jobs:
         # universal2 supports both x86_64 and aarch64
         uses: messense/maturin-action@v1
         with:
+          maturin-version: 1.4.0
           args: -i python --release --target universal2-apple-darwin --manifest-path examples/pyo3-opentelemetry-lib/Cargo.toml --out dist
       - name: Install wheel
         run: |
@@ -56,9 +57,10 @@ jobs:
     - name: Build wheels
       uses: messense/maturin-action@v1
       with:
+        maturin-version: 1.4.0
         target: ${{ matrix.target }}
         manylinux: '2_28'
-        args: -i {{  }} --release --manifest-path examples/pyo3-opentelemetry-lib/Cargo.toml --out dist
+        args: -i ${{ matrix.python-version }} --release --manifest-path examples/pyo3-opentelemetry-lib/Cargo.toml --out dist
 
   windows: 
     runs-on: windows-latest 
@@ -83,7 +85,8 @@ jobs:
           default: true 
       - name: Build wheels 
         uses: messense/maturin-action@v1 
-        with: 
+        with:
+          maturin-version: 1.4.0
           target: ${{ matrix.target }} 
           args: -i ${{ matrix.python-version }} --release --manifest-path examples/pyo3-opentelemetry-lib/Cargo.toml --out dist 
       - name: Install built wheel 
@@ -108,6 +111,7 @@ jobs:
     - name: Build sdist
       uses: messense/maturin-action@v1
       with:
+        maturin-version: 1.4.0
         command: sdist
         args: --manifest-path examples/pyo3-opentelemetry-lib/Cargo.toml --out dist
 
