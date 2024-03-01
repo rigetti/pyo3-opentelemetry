@@ -205,5 +205,5 @@
     dependencies = ["check", "clippy", "deny", "deadlinks", "msrv-verify", "nextest"]
 
 [tasks.pre-ci-flow]
-    dependencies = ["check", "clippy", "deny", "deadlinks", "msrv-verify"]
+    dependencies = ["check", "clippy", "deadlinks", "msrv-verify"]
 
