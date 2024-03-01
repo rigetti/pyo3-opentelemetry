@@ -13,7 +13,7 @@
 // limitations under the License.
 use pyo3::prelude::*;
 
-use rigetti_pyo3::{py_wrap_error, wrap_error, ToPythonError};
+use crate::{common::ToPythonError, py_wrap_error, wrap_error};
 
 use super::export_process::{
     ExportProcess, ExportProcessConfig, RustTracingShutdownError, RustTracingStartError,

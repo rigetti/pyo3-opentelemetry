@@ -22,8 +22,8 @@ use opentelemetry_sdk::{
 };
 use pyo3::prelude::*;
 
+use crate::create_init_submodule;
 use opentelemetry_sdk::trace;
-use rigetti_pyo3::create_init_submodule;
 use tonic::metadata::{
     errors::{InvalidMetadataKey, InvalidMetadataValue},
     MetadataKey,

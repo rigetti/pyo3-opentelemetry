@@ -14,9 +14,8 @@
 
 use std::fmt::Debug;
 
-use crate::subscriber::PyConfig;
+use crate::{py_wrap_error, subscriber::PyConfig, wrap_error};
 use pyo3::{exceptions::PyRuntimeError, prelude::*};
-use rigetti_pyo3::{create_init_submodule, py_wrap_error, wrap_error};
 use tokio::runtime::Runtime;
 
 use super::{
@@ -189,8 +188,4 @@ impl ExportProcess {
             }
         }
     }
-}
-
-create_init_submodule! {
-    errors: [TracingStartError, TracingShutdownError],
 }

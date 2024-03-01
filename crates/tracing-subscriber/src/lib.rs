@@ -122,7 +122,6 @@
 //!
 //! * `pyo3-opentelemetry` - propagates `OpenTelemetry` contexts from Python into Rust.
 use pyo3::{types::PyModule, PyResult, Python};
-use rigetti_pyo3::create_init_submodule;
 
 use self::{
     contextmanager::{CurrentThreadTracingConfig, GlobalTracingConfig, TracingContextManagerError},
@@ -130,6 +129,7 @@ use self::{
 };
 pub use contextmanager::Tracing;
 
+pub(crate) mod common;
 mod contextmanager;
 mod export_process;
 pub(crate) mod layers;

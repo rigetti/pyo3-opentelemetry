@@ -6,7 +6,8 @@
   dependencies = ["python-install-dependencies"]
   script = '''
   poetry run maturin develop
-  cargo make python-format
+  poetry run black .
+  poetry run ruff . --fix
   '''
     
 [tasks.python-format]

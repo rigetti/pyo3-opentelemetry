@@ -12,7 +12,6 @@ opentelemetry_sdk = { version = "0.20.0" }
 pyo3 = { version = "0.20.0", features = ["macros", "extension-module"] }
 pyo3-asyncio = "0.20.0"
 pyo3-build-config = "0.20.0"
-rigetti-pyo3 = { version = "0.3.1", default-features = false }
 rstest = "0.17.0"
 tokio = { version = "1.27.0", features = [] }
 tracing = "0.1.37"
