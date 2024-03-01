@@ -61,7 +61,7 @@ pub(crate) struct Config {
 
 impl Config {
     fn initialize_otlp_exporter(&self) -> TonicExporterBuilder {
-        let mut otlp_exporter = opentelemetry_otlp::new_exporter().tonic().with_env();
+        let mut otlp_exporter = opentelemetry_otlp::new_exporter().tonic();
         if let Some(endpoint) = self.endpoint.clone() {
             otlp_exporter = otlp_exporter.with_endpoint(endpoint);
         }
@@ -103,7 +103,7 @@ impl Config {
             );
 
         let tracer = if batch {
-            pipeline.install_batch(opentelemetry::runtime::TokioCurrentThread)
+            pipeline.install_batch(opentelemetry_sdk::runtime::TokioCurrentThread)
         } else {
             pipeline.install_simple()
         }
@@ -131,7 +131,7 @@ pub(super) enum Error {
 #[derive(thiserror::Error, Debug)]
 pub(crate) enum BuildError {
     #[error("failed to build opentelemetry-otlp pipeline: {0}")]
-    BatchInstall(#[from] TraceError),
+    BatchInstall(#[from] opentelemetry::trace::TraceError),
     #[error("provider not set on returned opentelemetry-otlp tracer")]
     ProviderNotSetOnTracer,
     #[error("error in the configuration: {0}")]
