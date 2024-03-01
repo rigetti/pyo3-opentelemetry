@@ -201,8 +201,9 @@
 [tasks.examples]
     dependencies = ["example-lib-python"]
 
+# Reintroduce cargo deny upon resolution of https://github.com/rigetti/pyo3-opentelemetry/issues/16
 [tasks.check-all]
-    dependencies = ["check", "clippy", "deny", "deadlinks", "msrv-verify", "nextest"]
+    dependencies = ["check", "clippy", "deadlinks", "msrv-verify", "nextest"]
 
 [tasks.pre-ci-flow]
     dependencies = ["check", "clippy", "deadlinks", "msrv-verify"]

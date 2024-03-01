@@ -1,3 +1,7 @@
+/// This module contains a number of `rigetti-pyo3` ports which were
+/// backed out due to build issues involving the `pyo3/extension-module`
+/// feature. This should be replaced upon resolution of
+/// <https://github.com/rigetti/pyo3-opentelemetry/issues/15/>.
 use pyo3::PyErr;
 
 /// A macro for initializing a submodule.
