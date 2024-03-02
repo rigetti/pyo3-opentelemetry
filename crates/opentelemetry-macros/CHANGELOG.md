@@ -1,3 +1,13 @@
+## 0.3.2-rc.0 (2024-03-02)
+
+### Fixes
+
+#### build with pyo3 default features
+
+#### disable cargo deny
+
+#### typing extensions version
+
 ## 0.3.1 (2023-12-18)
 
 ### Fixes

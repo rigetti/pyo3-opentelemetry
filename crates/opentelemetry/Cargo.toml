@@ -1,6 +1,6 @@
 [package]
 name = "pyo3-opentelemetry"
-version = "0.3.1"
+version = "0.3.2-rc.0"
 edition = "2021"
 categories = ["Python bindings", "OpenTelemetry", "Tracing", "Macros"]
 keywords = ["python", "pyo3", "opentelemetry", "tracing"]
@@ -15,7 +15,7 @@ opentelemetry = { workspace = true }
 opentelemetry_api = { workspace = true }
 opentelemetry_sdk = { workspace = true }
 pyo3 = { workspace = true }
-pyo3-opentelemetry-macros = { path = "../opentelemetry-macros", version = "0.3.1" }
+pyo3-opentelemetry-macros = { path = "../opentelemetry-macros", version = "0.3.2-rc.0" }
 
 [dev-dependencies]
 futures-util = "0.3.28"
