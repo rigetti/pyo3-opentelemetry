@@ -53,10 +53,7 @@ impl crate::layers::Config for Config {
         };
         let provider = if batch {
             opentelemetry_sdk::trace::TracerProvider::builder()
-                .with_batch_exporter(
-                    exporter_builder.build(),
-                    opentelemetry::runtime::TokioCurrentThread,
-                )
+                .with_batch_exporter(exporter_builder.build(), opentelemetry::runtime::Tokio)
                 .build()
         } else {
             opentelemetry_sdk::trace::TracerProvider::builder()
