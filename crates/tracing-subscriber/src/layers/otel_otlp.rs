@@ -103,7 +103,7 @@ impl Config {
             );
 
         let tracer = if batch {
-            pipeline.install_batch(opentelemetry::runtime::TokioCurrentThread)
+            pipeline.install_batch(opentelemetry::runtime::Tokio)
         } else {
             pipeline.install_simple()
         }
