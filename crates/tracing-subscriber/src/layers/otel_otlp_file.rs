@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::create_init_submodule;
 use opentelemetry_api::trace::TracerProvider;
 use pyo3::prelude::*;
-use rigetti_pyo3::create_init_submodule;
 use tracing_subscriber::Layer;
 
 use super::{build_env_filter, force_flush_provider_as_shutdown, LayerBuildResult, WithShutdown};
@@ -53,10 +53,7 @@ impl crate::layers::Config for Config {
         };
         let provider = if batch {
             opentelemetry_sdk::trace::TracerProvider::builder()
-                .with_batch_exporter(
-                    exporter_builder.build(),
-                    opentelemetry::runtime::TokioCurrentThread,
-                )
+                .with_batch_exporter(exporter_builder.build(), opentelemetry::runtime::Tokio)
                 .build()
         } else {
             opentelemetry_sdk::trace::TracerProvider::builder()

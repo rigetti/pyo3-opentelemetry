@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+use crate::create_init_submodule;
 use pyo3::prelude::*;
-use rigetti_pyo3::create_init_submodule;
 use tracing::subscriber::DefaultGuard;
 use tracing_subscriber::{layer::Layered, prelude::__tracing_subscriber_SubscriberExt, Registry};
 
@@ -30,6 +30,7 @@ pub(crate) enum BuildError {
     LayerBuild(#[from] crate::layers::BuildError),
 }
 
+#[allow(dead_code)]
 #[derive(thiserror::Error, Debug)]
 #[error("{message}")]
 pub(crate) struct CustomError {

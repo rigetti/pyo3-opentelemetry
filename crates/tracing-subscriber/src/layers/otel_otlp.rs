@@ -22,8 +22,8 @@ use opentelemetry_sdk::{
 };
 use pyo3::prelude::*;
 
+use crate::create_init_submodule;
 use opentelemetry_sdk::trace;
-use rigetti_pyo3::create_init_submodule;
 use tonic::metadata::{
     errors::{InvalidMetadataKey, InvalidMetadataValue},
     MetadataKey,
@@ -103,7 +103,7 @@ impl Config {
             );
 
         let tracer = if batch {
-            pipeline.install_batch(opentelemetry::runtime::TokioCurrentThread)
+            pipeline.install_batch(opentelemetry::runtime::Tokio)
         } else {
             pipeline.install_simple()
         }
@@ -152,6 +152,7 @@ pub(crate) enum ConfigError {
 
 #[pyclass(name = "SpanLimits")]
 #[derive(Clone, Debug)]
+#[allow(clippy::struct_field_names)]
 struct PySpanLimits {
     /// The max events that can be added to a `Span`.
     max_events_per_span: u32,

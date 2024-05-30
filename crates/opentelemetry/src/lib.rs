@@ -16,6 +16,7 @@
 #![deny(clippy::all)]
 #![deny(clippy::pedantic)]
 #![deny(clippy::cargo)]
+#![allow(clippy::multiple_crate_versions)]
 #![warn(clippy::nursery)]
 // Has false positives that conflict with unreachable_pub
 #![allow(clippy::redundant_pub_crate)]
@@ -38,7 +39,8 @@
     path_statements,
     patterns_in_fns_without_body,
     pointer_structural_match,
-    private_in_public,
+    private_interfaces,
+    private_bounds,
     semicolon_in_expressions_from_macros,
     trivial_casts,
     trivial_numeric_casts,
