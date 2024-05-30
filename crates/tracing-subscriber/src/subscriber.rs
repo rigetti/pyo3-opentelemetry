@@ -30,6 +30,7 @@ pub(crate) enum BuildError {
     LayerBuild(#[from] crate::layers::BuildError),
 }
 
+#[allow(dead_code)]
 #[derive(thiserror::Error, Debug)]
 #[error("{message}")]
 pub(crate) struct CustomError {
