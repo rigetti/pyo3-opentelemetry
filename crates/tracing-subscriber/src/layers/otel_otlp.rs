@@ -14,9 +14,9 @@
 
 use std::{collections::HashMap, time::Duration};
 
-use opentelemetry_api::{trace::TraceError, KeyValue};
 use opentelemetry_otlp::{TonicExporterBuilder, WithExportConfig};
 use opentelemetry_sdk::{
+    runtime::TokioCurrentThread,
     trace::{Sampler, SpanLimits},
     Resource,
 };
@@ -61,7 +61,7 @@ pub(crate) struct Config {
 
 impl Config {
     fn initialize_otlp_exporter(&self) -> TonicExporterBuilder {
-        let mut otlp_exporter = opentelemetry_otlp::new_exporter().tonic().with_env();
+        let mut otlp_exporter = opentelemetry_otlp::new_exporter().tonic();
         if let Some(endpoint) = self.endpoint.clone() {
             otlp_exporter = otlp_exporter.with_endpoint(endpoint);
         }
@@ -103,7 +103,7 @@ impl Config {
             );
 
         let tracer = if batch {
-            pipeline.install_batch(opentelemetry::runtime::Tokio)
+            pipeline.install_batch(TokioCurrentThread {})
         } else {
             pipeline.install_simple()
         }
@@ -131,7 +131,7 @@ pub(super) enum Error {
 #[derive(thiserror::Error, Debug)]
 pub(crate) enum BuildError {
     #[error("failed to build opentelemetry-otlp pipeline: {0}")]
-    BatchInstall(#[from] TraceError),
+    TraceInstall(#[from] opentelemetry::trace::TraceError),
     #[error("provider not set on returned opentelemetry-otlp tracer")]
     ProviderNotSetOnTracer,
     #[error("error in the configuration: {0}")]
@@ -304,8 +304,8 @@ impl From<PyResource> for Resource {
         let kvs = resource
             .attrs
             .into_iter()
-            .map(|(k, v)| KeyValue::new(k, v))
-            .collect::<Vec<KeyValue>>();
+            .map(|(k, v)| opentelemetry::KeyValue::new(k, v))
+            .collect::<Vec<opentelemetry::KeyValue>>();
         match resource.schema_url {
             Some(schema_url) => Self::from_schema_url(kvs, schema_url),
             None => Self::new(kvs),
@@ -339,7 +339,7 @@ pub(crate) enum PyResourceValueArray {
     String(Vec<String>),
 }
 
-impl From<PyResourceValueArray> for opentelemetry_api::Array {
+impl From<PyResourceValueArray> for opentelemetry::Array {
     fn from(py_resource_value_array: PyResourceValueArray) -> Self {
         match py_resource_value_array {
             PyResourceValueArray::Bool(b) => Self::Bool(b),
@@ -352,7 +352,7 @@ impl From<PyResourceValueArray> for opentelemetry_api::Array {
     }
 }
 
-impl From<PyResourceValue> for opentelemetry_api::Value {
+impl From<PyResourceValue> for opentelemetry::Value {
     fn from(py_resource_value: PyResourceValue) -> Self {
         match py_resource_value {
             PyResourceValue::Bool(b) => Self::Bool(b),

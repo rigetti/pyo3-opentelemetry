@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use crate::create_init_submodule;
-use opentelemetry_api::trace::TracerProvider;
+use opentelemetry_sdk::runtime::TokioCurrentThread;
 use pyo3::prelude::*;
 use tracing_subscriber::Layer;
 
@@ -43,6 +43,7 @@ impl crate::layers::Config for Config {
     }
 
     fn build(&self, batch: bool) -> LayerBuildResult<WithShutdown> {
+        use opentelemetry::trace::TracerProvider as _;
         let exporter_builder = opentelemetry_stdout::SpanExporter::builder();
         let exporter_builder = match self.file_path.as_ref() {
             Some(file_path) => {
@@ -53,14 +54,14 @@ impl crate::layers::Config for Config {
         };
         let provider = if batch {
             opentelemetry_sdk::trace::TracerProvider::builder()
-                .with_batch_exporter(exporter_builder.build(), opentelemetry::runtime::Tokio)
+                .with_batch_exporter(exporter_builder.build(), TokioCurrentThread)
                 .build()
         } else {
             opentelemetry_sdk::trace::TracerProvider::builder()
                 .with_simple_exporter(exporter_builder.build())
                 .build()
         };
-        let tracer = provider.tracer("stdout");
+        let tracer = provider.tracer("pyo3-opentelemetry-stdout");
         let env_filter = build_env_filter(self.filter.clone())?;
         let layer = tracing_opentelemetry::layer()
             .with_tracer(tracer)

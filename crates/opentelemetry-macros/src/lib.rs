@@ -16,7 +16,6 @@
 #![deny(clippy::all)]
 #![deny(clippy::pedantic)]
 #![deny(clippy::cargo)]
-#![allow(clippy::multiple_crate_versions)]
 #![warn(clippy::nursery)]
 // Has false positives that conflict with unreachable_pub
 #![allow(clippy::redundant_pub_crate)]
@@ -213,7 +212,7 @@ fn wrap_block_in_current_context(
     let error_handler: proc_macro2::TokenStream = match config.on_context_extraction_failure {
         RuntimeErrorHandler::Trace => syn::parse_quote! {
             if let Err(e) = #context_guard_name {
-                use opentelemetry_api::trace::TraceContextExt;
+                use opentelemetry::trace::TraceContextExt;
                 let ctx = opentelemetry::Context::current();
                 ctx.span().record_error(&e);
             }
@@ -338,7 +337,7 @@ fn get_item_impl_method_names(item_impl: &syn::ItemImpl) -> HashSet<String> {
 ///   - must be a valid Rust identifier.
 /// - `on_context_extraction_failure`: What to do when the context cannot be extracted from Python. Defaults to `print`.
 ///   - `print`: Print the error to stderr and continue.
-///   - `trace`: Record the error on the current span using `opentelemetry_api::trace::TraceContextExt::record_error`.
+///   - `trace`: Record the error on the current span using `opentelemetry::trace::TraceContextExt::record_error`.
 ///   - `py_error`: Return a `pyo3::PyErr`.
 ///   - `ignore`: Ignore the error.
 /// - `exclude`: A list of method names to exclude. Only valid on `impl` items.

@@ -18,9 +18,8 @@ name = "pyo3_opentelemetry_lib"
 crate-type =  ["cdylib", "rlib"]
 
 [dependencies]
-opentelemetry = "0.20.0"
-opentelemetry_api = "0.20.0"
-opentelemetry_sdk = "0.20.0"
+opentelemetry = "0.23.0"
+opentelemetry_sdk = "0.23.0"
 pyo3 = { workspace = true }
 pyo3-asyncio = { workspace = true, features = ["tokio", "tokio-runtime"] }
 pyo3-opentelemetry = { path = "../../crates/opentelemetry" }
