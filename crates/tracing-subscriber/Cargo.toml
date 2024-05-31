@@ -1,6 +1,6 @@
 [package]
 name = "pyo3-tracing-subscriber"
-version = "0.1.2-rc.0"
+version = "0.1.2-dev.0"
 edition = "2021"
 categories = ["Python bindings", "OpenTelemetry", "Tracing"]
 keywords = ["python", "pyo3", "opentelemetry", "tracing"]
