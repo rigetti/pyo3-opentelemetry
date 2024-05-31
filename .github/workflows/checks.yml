@@ -15,7 +15,7 @@ jobs:
       matrix:
         python-version: [ '3.8', '3.9', '3.10', '3.11', '3.12' ]
         rust:
-          - 1.78.0 
+          - stable 
           # the scripts seem to inevitably involve building something that requires a newer version
           # of rust, so we just run against stable for now.
           # - 1.60.0

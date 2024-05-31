@@ -14,14 +14,8 @@
 db-path = "~/.cargo/advisory-db"
 # The url(s) of the advisory databases to use
 db-urls = ["https://github.com/rustsec/advisory-db"]
-# The lint level for security vulnerabilities
-vulnerability = "deny"
-# The lint level for unmaintained crates
-unmaintained = "deny"
 # The lint level for crates that have been yanked from their source registry
 yanked = "deny"
-# The lint level for crates with security notices.
-notice = "deny"
 # A list of advisory IDs to ignore. Note that ignored advisories will still
 # output a note when they are encountered.
 #ignore = [
@@ -33,7 +27,6 @@ notice = "deny"
 # https://embarkstudios.github.io/cargo-deny/checks/licenses/cfg.html
 [licenses]
 unused-allowed-license = "allow"
-unlicensed = "deny"
 allow = [
     "Apache-2.0",
     "ISC",
@@ -44,32 +37,30 @@ allow = [
     "Unicode-DFS-2016",
     "Apache-2.0 WITH LLVM-exception",
 ]
-# List of explictly disallowed licenses
-# See https://spdx.org/licenses/ for list of possible licenses
-# [possible values: any SPDX 3.11 short identifier (+ optional exception)].
-deny = [
-    #"Nokia",
-]
 # Lint level for licenses considered copyleft
-copyleft = "deny"
-allow-osi-fsf-free = "neither"
-default = "deny"
 confidence-threshold = 0.8
-exceptions = [
-]
 
 [licenses.private]
 # If true, ignores workspace crates that aren't published, or are only
 # published to private registries
 ignore = true
 
+[[licenses.clarify]]
+name = "ring"
+expression = "MIT AND ISC AND OpenSSL"
+license-files = [
+    { path = "LICENSE", hash = 0xbd0eed23 }
+]
+
 # This section is considered when running `cargo deny check bans`.
 # More documentation about the 'bans' section can be found here:
 # https://embarkstudios.github.io/cargo-deny/checks/bans/cfg.html
 [bans]
-multiple-versions = "warn"
-wildcards = "warn"
-# allow-wildcard-paths = true
+# clippy::cargo now handles multiple versions; we don't need two
+# tools barking at us for the same thing
+multiple-versions = "allow"
+wildcards = "deny"
+allow-wildcard-paths = true
 highlight = "all"
 skip-tree = []
 # This section is considered when running `cargo deny check sources`.
