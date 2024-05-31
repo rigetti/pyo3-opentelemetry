@@ -13,7 +13,6 @@
 // limitations under the License.
 
 use crate::create_init_submodule;
-use opentelemetry_sdk::runtime::TokioCurrentThread;
 use pyo3::prelude::*;
 use tracing_subscriber::Layer;
 
@@ -52,16 +51,13 @@ impl crate::layers::Config for Config {
             }
             None => exporter_builder,
         };
-        let provider = if batch {
-            opentelemetry_sdk::trace::TracerProvider::builder()
-                .with_batch_exporter(exporter_builder.build(), TokioCurrentThread)
-                .build()
-        } else {
-            opentelemetry_sdk::trace::TracerProvider::builder()
-                .with_simple_exporter(exporter_builder.build())
-                .build()
-        };
-        let tracer = provider.tracer("pyo3-opentelemetry-stdout");
+        if batch {
+            return Err(BuildError::BatchModeNotSupported)?;
+        }
+        let provider = opentelemetry_sdk::trace::TracerProvider::builder()
+            .with_simple_exporter(exporter_builder.build())
+            .build();
+        let tracer = provider.tracer("pyo3_tracing_subscriber");
         let env_filter = build_env_filter(self.filter.clone())?;
         let layer = tracing_opentelemetry::layer()
             .with_tracer(tracer)
@@ -77,6 +73,8 @@ impl crate::layers::Config for Config {
 pub(crate) enum BuildError {
     #[error("failed to initialize file span exporter for specified file path: {0}")]
     InvalidFile(#[from] std::io::Error),
+    #[error("batch mode is not supported for stdout layer")]
+    BatchModeNotSupported,
 }
 
 create_init_submodule! {

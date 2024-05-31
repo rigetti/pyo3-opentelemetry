@@ -16,7 +16,6 @@ use std::{collections::HashMap, time::Duration};
 
 use opentelemetry_otlp::{TonicExporterBuilder, WithExportConfig};
 use opentelemetry_sdk::{
-    runtime::TokioCurrentThread,
     trace::{Sampler, SpanLimits},
     Resource,
 };
@@ -103,7 +102,7 @@ impl Config {
             );
 
         let tracer = if batch {
-            pipeline.install_batch(TokioCurrentThread {})
+            pipeline.install_batch(opentelemetry_sdk::runtime::Tokio {})
         } else {
             pipeline.install_simple()
         }

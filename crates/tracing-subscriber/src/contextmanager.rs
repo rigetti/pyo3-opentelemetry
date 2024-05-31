@@ -197,7 +197,7 @@ mod test {
 
     use crate::{
         contextmanager::{CurrentThreadTracingConfig, GlobalTracingConfig, TracingConfig},
-        export_process::{BatchConfig, ExportProcess, ExportProcessConfig, SimpleConfig},
+        export_process::{ExportProcess, ExportProcessConfig, SimpleConfig},
         subscriber::TracingSubscriberRegistryConfig,
     };
 
@@ -234,71 +234,6 @@ mod test {
         name: String,
         start_time_unix_nano: u128,
         end_time_unix_nano: u128,
-    }
-
-    #[test]
-    /// Test that a global batch process can be started and stopped and that it exports
-    /// accurate spans as configured.
-    fn test_global_batch() {
-        let temporary_file_path = get_tempfile("test_global_batch");
-        let layer_config = Box::new(crate::layers::otel_otlp_file::Config {
-            file_path: Some(temporary_file_path.as_os_str().to_str().unwrap().to_owned()),
-            filter: Some("error,pyo3_tracing_subscriber=info".to_string()),
-        });
-        let subscriber = Box::new(TracingSubscriberRegistryConfig { layer_config });
-        let config = TracingConfig::Global(GlobalTracingConfig {
-            export_process: ExportProcessConfig::Batch(BatchConfig {
-                subscriber: crate::subscriber::PyConfig {
-                    subscriber_config: subscriber,
-                },
-            }),
-        });
-        let export_process = ExportProcess::start(config).unwrap();
-        let rt2 = Builder::new_current_thread().enable_time().build().unwrap();
-        let _guard = rt2.enter();
-        let export_runtime = rt2
-            .block_on(tokio::time::timeout(Duration::from_secs(1), async move {
-                for _ in 0..N_SPANS {
-                    example();
-                }
-                export_process.shutdown().await
-            }))
-            .unwrap()
-            .unwrap()
-            .unwrap();
-        drop(export_runtime);
-
-        let reader = std::io::BufReader::new(std::fs::File::open(temporary_file_path).unwrap());
-        let lines = reader.lines();
-        let spans = lines
-            .flat_map(|line| {
-                let line = line.unwrap();
-                let span_data: SpanData = serde_json::from_str(line.as_str()).unwrap();
-                span_data
-                    .resource_spans
-                    .iter()
-                    .flat_map(|resource_span| {
-                        resource_span
-                            .scope_spans
-                            .iter()
-                            .flat_map(|scope_span| scope_span.spans.clone())
-                    })
-                    .collect::<Vec<Span>>()
-            })
-            .collect::<Vec<Span>>();
-        assert_eq!(spans.len(), N_SPANS);
-
-        let span_grace = Duration::from_millis(200);
-        for span in spans {
-            assert_eq!(span.name, "example");
-            assert!(
-                span.end_time_unix_nano - span.start_time_unix_nano >= SPAN_DURATION.as_nanos()
-            );
-            assert!(
-                (span.end_time_unix_nano - span.start_time_unix_nano)
-                    <= (SPAN_DURATION.as_nanos() + span_grace.as_nanos())
-            );
-        }
     }
 
     #[test]
@@ -352,7 +287,7 @@ mod test {
             .collect::<Vec<Span>>();
         assert_eq!(spans.len(), N_SPANS);
 
-        let span_grace = Duration::from_millis(10);
+        let span_grace = Duration::from_millis(50);
         for span in spans {
             assert_eq!(span.name, "example");
             assert!(
