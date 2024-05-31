@@ -37,8 +37,7 @@
   # separate process; that proved non-trivial on a first attempt, as the tests ran into sevaral unexpected
   # failures.
 
-  poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_file_export[02]' --with-global-tracing-configuration
-  poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_file_export[03]' --with-global-tracing-configuration
+  poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_file_export[01]' --with-global-tracing-configuration
   poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_file_export_asynchronous[00]' --with-global-tracing-configuration
 
   poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_otlp_export[02]' --with-global-tracing-configuration

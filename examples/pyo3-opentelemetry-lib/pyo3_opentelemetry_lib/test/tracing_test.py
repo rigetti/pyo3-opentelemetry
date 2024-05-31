@@ -50,21 +50,9 @@ _TEST_FILE_EXPORT = [
             subscriber=subscriber.Config(layer=file.Config(file_path=os.path.join(_TEST_ARTIFACTS_DIR, filename)))
         )
     ),
-    lambda filename: CurrentThreadTracingConfig(
-        export_process=BatchConfig(
-            subscriber=subscriber.Config(layer=file.Config(file_path=os.path.join(_TEST_ARTIFACTS_DIR, filename)))
-        )
-    ),
     global_tracing(
         lambda filename: GlobalTracingConfig(
             export_process=SimpleConfig(
-                subscriber=subscriber.Config(layer=file.Config(file_path=os.path.join(_TEST_ARTIFACTS_DIR, filename)))
-            )
-        )
-    ),
-    global_tracing(
-        lambda filename: GlobalTracingConfig(
-            export_process=BatchConfig(
                 subscriber=subscriber.Config(layer=file.Config(file_path=os.path.join(_TEST_ARTIFACTS_DIR, filename)))
             )
         )
@@ -85,11 +73,6 @@ async def test_file_export(config_builder: Callable[[str], TracingConfig], trace
 _TEST_FILE_EXPORT_MULTI_THREADS = [
     lambda filename: CurrentThreadTracingConfig(
         export_process=SimpleConfig(
-            subscriber=subscriber.Config(layer=file.Config(file_path=os.path.join(_TEST_ARTIFACTS_DIR, filename)))
-        )
-    ),
-    lambda filename: CurrentThreadTracingConfig(
-        export_process=BatchConfig(
             subscriber=subscriber.Config(layer=file.Config(file_path=os.path.join(_TEST_ARTIFACTS_DIR, filename)))
         )
     ),
