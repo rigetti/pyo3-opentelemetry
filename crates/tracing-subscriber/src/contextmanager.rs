@@ -185,7 +185,13 @@ impl Tracing {
 #[cfg(feature = "layer-otel-otlp-file")]
 #[cfg(test)]
 mod test {
-    use std::{io::BufRead, thread::sleep, time::Duration};
+    use std::{
+        env::temp_dir,
+        io::BufRead,
+        path::PathBuf,
+        thread::sleep,
+        time::{Duration, SystemTime, UNIX_EPOCH},
+    };
 
     use tokio::runtime::Builder;
 
@@ -234,8 +240,7 @@ mod test {
     /// Test that a global batch process can be started and stopped and that it exports
     /// accurate spans as configured.
     fn test_global_batch() {
-        let temporary_file = tempfile::NamedTempFile::new().unwrap();
-        let temporary_file_path = temporary_file.path().to_owned();
+        let temporary_file_path = get_tempfile("test_global_batch");
         let layer_config = Box::new(crate::layers::otel_otlp_file::Config {
             file_path: Some(temporary_file_path.as_os_str().to_str().unwrap().to_owned()),
             filter: Some("error,pyo3_tracing_subscriber=info".to_string()),
@@ -300,8 +305,7 @@ mod test {
     /// Test that a global simple export process can be started and stopped and that it
     /// exports accurate spans as configured.
     fn test_global_simple() {
-        let temporary_file = tempfile::NamedTempFile::new().unwrap();
-        let temporary_file_path = temporary_file.path().to_owned();
+        let temporary_file_path = get_tempfile("test_global_simple");
         let layer_config = Box::new(crate::layers::otel_otlp_file::Config {
             file_path: Some(temporary_file_path.as_os_str().to_str().unwrap().to_owned()),
             filter: Some("error,pyo3_tracing_subscriber=info".to_string()),
@@ -361,12 +365,22 @@ mod test {
         }
     }
 
+    fn get_tempfile(prefix: &str) -> PathBuf {
+        let timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("should be able to get current time")
+            .as_nanos();
+        let dir = temp_dir();
+        dir.join(std::path::Path::new(
+            format!("{prefix}-{timestamp}.txt").as_str(),
+        ))
+    }
+
     #[test]
     /// Test that a current thread simple export process can be started and stopped and that it
     /// exports accurate spans as configured.
     fn test_current_thread_simple() {
-        let temporary_file = tempfile::NamedTempFile::new().unwrap();
-        let temporary_file_path = temporary_file.path().to_owned();
+        let temporary_file_path = get_tempfile("test_current_thread_simple");
         let layer_config = Box::new(crate::layers::otel_otlp_file::Config {
             file_path: Some(temporary_file_path.as_os_str().to_str().unwrap().to_owned()),
             filter: Some("error,pyo3_tracing_subscriber=info".to_string()),

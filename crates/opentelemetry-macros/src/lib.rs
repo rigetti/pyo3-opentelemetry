@@ -355,7 +355,7 @@ fn get_item_impl_method_names(item_impl: &syn::ItemImpl) -> HashSet<String> {
 ///    Ok(())
 /// }
 ///
-/// #[pypropagate(context_guard_name = "_my_context_guard", on_context_extraction_failure = "py_error"))]
+/// #[pypropagate(context_guard_name = "_my_context_guard", on_context_extraction_failure = "py_error")]
 /// #[pyfunction]
 /// fn my_function2(py: Python<'_>, arg1: u32, arg2: String) -> PyResult<()> {
 ///    // ...
