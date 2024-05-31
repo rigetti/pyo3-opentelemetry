@@ -29,6 +29,7 @@
 [tasks.python-test]
   dependencies = ["python-build"]
   script = '''
+  mkdir -p pyo3_opentelemetry_lib/test/__artifacts__
   poetry run pytest .
 
   # Note, the follow are all tests that initialize a global tracing subscriber, which is only possible to do
