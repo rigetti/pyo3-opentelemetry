@@ -21,7 +21,8 @@ jobs:
     - run: |
         git config --global user.name "${{ github.triggering_actor }}"
         git config --global user.email "${{ github.triggering_actor}}@users.noreply.github.com"
-        git pull origin --tags
     - name: Prepare Prerelease
-      run: knope release --prerelease-label=rc --verbose
+      run: |
+        git pull origin --tags
+        knope release --prerelease-label=rc --verbose
 
