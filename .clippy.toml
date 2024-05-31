@@ -1,5 +1,6 @@
 allowed-duplicate-crates = [
   "base64",
+  "bitflags",
   "hashbrown",
   "indexmap",
   "regex-automata",

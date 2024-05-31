@@ -44,38 +44,36 @@ def global_tracing(param: Any):
     return pytest.param(param, marks=pytest.mark.global_tracing_configuration)
 
 
-@pytest.mark.parametrize(
-    "config_builder",
-    [
-        lambda filename: CurrentThreadTracingConfig(
+_TEST_FILE_EXPORT = [
+    lambda filename: CurrentThreadTracingConfig(
+        export_process=SimpleConfig(
+            subscriber=subscriber.Config(layer=file.Config(file_path=os.path.join(_TEST_ARTIFACTS_DIR, filename)))
+        )
+    ),
+    lambda filename: CurrentThreadTracingConfig(
+        export_process=BatchConfig(
+            subscriber=subscriber.Config(layer=file.Config(file_path=os.path.join(_TEST_ARTIFACTS_DIR, filename)))
+        )
+    ),
+    global_tracing(
+        lambda filename: GlobalTracingConfig(
             export_process=SimpleConfig(
                 subscriber=subscriber.Config(layer=file.Config(file_path=os.path.join(_TEST_ARTIFACTS_DIR, filename)))
             )
-        ),
-        lambda filename: CurrentThreadTracingConfig(
+        )
+    ),
+    global_tracing(
+        lambda filename: GlobalTracingConfig(
             export_process=BatchConfig(
                 subscriber=subscriber.Config(layer=file.Config(file_path=os.path.join(_TEST_ARTIFACTS_DIR, filename)))
             )
-        ),
-        global_tracing(
-            lambda filename: GlobalTracingConfig(
-                export_process=SimpleConfig(
-                    subscriber=subscriber.Config(
-                        layer=file.Config(file_path=os.path.join(_TEST_ARTIFACTS_DIR, filename))
-                    )
-                )
-            )
-        ),
-        global_tracing(
-            lambda filename: GlobalTracingConfig(
-                export_process=BatchConfig(
-                    subscriber=subscriber.Config(
-                        layer=file.Config(file_path=os.path.join(_TEST_ARTIFACTS_DIR, filename))
-                    )
-                )
-            )
-        ),
-    ],
+        )
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "config_builder", _TEST_FILE_EXPORT, ids=[str(i).zfill(2) for i in range(len(_TEST_FILE_EXPORT))]
 )
 async def test_file_export(config_builder: Callable[[str], TracingConfig], tracer: Tracer, file_export_filter: None):
     """
@@ -84,20 +82,24 @@ async def test_file_export(config_builder: Callable[[str], TracingConfig], trace
     await _test_file_export(config_builder, tracer)
 
 
+_TEST_FILE_EXPORT_MULTI_THREADS = [
+    lambda filename: CurrentThreadTracingConfig(
+        export_process=SimpleConfig(
+            subscriber=subscriber.Config(layer=file.Config(file_path=os.path.join(_TEST_ARTIFACTS_DIR, filename)))
+        )
+    ),
+    lambda filename: CurrentThreadTracingConfig(
+        export_process=BatchConfig(
+            subscriber=subscriber.Config(layer=file.Config(file_path=os.path.join(_TEST_ARTIFACTS_DIR, filename)))
+        )
+    ),
+]
+
+
 @pytest.mark.parametrize(
     "config_builder",
-    [
-        lambda filename: CurrentThreadTracingConfig(
-            export_process=SimpleConfig(
-                subscriber=subscriber.Config(layer=file.Config(file_path=os.path.join(_TEST_ARTIFACTS_DIR, filename)))
-            )
-        ),
-        lambda filename: CurrentThreadTracingConfig(
-            export_process=BatchConfig(
-                subscriber=subscriber.Config(layer=file.Config(file_path=os.path.join(_TEST_ARTIFACTS_DIR, filename)))
-            )
-        ),
-    ],
+    _TEST_FILE_EXPORT_MULTI_THREADS,
+    ids=[str(i).zfill(2) for i in range(len(_TEST_FILE_EXPORT_MULTI_THREADS))],
 )
 async def test_file_export_multi_threads(
     config_builder: Callable[[str], TracingConfig], tracer: Tracer, file_export_filter: None
@@ -149,30 +151,21 @@ async def _test_file_export(config_builder: Callable[[str], TracingConfig], trac
     assert counter["example_function_impl"] == 1
 
 
+_TEST_FILE_EXPORT_ASYNC = [
+    global_tracing(
+        lambda filename: GlobalTracingConfig(
+            export_process=SimpleConfig(
+                subscriber=subscriber.Config(layer=file.Config(file_path=os.path.join(_TEST_ARTIFACTS_DIR, filename)))
+            )
+        )
+    ),
+]
+
+
 @pytest.mark.parametrize(
-    "config_builder",
-    [
-        global_tracing(
-            lambda filename: GlobalTracingConfig(
-                export_process=SimpleConfig(
-                    subscriber=subscriber.Config(
-                        layer=file.Config(file_path=os.path.join(_TEST_ARTIFACTS_DIR, filename))
-                    )
-                )
-            )
-        ),
-        global_tracing(
-            lambda filename: GlobalTracingConfig(
-                export_process=BatchConfig(
-                    subscriber=subscriber.Config(
-                        layer=file.Config(file_path=os.path.join(_TEST_ARTIFACTS_DIR, filename))
-                    )
-                )
-            )
-        ),
-    ],
+    "config_builder", _TEST_FILE_EXPORT_ASYNC, ids=[str(i).zfill(2) for i in range(len(_TEST_FILE_EXPORT_ASYNC))]
 )
-async def test_file_export_async(
+async def test_file_export_asynchronous(
     config_builder: Callable[[str], TracingConfig], tracer: Tracer, file_export_filter: None
 ):
     """
@@ -218,18 +211,18 @@ async def test_file_export_async(
     assert counter["example_function_impl_async"] == 1
 
 
+_TEST_OTLP_EXPORT = [
+    CurrentThreadTracingConfig(export_process=SimpleConfig(subscriber=subscriber.Config(layer=otlp.Config()))),
+    CurrentThreadTracingConfig(export_process=BatchConfig(subscriber=subscriber.Config(layer=otlp.Config()))),
+    global_tracing(GlobalTracingConfig(export_process=SimpleConfig(subscriber=subscriber.Config(layer=otlp.Config())))),
+    global_tracing(GlobalTracingConfig(export_process=BatchConfig(subscriber=subscriber.Config(layer=otlp.Config())))),
+]
+
+
 @pytest.mark.parametrize(
     "config",
-    [
-        CurrentThreadTracingConfig(export_process=SimpleConfig(subscriber=subscriber.Config(layer=otlp.Config()))),
-        CurrentThreadTracingConfig(export_process=BatchConfig(subscriber=subscriber.Config(layer=otlp.Config()))),
-        global_tracing(
-            GlobalTracingConfig(export_process=SimpleConfig(subscriber=subscriber.Config(layer=otlp.Config())))
-        ),
-        global_tracing(
-            GlobalTracingConfig(export_process=BatchConfig(subscriber=subscriber.Config(layer=otlp.Config())))
-        ),
-    ],
+    _TEST_OTLP_EXPORT,
+    ids=[str(i).zfill(2) for i in range(len(_TEST_OTLP_EXPORT))],
 )
 async def test_otlp_export(
     config: TracingConfig,
@@ -267,12 +260,16 @@ async def test_otlp_export(
     assert counter["example_function_impl"] == 1
 
 
+_TEST_OTLP_EXPORT_MULTI_THREADS = [
+    CurrentThreadTracingConfig(export_process=SimpleConfig(subscriber=subscriber.Config(layer=otlp.Config()))),
+    CurrentThreadTracingConfig(export_process=BatchConfig(subscriber=subscriber.Config(layer=otlp.Config()))),
+]
+
+
 @pytest.mark.parametrize(
     "config",
-    [
-        CurrentThreadTracingConfig(export_process=SimpleConfig(subscriber=subscriber.Config(layer=otlp.Config()))),
-        CurrentThreadTracingConfig(export_process=BatchConfig(subscriber=subscriber.Config(layer=otlp.Config()))),
-    ],
+    _TEST_OTLP_EXPORT_MULTI_THREADS,
+    ids=[str(i).zfill(2) for i in range(len(_TEST_OTLP_EXPORT_MULTI_THREADS))],
 )
 async def test_otlp_export_multi_threads(
     config: TracingConfig,
@@ -311,18 +308,18 @@ async def test_otlp_export_multi_threads(
         assert counter["example_function_impl"] == 1
 
 
+TEST_OTLP_EXPORT_ASYNC = [
+    global_tracing(GlobalTracingConfig(export_process=SimpleConfig(subscriber=subscriber.Config(layer=otlp.Config())))),
+    global_tracing(GlobalTracingConfig(export_process=BatchConfig(subscriber=subscriber.Config(layer=otlp.Config())))),
+]
+
+
 @pytest.mark.parametrize(
     "config",
-    [
-        global_tracing(
-            GlobalTracingConfig(export_process=SimpleConfig(subscriber=subscriber.Config(layer=otlp.Config())))
-        ),
-        global_tracing(
-            GlobalTracingConfig(export_process=BatchConfig(subscriber=subscriber.Config(layer=otlp.Config())))
-        ),
-    ],
+    TEST_OTLP_EXPORT_ASYNC,
+    ids=[str(i).zfill(2) for i in range(len(TEST_OTLP_EXPORT_ASYNC))],
 )
-async def test_otlp_export_async(
+async def test_otlp_export_asynchronous(
     config: TracingConfig,
     tracer: Tracer,
     otlp_test_namespace: str,
