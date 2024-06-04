@@ -1,3 +1,15 @@
+## 0.1.2-dev.1 (2024-06-04)
+
+### Fixes
+
+#### use tls tonic features (#18)
+
+#### update opentelemetry dependencies
+
+#### drop batch stdout support
+
+#### use explicit extension-module features
+
 ## 0.1.2-dev.0 (2024-05-31)
 
 ### Fixes
