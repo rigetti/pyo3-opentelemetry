@@ -31,6 +31,6 @@ tracing-subscriber = { version = "0.3.17", features = ["env-filter"], optional =
 [features]
 
 [build-dependencies]
-pyo3-tracing-subscriber = { path = "../../crates/tracing-subscriber", features = ["layer-otel-otlp-file", "layer-otel-otlp", "stubs"] }
+pyo3-tracing-subscriber = { path = "../../crates/tracing-subscriber", features = ["layer-otel-otlp-file", "layer-otel-otlp", "stubs"], default-features = false }
 pyo3-build-config.workspace = true
 

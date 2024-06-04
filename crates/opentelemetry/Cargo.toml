@@ -26,4 +26,6 @@ tracing-opentelemetry = { workspace = true }
 tracing-subscriber = { workspace = true }
 
 [features]
+extension-module = ["pyo3/extension-module"]
+default = ["extension-module"]
 
