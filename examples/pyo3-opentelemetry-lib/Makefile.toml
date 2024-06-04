@@ -18,7 +18,7 @@
   '''
 
 [tasks.python-check]
-  dependencies = ["python-build"]
+  dependencies = ["python-build", "python-format"]
   script = '''
   poetry run black . --check
   poetry run ruff .
@@ -27,7 +27,7 @@
   '''
 
 [tasks.python-test]
-  dependencies = ["python-build"]
+  dependencies = ["python-build", "python-format"]
   script = '''
   mkdir -p pyo3_opentelemetry_lib/test/__artifacts__
   poetry run pytest .
