@@ -6,8 +6,7 @@
   dependencies = ["python-install-dependencies"]
   script = '''
   poetry run maturin develop
-  poetry run black .
-  poetry run ruff . --fix
+  cargo make python-format 
   '''
     
 [tasks.python-format]
@@ -18,7 +17,7 @@
   '''
 
 [tasks.python-check]
-  dependencies = ["python-build", "python-format"]
+  dependencies = ["python-build"]
   script = '''
   poetry run black . --check
   poetry run ruff .
@@ -27,7 +26,7 @@
   '''
 
 [tasks.python-test]
-  dependencies = ["python-build", "python-format"]
+  dependencies = ["python-build"]
   script = '''
   mkdir -p pyo3_opentelemetry_lib/test/__artifacts__
   poetry run pytest .
