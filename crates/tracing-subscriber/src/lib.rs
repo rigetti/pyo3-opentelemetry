@@ -37,7 +37,6 @@
     overflowing_literals,
     path_statements,
     patterns_in_fns_without_body,
-    pointer_structural_match,
     private_interfaces,
     private_bounds,
     semicolon_in_expressions_from_macros,
