@@ -6,14 +6,20 @@ resolver = "2"
 [workspace.dependencies]
 thiserror = "1.0.57"
 serde = { version = "1.0.145", features = ["derive"] }
-opentelemetry = { version = "0.23.0" }
-opentelemetry_sdk = { version = "0.23.0" }
+# All OTEL packages must have the same version number.
+# When updating the OTEL version, be sure to update these optional dependencies in `tracing-subscriber` as well:
+# * opentelemetry-otlp
+# * opentelemetry-proto
+# * opentelemetry-stdout
+opentelemetry = "0.25.0"
+opentelemetry_sdk = "0.25.0"
 pyo3 = { version = "0.20.0", features = ["macros"] }
 pyo3-asyncio = { version = "0.20.0", features = ["tokio-runtime"] }
 pyo3-build-config = "0.20.0"
 rstest = "0.17.0"
 tokio = { version = "1.36.0", features = [] }
 tracing = { version = "0.1.37", features = ["log"] }
-tracing-opentelemetry = "0.24.0"
+# Despite how close the version numbers are, this package's release numbers *do
+# not* match the OTEL SDK version that it requires.
+tracing-opentelemetry = "0.26.0"
 tracing-subscriber = "0.3.17"
-
