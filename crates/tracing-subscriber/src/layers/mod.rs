@@ -18,14 +18,11 @@
 //! Currently, the following layers are supported:
 //!
 //! * [`crate::layers::fmt_file::Config`] - a layer which writes spans to a file (or stdout) in
-//! * [`crate::layers::otel_otlp_file::Config`] - a layer which writes spans to a file (or stdout) in
-//! the `OpenTelemetry` OTLP JSON-serialized format.
+//!   the `OpenTelemetry` OTLP JSON-serialized format.
 //! * [`crate::layers::otel_otlp::Config`] - a layer which exports spans to an `OpenTelemetry` collector.
 pub(crate) mod fmt_file;
 #[cfg(feature = "layer-otel-otlp")]
 pub(crate) mod otel_otlp;
-#[cfg(feature = "layer-otel-otlp-file")]
-pub(crate) mod otel_otlp_file;
 
 use std::fmt::Debug;
 
@@ -57,9 +54,6 @@ impl Debug for WithShutdown {
 
 #[derive(thiserror::Error, Debug)]
 pub(crate) enum BuildError {
-    #[cfg(feature = "layer-otel-otlp-file")]
-    #[error("file layer: {0}")]
-    File(#[from] otel_otlp_file::BuildError),
     #[cfg(feature = "layer-otel-otlp")]
     #[error("otlp layer: {0}")]
     Otlp(#[from] otel_otlp::BuildError),
@@ -108,7 +102,7 @@ impl Clone for Box<dyn Config> {
     }
 }
 
-#[cfg(any(feature = "layer-otel-otlp", feature = "layer-otel-otlp-file"))]
+#[cfg(feature = "layer-otel-otlp")]
 pub(super) fn force_flush_provider_as_shutdown(
     provider: opentelemetry_sdk::trace::TracerProvider,
     timeout: Option<std::time::Duration>,
@@ -145,8 +139,6 @@ pub(super) fn build_env_filter(env_filter: Option<String>) -> Result<EnvFilter, 
 #[derive(FromPyObject, Clone, Debug)]
 #[allow(variant_size_differences, clippy::large_enum_variant)]
 pub(crate) enum PyConfig {
-    #[cfg(feature = "layer-otel-otlp-file")]
-    OtlpFile(otel_otlp_file::Config),
     #[cfg(feature = "layer-otel-otlp")]
     Otlp(otel_otlp::PyConfig),
     File(fmt_file::Config),
@@ -161,8 +153,6 @@ impl Default for PyConfig {
 impl Config for PyConfig {
     fn build(&self, batch: bool) -> LayerBuildResult<WithShutdown> {
         match self {
-            #[cfg(feature = "layer-otel-otlp-file")]
-            Self::OtlpFile(config) => config.build(batch),
             #[cfg(feature = "layer-otel-otlp")]
             Self::Otlp(config) => config.build(batch),
             Self::File(config) => config.build(batch),
@@ -171,8 +161,6 @@ impl Config for PyConfig {
 
     fn requires_runtime(&self) -> bool {
         match self {
-            #[cfg(feature = "layer-otel-otlp-file")]
-            Self::OtlpFile(config) => config.requires_runtime(),
             #[cfg(feature = "layer-otel-otlp")]
             Self::Otlp(config) => config.requires_runtime(),
             Self::File(config) => config.requires_runtime(),
@@ -185,14 +173,6 @@ impl Config for PyConfig {
 pub(crate) fn init_submodule(name: &str, py: Python, m: &PyModule) -> PyResult<()> {
     let modules = py.import("sys")?.getattr("modules")?;
 
-    #[cfg(feature = "layer-otel-otlp-file")]
-    {
-        let submod = pyo3::types::PyModule::new(py, "otel_otlp_file")?;
-        let qualified_name = format!("{name}.otel_otlp_file");
-        otel_otlp_file::init_submodule(qualified_name.as_str(), py, submod)?;
-        modules.set_item(qualified_name, submod)?;
-        m.add_submodule(submod)?;
-    }
     #[cfg(feature = "layer-otel-otlp")]
     {
         let submod = pyo3::types::PyModule::new(py, "otel_otlp")?;

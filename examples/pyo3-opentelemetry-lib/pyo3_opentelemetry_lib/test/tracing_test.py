@@ -23,7 +23,6 @@ from pyo3_opentelemetry_lib._tracing_subscriber import (
     subscriber,
 )
 from pyo3_opentelemetry_lib._tracing_subscriber.layers import otel_otlp as otlp
-from pyo3_opentelemetry_lib._tracing_subscriber.layers import otel_otlp_file as file
 
 if TYPE_CHECKING:
     from pyo3_opentelemetry_lib._tracing_subscriber import TracingConfig

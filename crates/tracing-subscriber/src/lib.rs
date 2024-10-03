@@ -63,7 +63,6 @@
 //!
 //! * `pyo3` - enables the Python bindings for the tracing subscriber. This feature is enabled by default.
 //! * `extension-module` - enables the Python extension module for the tracing subscriber. This feature is enabled by default.
-//! * `layer-otel-otlp-file` - exports trace data with `opentelemetry-stdout`. See `crate::layers::otel_otlp_file`.
 //! * `layer-otel-otlp` - exports trace data with `opentelemetry-otlp`. See `crate::layers::otel_otlp`.
 //! * `stubs` - supports writing stub files in your Python source code from your Rust build scripts. See `crates::stubs`. This should only be used in build scripts with default features disabled.
 //!
@@ -203,7 +202,6 @@ create_init_submodule! {
 /// * `layers` - a submodule which contains different layers to add to the tracing subscriber.
 /// Currently supported:
 ///     * `tracing::fmt` - a layer which exports trace data to stdout in a non-OpenTelemetry data format.
-///     * `opentelemetry-stdout` - a layer which exports trace data to stdout (requires the `layer-otel-otlp-file` feature).
 ///     * `opentelemetry-otlp` - a layer which exports trace data to an `OpenTelemetry` collector (requires the `layer-otel-otlp` feature).
 /// * `subscriber` - a submodule which contains utilities for initialing the tracing subscriber
 /// with the configured layer. Currently, the tracing subscriber is initialized as

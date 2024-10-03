@@ -182,7 +182,6 @@ impl Tracing {
     }
 }
 
-#[cfg(feature = "layer-otel-otlp-file")]
 #[cfg(test)]
 mod test {
     use std::{
@@ -209,8 +208,7 @@ mod test {
     const N_SPANS: usize = 5;
     const SPAN_DURATION: Duration = Duration::from_millis(100);
 
-    /// A truncated implementation of `opentelemetry_stdout` that derives
-    /// `serde::Deserialize`.
+    /// A simple otlp implementation that derives `serde::Deserialize`.
     #[derive(serde::Deserialize)]
     #[serde(rename_all = "camelCase")]
     struct SpanData {

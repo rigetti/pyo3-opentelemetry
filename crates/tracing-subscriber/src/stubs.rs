@@ -83,7 +83,6 @@ struct Data {
     host_package: String,
     tracing_subscriber_module_name: String,
     version: String,
-    layer_otel_otlp_file: bool,
     layer_otel_otlp: bool,
     any_additional_layer: bool,
 }
@@ -94,10 +93,8 @@ impl Data {
             host_package,
             tracing_subscriber_module_name,
             version: env!("CARGO_PKG_VERSION").to_string(),
-            layer_otel_otlp_file: cfg!(feature = "layer-otel-otlp-file"),
             layer_otel_otlp: cfg!(feature = "layer-otel-otlp"),
-            any_additional_layer: cfg!(feature = "layer-otel-otlp-file")
-                || cfg!(feature = "layer-otel-otlp"),
+            any_additional_layer: cfg!(feature = "layer-otel-otlp"),
         }
     }
 }
@@ -151,7 +148,6 @@ macro_rules! include_stub_and_init {
 /// * `tracing_subscriber_module_name` - The name of the tracing subscriber module (ie the Python
 /// module that will contain the stub files).
 /// * `directory` - The directory to write the stub files to.
-/// * `layer_otel_otlp_file` - Whether to include stub files for the `otel_otlp_file` layer.
 /// * `layer_otel_otlp` - Whether to include stub files for the `otel_otlp` layer.
 ///
 /// See module level documentation for the `pyo3-tracing-subscriber` crate for more information
@@ -176,8 +172,6 @@ pub fn write_stub_files(
     include_stub_and_init!(directory, "subscriber/", hb);
     include_stub_and_init!(directory, "layers/", hb);
     include_stub_and_init!(directory, "layers/file/", hb);
-    #[cfg(feature = "layer-otel-otlp-file")]
-    include_stub_and_init!(directory, "layers/otel_otlp_file/", hb);
     #[cfg(feature = "layer-otel-otlp")]
     include_stub_and_init!(directory, "layers/otel_otlp/", hb);
     let data = Data::new(

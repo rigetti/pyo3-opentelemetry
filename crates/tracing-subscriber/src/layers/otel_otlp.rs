@@ -14,6 +14,7 @@
 
 use std::{collections::HashMap, time::Duration};
 
+use opentelemetry::trace::TracerProvider;
 use opentelemetry_otlp::{TonicExporterBuilder, WithExportConfig};
 use opentelemetry_sdk::{
     trace::{Sampler, SpanLimits},
@@ -22,7 +23,6 @@ use opentelemetry_sdk::{
 use pyo3::prelude::*;
 
 use crate::create_init_submodule;
-use opentelemetry_sdk::trace;
 use tonic::metadata::{
     errors::{InvalidMetadataKey, InvalidMetadataValue},
     MetadataKey,
@@ -37,6 +37,8 @@ use super::{build_env_filter, force_flush_provider_as_shutdown, LayerBuildResult
 /// Configures the [`opentelemetry-otlp`] crate layer.
 #[derive(Clone, Debug)]
 pub(crate) struct Config {
+    /// The name of the tracer to use.
+    tracer_name: String,
     /// Configuration to limit the amount of trace data collected.
     span_limits: SpanLimits,
     /// OpenTelemetry resource attributes describing the entity that produced the telemetry.
@@ -95,21 +97,18 @@ impl Config {
             .tracing()
             .with_exporter(self.initialize_otlp_exporter())
             .with_trace_config(
-                trace::config()
+                opentelemetry_sdk::trace::Config::default()
                     .with_sampler(self.sampler.clone())
                     .with_span_limits(self.span_limits)
                     .with_resource(self.resource.clone()),
             );
 
-        let tracer = if batch {
+        let provider = if batch {
             pipeline.install_batch(opentelemetry_sdk::runtime::Tokio {})
         } else {
             pipeline.install_simple()
-        }
-        .map_err(BuildError::from)?;
-        let provider = tracer
-            .provider()
-            .ok_or(BuildError::ProviderNotSetOnTracer)?;
+        }.map_err(BuildError::from)?;
+        let tracer = provider.tracer(self.tracer_name.clone());
         let env_filter = build_env_filter(self.filter.clone())?;
         let layer = tracing_opentelemetry::layer()
             .with_tracer(tracer)
@@ -131,8 +130,6 @@ pub(super) enum Error {
 pub(crate) enum BuildError {
     #[error("failed to build opentelemetry-otlp pipeline: {0}")]
     TraceInstall(#[from] opentelemetry::trace::TraceError),
-    #[error("provider not set on returned opentelemetry-otlp tracer")]
-    ProviderNotSetOnTracer,
     #[error("error in the configuration: {0}")]
     Config(#[from] ConfigError),
     #[error("failed to parse specified trace filter: {0}")]
@@ -231,6 +228,7 @@ impl PySpanLimits {
 #[pyclass(name = "Config")]
 #[derive(Clone, Default, Debug)]
 pub(crate) struct PyConfig {
+    tracer_name: String,
     span_limits: PySpanLimits,
     resource: PyResource,
     metadata_map: Option<HashMap<String, String>>,
@@ -245,6 +243,7 @@ pub(crate) struct PyConfig {
 impl PyConfig {
     #[new]
     #[pyo3(signature = (
+        tracer_name,
         /,
         span_limits = None,
         resource = None,
@@ -257,6 +256,7 @@ impl PyConfig {
     ))]
     #[allow(clippy::too_many_arguments)]
     fn new(
+        tracer_name: String,
         span_limits: Option<PySpanLimits>,
         resource: Option<PyResource>,
         metadata_map: Option<&PyAny>,
@@ -267,6 +267,7 @@ impl PyConfig {
         filter: Option<&str>,
     ) -> PyResult<Self> {
         Ok(Self {
+            tracer_name,
             span_limits: span_limits.unwrap_or_default(),
             resource: resource.unwrap_or_default(),
             metadata_map: metadata_map.map(PyAny::extract).transpose()?,
@@ -439,6 +440,7 @@ impl TryFrom<PyConfig> for Config {
         };
 
         Ok(Self {
+            tracer_name: config.tracer_name,
             span_limits: config.span_limits.into(),
             resource: config.resource.into(),
             metadata_map,
