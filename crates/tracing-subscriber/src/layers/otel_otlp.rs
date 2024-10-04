@@ -12,14 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::{collections::HashMap, time::Duration};
+use std::{collections::HashMap, sync::Arc, time::Duration};
 
+use opentelemetry::{trace::TracerProvider, InstrumentationLibrary};
 use opentelemetry_otlp::{TonicExporterBuilder, WithExportConfig};
 use opentelemetry_sdk::{
     trace::{Sampler, SpanLimits},
     Resource,
 };
 use pyo3::prelude::*;
+use tracing_subscriber::Layer;
 
 use crate::create_init_submodule;
 use opentelemetry_sdk::trace;
@@ -27,12 +29,12 @@ use tonic::metadata::{
     errors::{InvalidMetadataKey, InvalidMetadataValue},
     MetadataKey,
 };
-use tracing_subscriber::{
-    filter::{FromEnvError, ParseError},
-    Layer,
-};
+use tracing_subscriber::filter::{FromEnvError, ParseError};
 
-use super::{build_env_filter, force_flush_provider_as_shutdown, LayerBuildResult, WithShutdown};
+use super::{
+    build_env_filter, force_flush_provider_as_shutdown, LayerBuildResult, PyInstrumentationLibrary,
+    WithShutdown,
+};
 
 /// Configures the [`opentelemetry-otlp`] crate layer.
 #[derive(Clone, Debug)]
@@ -56,6 +58,8 @@ pub(crate) struct Config {
     pre_shutdown_timeout: Duration,
     /// The filter to use for the [`tracing_subscriber::filter::EnvFilter`] layer.
     filter: Option<String>,
+    /// The instrumentation library to use for the [`opentelemetry::sdk::trace::TracerProvider`].
+    instrumentation_library: Option<InstrumentationLibrary>,
 }
 
 impl Config {
@@ -95,22 +99,27 @@ impl Config {
             .tracing()
             .with_exporter(self.initialize_otlp_exporter())
             .with_trace_config(
-                trace::config()
+                trace::Config::default()
                     .with_sampler(self.sampler.clone())
                     .with_span_limits(self.span_limits)
                     .with_resource(self.resource.clone()),
             );
 
-        let tracer = if batch {
+        let provider = if batch {
             pipeline.install_batch(opentelemetry_sdk::runtime::Tokio {})
         } else {
             pipeline.install_simple()
         }
         .map_err(BuildError::from)?;
-        let provider = tracer
-            .provider()
-            .ok_or(BuildError::ProviderNotSetOnTracer)?;
         let env_filter = build_env_filter(self.filter.clone())?;
+
+        let tracer = self.instrumentation_library.as_ref().map_or_else(
+            || provider.tracer("pyo3_tracing_subscriber"),
+            |instrumentation_library| {
+                provider.library_tracer(Arc::new(instrumentation_library.clone()))
+            },
+        );
+
         let layer = tracing_opentelemetry::layer()
             .with_tracer(tracer)
             .with_filter(env_filter);
@@ -131,8 +140,6 @@ pub(super) enum Error {
 pub(crate) enum BuildError {
     #[error("failed to build opentelemetry-otlp pipeline: {0}")]
     TraceInstall(#[from] opentelemetry::trace::TraceError),
-    #[error("provider not set on returned opentelemetry-otlp tracer")]
-    ProviderNotSetOnTracer,
     #[error("error in the configuration: {0}")]
     Config(#[from] ConfigError),
     #[error("failed to parse specified trace filter: {0}")]
@@ -239,6 +246,7 @@ pub(crate) struct PyConfig {
     timeout_millis: Option<u64>,
     pre_shutdown_timeout_millis: u64,
     filter: Option<String>,
+    instrumentation_library: Option<PyInstrumentationLibrary>,
 }
 
 #[pymethods]
@@ -253,7 +261,8 @@ impl PyConfig {
         endpoint = None,
         timeout_millis = None,
         pre_shutdown_timeout_millis = 2000,
-        filter = None
+        filter = None,
+        instrumentation_library = None
     ))]
     #[allow(clippy::too_many_arguments)]
     fn new(
@@ -265,6 +274,7 @@ impl PyConfig {
         timeout_millis: Option<u64>,
         pre_shutdown_timeout_millis: u64,
         filter: Option<&str>,
+        instrumentation_library: Option<PyInstrumentationLibrary>,
     ) -> PyResult<Self> {
         Ok(Self {
             span_limits: span_limits.unwrap_or_default(),
@@ -275,6 +285,7 @@ impl PyConfig {
             timeout_millis,
             pre_shutdown_timeout_millis,
             filter: filter.map(String::from),
+            instrumentation_library,
         })
     }
 }
@@ -447,6 +458,7 @@ impl TryFrom<PyConfig> for Config {
             timeout: config.timeout_millis.map(Duration::from_millis),
             pre_shutdown_timeout: Duration::from_millis(config.pre_shutdown_timeout_millis),
             filter: config.filter,
+            instrumentation_library: config.instrumentation_library.map(Into::into),
         })
     }
 }

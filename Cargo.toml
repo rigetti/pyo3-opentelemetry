@@ -10,7 +10,6 @@ serde = { version = "1.0.145", features = ["derive"] }
 # When updating the OTEL version, be sure to update these optional dependencies in `tracing-subscriber` as well:
 # * opentelemetry-otlp
 # * opentelemetry-proto
-# * opentelemetry-stdout
 opentelemetry = "0.25.0"
 opentelemetry_sdk = "0.25.0"
 pyo3 = { version = "0.20.0", features = ["macros"] }

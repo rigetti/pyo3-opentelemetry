@@ -149,7 +149,7 @@ macro_rules! include_stub_and_init {
 ///
 /// * `host_package` - The name of the host Python package.
 /// * `tracing_subscriber_module_name` - The name of the tracing subscriber module (ie the Python
-/// module that will contain the stub files).
+///   module that will contain the stub files).
 /// * `directory` - The directory to write the stub files to.
 /// * `layer_otel_otlp_file` - Whether to include stub files for the `otel_otlp_file` layer.
 /// * `layer_otel_otlp` - Whether to include stub files for the `otel_otlp` layer.

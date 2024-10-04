@@ -244,6 +244,7 @@ mod test {
         let layer_config = Box::new(crate::layers::otel_otlp_file::Config {
             file_path: Some(temporary_file_path.as_os_str().to_str().unwrap().to_owned()),
             filter: Some("error,pyo3_tracing_subscriber=info".to_string()),
+            instrumentation_library: None,
         });
         let subscriber = Box::new(TracingSubscriberRegistryConfig { layer_config });
         let config = TracingConfig::Global(GlobalTracingConfig {
@@ -319,6 +320,7 @@ mod test {
         let layer_config = Box::new(crate::layers::otel_otlp_file::Config {
             file_path: Some(temporary_file_path.as_os_str().to_str().unwrap().to_owned()),
             filter: Some("error,pyo3_tracing_subscriber=info".to_string()),
+            instrumentation_library: None,
         });
         let subscriber = Box::new(TracingSubscriberRegistryConfig { layer_config });
         let config = TracingConfig::CurrentThread(CurrentThreadTracingConfig {

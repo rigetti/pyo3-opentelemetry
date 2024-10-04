@@ -42,7 +42,7 @@ pub(crate) struct ExportProcess {
 }
 
 impl ExportProcess {
-    fn new(guard: SubscriberManagerGuard, runtime: Runtime) -> Self {
+    const fn new(guard: SubscriberManagerGuard, runtime: Runtime) -> Self {
         Self { runtime, guard }
     }
 
