@@ -183,7 +183,7 @@ async def test_file_export_asynchronous(
                 span_trace_id = int(span["traceId"], 16)
                 assert span_trace_id is None or span_trace_id == trace_id, filename
                 if span["name"] == "example_function_impl_async":
-                    duration_ns = span["endTimeUnixNano"] - span["startTimeUnixNano"]
+                    duration_ns = int(span["endTimeUnixNano"]) - int(span["startTimeUnixNano"])
                     expected_duration_ms = 100
                     assert duration_ns > (expected_duration_ms * 10**6)
                     assert duration_ns < (1.5 * expected_duration_ms * 10**6)

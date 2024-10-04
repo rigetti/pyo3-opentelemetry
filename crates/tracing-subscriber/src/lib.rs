@@ -159,7 +159,8 @@ create_init_submodule! {
     errors: [TracingContextManagerError, TracingStartError, TracingShutdownError],
     submodules: [
         "layers": layers::init_submodule,
-        "subscriber": subscriber::init_submodule
+        "subscriber": subscriber::init_submodule,
+        "common": common::init_submodule
     ],
 }
 

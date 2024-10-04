@@ -173,6 +173,7 @@ pub fn write_stub_files(
     )
     .map_err(Box::new)
     .map_err(Error::from)?;
+    include_stub_and_init!(directory, "common/", hb);
     include_stub_and_init!(directory, "subscriber/", hb);
     include_stub_and_init!(directory, "layers/", hb);
     include_stub_and_init!(directory, "layers/file/", hb);

@@ -21,12 +21,10 @@ use opentelemetry_proto::transform::{
     common::tonic::ResourceAttributesWithSchema, trace::tonic::group_spans_by_resource_and_scope,
 };
 use pyo3::prelude::*;
-use tracing_subscriber::Layer;
 
-use super::{
-    build_env_filter, force_flush_provider_as_shutdown, LayerBuildResult, PyInstrumentationLibrary,
-    WithShutdown,
-};
+use super::{build_env_filter, force_flush_provider_as_shutdown, LayerBuildResult, WithShutdown};
+use crate::common::PyInstrumentationLibrary;
+use tracing_subscriber::Layer;
 
 /// Configures the [`opentelemetry-stdout`] crate layer. If [`file_path`] is None, the layer
 /// will write to stdout.

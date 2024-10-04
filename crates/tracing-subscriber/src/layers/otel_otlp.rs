@@ -31,10 +31,8 @@ use tonic::metadata::{
 };
 use tracing_subscriber::filter::{FromEnvError, ParseError};
 
-use super::{
-    build_env_filter, force_flush_provider_as_shutdown, LayerBuildResult, PyInstrumentationLibrary,
-    WithShutdown,
-};
+use super::{build_env_filter, force_flush_provider_as_shutdown, LayerBuildResult, WithShutdown};
+use crate::common::PyInstrumentationLibrary;
 
 /// Configures the [`opentelemetry-otlp`] crate layer.
 #[derive(Clone, Debug)]
