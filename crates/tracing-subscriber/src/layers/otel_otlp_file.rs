@@ -21,7 +21,7 @@ use opentelemetry_proto::transform::{
     common::tonic::ResourceAttributesWithSchema, trace::tonic::group_spans_by_resource_and_scope,
 };
 use pyo3::prelude::*;
-use tracing_subscriber::{fmt::MakeWriter, Layer};
+use tracing_subscriber::Layer;
 
 use super::{
     build_env_filter, force_flush_provider_as_shutdown, LayerBuildResult, PyInstrumentationLibrary,
@@ -80,13 +80,28 @@ impl opentelemetry_sdk::export::trace::SpanExporter for OtelOtlpFile {
 
         Box::pin(async move {
             let traces_data = opentelemetry_proto::tonic::trace::v1::TracesData { resource_spans };
-            match writer {
-                Some(writer) => {
-                    serde_json::to_writer(writer.lock().await.make_writer(), &traces_data)
-                        .map_err(|e| TraceError::Other(Box::new(e)))
-                }
-                None => serde_json::to_writer(std::io::stdout(), &traces_data)
-                    .map_err(|e| TraceError::Other(Box::new(e))),
+            let serialized =
+                serde_json::to_vec(&traces_data).map_err(|e| TraceError::Other(Box::new(e)))?;
+            if let Some(writer) = writer {
+                let mut writer = writer.lock().await;
+                writer
+                    .write(serialized.as_slice())
+                    .map(|_| ())
+                    .map_err(|e| TraceError::Other(Box::new(e)))?;
+                writer
+                    .write(b"\n")
+                    .map(|_| ())
+                    .map_err(|e| TraceError::Other(Box::new(e)))
+            } else {
+                let mut stdout = std::io::stdout().lock();
+                stdout
+                    .write(serialized.as_slice())
+                    .map(|_| ())
+                    .map_err(|e| TraceError::Other(Box::new(e)))?;
+                stdout
+                    .write(b"\n")
+                    .map(|_| ())
+                    .map_err(|e| TraceError::Other(Box::new(e)))
             }
         })
     }

@@ -200,6 +200,7 @@ mod test {
         export_process::{ExportProcess, ExportProcessConfig, SimpleConfig},
         subscriber::TracingSubscriberRegistryConfig,
     };
+    use opentelemetry_proto::tonic::trace::v1 as otlp;
 
     #[tracing::instrument]
     fn example() {
@@ -208,33 +209,6 @@ mod test {
 
     const N_SPANS: usize = 5;
     const SPAN_DURATION: Duration = Duration::from_millis(100);
-
-    /// A truncated implementation of `opentelemetry_stdout` that derives
-    /// `serde::Deserialize`.
-    #[derive(serde::Deserialize)]
-    #[serde(rename_all = "camelCase")]
-    struct SpanData {
-        resource_spans: Vec<ResourceSpan>,
-    }
-
-    #[derive(serde::Deserialize)]
-    #[serde(rename_all = "camelCase")]
-    struct ResourceSpan {
-        scope_spans: Vec<ScopeSpan>,
-    }
-
-    #[derive(serde::Deserialize)]
-    struct ScopeSpan {
-        spans: Vec<Span>,
-    }
-
-    #[derive(serde::Deserialize, Clone)]
-    #[serde(rename_all = "camelCase")]
-    struct Span {
-        name: String,
-        start_time_unix_nano: u128,
-        end_time_unix_nano: u128,
-    }
 
     #[test]
     /// Test that a global simple export process can be started and stopped and that it
@@ -273,7 +247,8 @@ mod test {
         let spans = lines
             .flat_map(|line| {
                 let line = line.unwrap();
-                let span_data: SpanData = serde_json::from_str(line.as_str()).unwrap();
+                let span_data: otlp::TracesData =
+                    serde_json::from_str(line.as_str().trim()).unwrap();
                 span_data
                     .resource_spans
                     .iter()
@@ -283,19 +258,20 @@ mod test {
                             .iter()
                             .flat_map(|scope_span| scope_span.spans.clone())
                     })
-                    .collect::<Vec<Span>>()
+                    .collect::<Vec<otlp::Span>>()
             })
-            .collect::<Vec<Span>>();
+            .collect::<Vec<otlp::Span>>();
         assert_eq!(spans.len(), N_SPANS);
 
         let span_grace = Duration::from_millis(50);
         for span in spans {
             assert_eq!(span.name, "example");
             assert!(
-                span.end_time_unix_nano - span.start_time_unix_nano >= SPAN_DURATION.as_nanos()
+                (span.end_time_unix_nano - span.start_time_unix_nano) as u128
+                    >= SPAN_DURATION.as_nanos()
             );
             assert!(
-                (span.end_time_unix_nano - span.start_time_unix_nano)
+                (span.end_time_unix_nano - span.start_time_unix_nano) as u128
                     <= (SPAN_DURATION.as_nanos() + span_grace.as_nanos())
             );
         }
@@ -351,7 +327,7 @@ mod test {
         let spans = lines
             .flat_map(|line| {
                 let line = line.unwrap();
-                let span_data: SpanData = serde_json::from_str(line.as_str()).unwrap();
+                let span_data: otlp::TracesData = serde_json::from_str(line.as_str()).unwrap();
                 span_data
                     .resource_spans
                     .iter()
@@ -361,19 +337,20 @@ mod test {
                             .iter()
                             .flat_map(|scope_span| scope_span.spans.clone())
                     })
-                    .collect::<Vec<Span>>()
+                    .collect::<Vec<otlp::Span>>()
             })
-            .collect::<Vec<Span>>();
+            .collect::<Vec<otlp::Span>>();
         assert_eq!(spans.len(), N_SPANS);
 
         let span_grace = Duration::from_millis(50);
         for span in spans {
             assert_eq!(span.name, "example");
             assert!(
-                span.end_time_unix_nano - span.start_time_unix_nano >= SPAN_DURATION.as_nanos()
+                (span.end_time_unix_nano - span.start_time_unix_nano) as u128
+                    >= SPAN_DURATION.as_nanos()
             );
             assert!(
-                (span.end_time_unix_nano - span.start_time_unix_nano)
+                (span.end_time_unix_nano - span.start_time_unix_nano) as u128
                     <= (SPAN_DURATION.as_nanos() + span_grace.as_nanos())
             );
         }
