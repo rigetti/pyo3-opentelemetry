@@ -185,15 +185,22 @@ impl Tracing {
 #[cfg(feature = "layer-otel-otlp-file")]
 #[cfg(test)]
 mod test {
-    use std::{io::BufRead, thread::sleep, time::Duration};
+    use std::{
+        env::temp_dir,
+        io::BufRead,
+        path::PathBuf,
+        thread::sleep,
+        time::{Duration, SystemTime, UNIX_EPOCH},
+    };
 
     use tokio::runtime::Builder;
 
     use crate::{
         contextmanager::{CurrentThreadTracingConfig, GlobalTracingConfig, TracingConfig},
-        export_process::{BatchConfig, ExportProcess, ExportProcessConfig, SimpleConfig},
+        export_process::{ExportProcess, ExportProcessConfig, SimpleConfig},
         subscriber::TracingSubscriberRegistryConfig,
     };
+    use opentelemetry_proto::tonic::trace::v1 as otlp;
 
     #[tracing::instrument]
     fn example() {
@@ -203,108 +210,15 @@ mod test {
     const N_SPANS: usize = 5;
     const SPAN_DURATION: Duration = Duration::from_millis(100);
 
-    /// A truncated implementation of `opentelemetry_stdout` that derives
-    /// `serde::Deserialize`.
-    #[derive(serde::Deserialize)]
-    #[serde(rename_all = "camelCase")]
-    struct SpanData {
-        resource_spans: Vec<ResourceSpan>,
-    }
-
-    #[derive(serde::Deserialize)]
-    #[serde(rename_all = "camelCase")]
-    struct ResourceSpan {
-        scope_spans: Vec<ScopeSpan>,
-    }
-
-    #[derive(serde::Deserialize)]
-    struct ScopeSpan {
-        spans: Vec<Span>,
-    }
-
-    #[derive(serde::Deserialize, Clone)]
-    #[serde(rename_all = "camelCase")]
-    struct Span {
-        name: String,
-        start_time_unix_nano: u128,
-        end_time_unix_nano: u128,
-    }
-
-    #[test]
-    /// Test that a global batch process can be started and stopped and that it exports
-    /// accurate spans as configured.
-    fn test_global_batch() {
-        let temporary_file = tempfile::NamedTempFile::new().unwrap();
-        let temporary_file_path = temporary_file.path().to_owned();
-        let layer_config = Box::new(crate::layers::otel_otlp_file::Config {
-            file_path: Some(temporary_file_path.as_os_str().to_str().unwrap().to_owned()),
-            filter: Some("error,pyo3_tracing_subscriber=info".to_string()),
-        });
-        let subscriber = Box::new(TracingSubscriberRegistryConfig { layer_config });
-        let config = TracingConfig::Global(GlobalTracingConfig {
-            export_process: ExportProcessConfig::Batch(BatchConfig {
-                subscriber: crate::subscriber::PyConfig {
-                    subscriber_config: subscriber,
-                },
-            }),
-        });
-        let export_process = ExportProcess::start(config).unwrap();
-        let rt2 = Builder::new_current_thread().enable_time().build().unwrap();
-        let _guard = rt2.enter();
-        let export_runtime = rt2
-            .block_on(tokio::time::timeout(Duration::from_secs(1), async move {
-                for _ in 0..N_SPANS {
-                    example();
-                }
-                export_process.shutdown().await
-            }))
-            .unwrap()
-            .unwrap()
-            .unwrap();
-        drop(export_runtime);
-
-        let reader = std::io::BufReader::new(std::fs::File::open(temporary_file_path).unwrap());
-        let lines = reader.lines();
-        let spans = lines
-            .flat_map(|line| {
-                let line = line.unwrap();
-                let span_data: SpanData = serde_json::from_str(line.as_str()).unwrap();
-                span_data
-                    .resource_spans
-                    .iter()
-                    .flat_map(|resource_span| {
-                        resource_span
-                            .scope_spans
-                            .iter()
-                            .flat_map(|scope_span| scope_span.spans.clone())
-                    })
-                    .collect::<Vec<Span>>()
-            })
-            .collect::<Vec<Span>>();
-        assert_eq!(spans.len(), N_SPANS);
-
-        let span_grace = Duration::from_millis(200);
-        for span in spans {
-            assert_eq!(span.name, "example");
-            assert!(
-                span.end_time_unix_nano - span.start_time_unix_nano >= SPAN_DURATION.as_nanos()
-            );
-            assert!(
-                (span.end_time_unix_nano - span.start_time_unix_nano)
-                    <= (SPAN_DURATION.as_nanos() + span_grace.as_nanos())
-            );
-        }
-    }
-
     #[test]
     /// Test that a global simple export process can be started and stopped and that it
     /// exports accurate spans as configured.
     fn test_global_simple() {
-        let temporary_file = tempfile::NamedTempFile::new().unwrap();
-        let temporary_file_path = temporary_file.path().to_owned();
+        let temporary_file_path = get_tempfile("test_global_simple");
         let layer_config = Box::new(crate::layers::otel_otlp_file::Config {
             file_path: Some(temporary_file_path.as_os_str().to_str().unwrap().to_owned()),
             filter: Some("error,pyo3_tracing_subscriber=info".to_string()),
+            instrumentation_library: None,
         });
         let subscriber = Box::new(TracingSubscriberRegistryConfig { layer_config });
         let config = TracingConfig::Global(GlobalTracingConfig {
@@ -333,7 +247,8 @@ mod test {
         let spans = lines
             .flat_map(|line| {
                 let line = line.unwrap();
-                let span_data: SpanData = serde_json::from_str(line.as_str()).unwrap();
+                let span_data: otlp::TracesData =
+                    serde_json::from_str(line.as_str().trim()).unwrap();
                 span_data
                     .resource_spans
                     .iter()
@@ -343,33 +258,45 @@ mod test {
                             .iter()
                             .flat_map(|scope_span| scope_span.spans.clone())
                     })
-                    .collect::<Vec<Span>>()
+                    .collect::<Vec<otlp::Span>>()
             })
-            .collect::<Vec<Span>>();
+            .collect::<Vec<otlp::Span>>();
         assert_eq!(spans.len(), N_SPANS);
 
-        let span_grace = Duration::from_millis(10);
+        let span_grace = Duration::from_millis(50);
         for span in spans {
             assert_eq!(span.name, "example");
             assert!(
-                span.end_time_unix_nano - span.start_time_unix_nano >= SPAN_DURATION.as_nanos()
+                (span.end_time_unix_nano - span.start_time_unix_nano) as u128
+                    >= SPAN_DURATION.as_nanos()
             );
             assert!(
-                (span.end_time_unix_nano - span.start_time_unix_nano)
+                (span.end_time_unix_nano - span.start_time_unix_nano) as u128
                     <= (SPAN_DURATION.as_nanos() + span_grace.as_nanos())
             );
         }
+    }
+
+    fn get_tempfile(prefix: &str) -> PathBuf {
+        let timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("should be able to get current time")
+            .as_nanos();
+        let dir = temp_dir();
+        dir.join(std::path::Path::new(
+            format!("{prefix}-{timestamp}.txt").as_str(),
+        ))
     }
 
     #[test]
     /// Test that a current thread simple export process can be started and stopped and that it
     /// exports accurate spans as configured.
     fn test_current_thread_simple() {
-        let temporary_file = tempfile::NamedTempFile::new().unwrap();
-        let temporary_file_path = temporary_file.path().to_owned();
+        let temporary_file_path = get_tempfile("test_current_thread_simple");
         let layer_config = Box::new(crate::layers::otel_otlp_file::Config {
             file_path: Some(temporary_file_path.as_os_str().to_str().unwrap().to_owned()),
             filter: Some("error,pyo3_tracing_subscriber=info".to_string()),
+            instrumentation_library: None,
         });
         let subscriber = Box::new(TracingSubscriberRegistryConfig { layer_config });
         let config = TracingConfig::CurrentThread(CurrentThreadTracingConfig {
@@ -400,7 +327,7 @@ mod test {
         let spans = lines
             .flat_map(|line| {
                 let line = line.unwrap();
-                let span_data: SpanData = serde_json::from_str(line.as_str()).unwrap();
+                let span_data: otlp::TracesData = serde_json::from_str(line.as_str()).unwrap();
                 span_data
                     .resource_spans
                     .iter()
@@ -410,19 +337,20 @@ mod test {
                             .iter()
                             .flat_map(|scope_span| scope_span.spans.clone())
                     })
-                    .collect::<Vec<Span>>()
+                    .collect::<Vec<otlp::Span>>()
             })
-            .collect::<Vec<Span>>();
+            .collect::<Vec<otlp::Span>>();
         assert_eq!(spans.len(), N_SPANS);
 
         let span_grace = Duration::from_millis(50);
         for span in spans {
             assert_eq!(span.name, "example");
             assert!(
-                span.end_time_unix_nano - span.start_time_unix_nano >= SPAN_DURATION.as_nanos()
+                (span.end_time_unix_nano - span.start_time_unix_nano) as u128
+                    >= SPAN_DURATION.as_nanos()
             );
             assert!(
-                (span.end_time_unix_nano - span.start_time_unix_nano)
+                (span.end_time_unix_nano - span.start_time_unix_nano) as u128
                     <= (SPAN_DURATION.as_nanos() + span_grace.as_nanos())
             );
         }

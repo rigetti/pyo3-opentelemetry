@@ -37,6 +37,12 @@ command = "! git diff --cached --quiet"
 type = "Command"
 command = "cargo update -w"
 
+# Do not commit the changelog if the version is a release candidate.
+[[workflows.steps]]
+type = "Command"
+command = 'case "$version" in *"-dev."*) git restore --staged --worktree CHANGELOG.md ;; esac || true'
+shell = true
+
 [[workflows.steps]]
 type = "Command"
 # git diff --cached --quiet exits with 0 if there are *no* staged changes.

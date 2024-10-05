@@ -10,22 +10,9 @@
 # * next time the code is generated.                                          *
 # *****************************************************************************
 
-from __future__ import annotations
+from {{ host_package }}.{{ tracing_subscriber_module_name }} import common
 
-from typing import TYPE_CHECKING
 
-from . import file as file
-from . import otel_otlp as otel_otlp
-from . import otel_otlp_file as otel_otlp_file
+__doc__ = common.__doc__
+__all__ = getattr(common, "__all__", [])
 
-if TYPE_CHECKING:
-    from typing import Union
-
-    Config = Union[
-        file.Config,
-        otel_otlp_file.Config,
-        otel_otlp.Config,
-    ]
-    """
-  One of the supported layer configurations that may be set on the subscriber configuration.
-  """

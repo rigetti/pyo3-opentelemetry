@@ -4,18 +4,6 @@
 
 #### ci release flow (#11)
 
-## 0.3.1-rc.1 (2023-12-18)
-
-### Fixes
-
-#### ci release flow
-
-## 0.3.1-rc.0 (2023-12-18)
-
-### Fixes
-
-#### ci release flow
-
 ## 0.3.0 (2023-12-16)
 
 ### Breaking Changes

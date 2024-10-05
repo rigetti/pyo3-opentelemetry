@@ -37,7 +37,6 @@
     overflowing_literals,
     path_statements,
     patterns_in_fns_without_body,
-    pointer_structural_match,
     semicolon_in_expressions_from_macros,
     trivial_casts,
     trivial_numeric_casts,
@@ -150,7 +149,7 @@ macro_rules! include_stub_and_init {
 ///
 /// * `host_package` - The name of the host Python package.
 /// * `tracing_subscriber_module_name` - The name of the tracing subscriber module (ie the Python
-/// module that will contain the stub files).
+///   module that will contain the stub files).
 /// * `directory` - The directory to write the stub files to.
 /// * `layer_otel_otlp_file` - Whether to include stub files for the `otel_otlp_file` layer.
 /// * `layer_otel_otlp` - Whether to include stub files for the `otel_otlp` layer.
@@ -174,6 +173,7 @@ pub fn write_stub_files(
     )
     .map_err(Box::new)
     .map_err(Error::from)?;
+    include_stub_and_init!(directory, "common/", hb);
     include_stub_and_init!(directory, "subscriber/", hb);
     include_stub_and_init!(directory, "layers/", hb);
     include_stub_and_init!(directory, "layers/file/", hb);

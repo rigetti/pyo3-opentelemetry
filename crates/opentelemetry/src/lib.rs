@@ -16,7 +16,6 @@
 #![deny(clippy::all)]
 #![deny(clippy::pedantic)]
 #![deny(clippy::cargo)]
-#![allow(clippy::multiple_crate_versions)]
 #![warn(clippy::nursery)]
 // Has false positives that conflict with unreachable_pub
 #![allow(clippy::redundant_pub_crate)]
@@ -38,7 +37,6 @@
     overflowing_literals,
     path_statements,
     patterns_in_fns_without_body,
-    pointer_structural_match,
     private_interfaces,
     private_bounds,
     semicolon_in_expressions_from_macros,
@@ -70,7 +68,7 @@
 //!
 //! * `pyo3-opentelemetry-macros` - a crate defining the `pypropagate` macro.
 //! * `pyo3-tracing-subscriber` - a crate supporting configuration and initialization of Rust
-//! tracing subscribers from Python.
+//!   tracing subscribers from Python.
 //!
 //! # Examples
 //!
@@ -100,7 +98,6 @@ use std::collections::HashMap;
 use pyo3::{prelude::*, types::IntoPyDict};
 
 use opentelemetry::{propagation::Extractor, Context};
-use opentelemetry_api::ContextGuard;
 
 pub use pyo3_opentelemetry_macros::pypropagate;
 
@@ -145,7 +142,7 @@ impl Carrier {
     /// When a `Propagator` is passed to a function or method, this method should be called
     /// at the beginning of the function or method to attach the context. This should not be used with
     /// async functions.
-    fn attach(&self) -> ContextGuard {
+    fn attach(&self) -> opentelemetry::ContextGuard {
         use opentelemetry::propagation::TextMapPropagator;
 
         let propagator = opentelemetry_sdk::propagation::TraceContextPropagator::new();
@@ -180,7 +177,7 @@ impl Carrier {
 /// Any Python error that occurs while trying to get the current context from Python will
 /// be returned; this includes import errors when importing `opentelemetry.context` and
 /// `opentelemetry.propagate`.
-pub fn attach_otel_context_from_python(py: Python<'_>) -> PyResult<ContextGuard> {
+pub fn attach_otel_context_from_python(py: Python<'_>) -> PyResult<opentelemetry::ContextGuard> {
     let get_current_context = py.import("opentelemetry.context")?.getattr("get_current")?;
     let inject = py.import("opentelemetry.propagate")?.getattr("inject")?;
 

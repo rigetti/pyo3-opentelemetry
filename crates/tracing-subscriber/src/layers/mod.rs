@@ -19,7 +19,7 @@
 //!
 //! * [`crate::layers::fmt_file::Config`] - a layer which writes spans to a file (or stdout) in
 //! * [`crate::layers::otel_otlp_file::Config`] - a layer which writes spans to a file (or stdout) in
-//! the `OpenTelemetry` OTLP JSON-serialized format.
+//!   the `OpenTelemetry` OTLP JSON-serialized format.
 //! * [`crate::layers::otel_otlp::Config`] - a layer which exports spans to an `OpenTelemetry` collector.
 pub(crate) mod fmt_file;
 #[cfg(feature = "layer-otel-otlp")]

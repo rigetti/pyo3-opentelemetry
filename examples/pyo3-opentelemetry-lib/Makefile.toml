@@ -6,8 +6,7 @@
   dependencies = ["python-install-dependencies"]
   script = '''
   poetry run maturin develop
-  poetry run black .
-  poetry run ruff . --fix
+  cargo make python-format 
   '''
     
 [tasks.python-format]
@@ -29,6 +28,7 @@
 [tasks.python-test]
   dependencies = ["python-build"]
   script = '''
+  mkdir -p pyo3_opentelemetry_lib/test/__artifacts__
   poetry run pytest .
 
   # Note, the follow are all tests that initialize a global tracing subscriber, which is only possible to do
@@ -36,15 +36,13 @@
   # separate process; that proved non-trivial on a first attempt, as the tests ran into sevaral unexpected
   # failures.
 
-  poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_file_export[<lambda>2]' --with-global-tracing-configuration
-  poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_file_export[<lambda>3]' --with-global-tracing-configuration
-  poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_file_export_async[<lambda>0]' --with-global-tracing-configuration
-  poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_file_export_async[<lambda>1]' --with-global-tracing-configuration
+  poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_file_export[01]' --with-global-tracing-configuration
+  poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_file_export_asynchronous[00]' --with-global-tracing-configuration
 
-  poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_otlp_export[config2]' --with-global-tracing-configuration
-  poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_otlp_export[config3]' --with-global-tracing-configuration
-  poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_otlp_export_async[config0]' --with-global-tracing-configuration
-  poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_otlp_export_async[config1]' --with-global-tracing-configuration
+  poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_otlp_export[02]' --with-global-tracing-configuration
+  poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_otlp_export[03]' --with-global-tracing-configuration
+  poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_otlp_export_asynchronous[00]' --with-global-tracing-configuration
+  poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_otlp_export_asynchronous[01]' --with-global-tracing-configuration
   '''
 
 [tasks.python-check-all]
