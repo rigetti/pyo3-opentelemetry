@@ -1,6 +1,6 @@
 [package]
 name = "pyo3-opentelemetry-macros"
-version = "0.3.2"
+version = "0.3.3"
 edition = "2021"
 categories = ["python-bindings", "opentelemetry", "tracing", "macros"]
 keywords = ["python", "pyo3", "opentelemetry", "tracing"]
