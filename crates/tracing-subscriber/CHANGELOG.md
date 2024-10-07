@@ -1,3 +1,19 @@
+## 0.1.2 (2024-10-07)
+
+### Fixes
+
+#### update opentelemetry dependencies
+
+#### drop batch stdout support
+
+#### use explicit extension-module features
+
+#### ensure new line between traces data
+
+#### update tracing subscriber stubs
+
+#### use tls tonic features (#18)
+
 ## 0.1.1 (2023-12-18)
 
 ### Fixes
