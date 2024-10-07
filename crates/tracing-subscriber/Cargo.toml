@@ -2,7 +2,7 @@
 name = "pyo3-tracing-subscriber"
 version = "0.1.3"
 edition = "2021"
-categories = ["python-bindings", "opentelemetry", "tracing"]
+categories = ["development-tools::ffi", "development-tools::profiling"]
 keywords = ["python", "pyo3", "opentelemetry", "tracing"]
 license = "Apache-2.0"
 readme = "./README.md"
