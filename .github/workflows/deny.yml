@@ -5,15 +5,14 @@ on:
     branches: [main]
   pull_request: {}
 
-name: Checks 
+name: Cargo Deny 
 
 jobs:
-  checks:
-    name: Run Checks
+  deny:
+    name: Cargo Deny
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ '3.9', '3.10', '3.11', '3.12' ]
         rust:
           - stable
           # the scripts seem to inevitably involve building something that requires a newer version
@@ -33,24 +32,10 @@ jobs:
         with:
           command: install
           args: --debug cargo-make
-      # For ci-flow, see the following:
-      # https://github.com/sagiegurari/cargo-make/tree/master#predefined-flows
-      # https://github.com/sagiegurari/cargo-make/blob/master/docs/cargo_make_task_list.md#ci
-      - name: Run Rust CI
+      - name: Run Cargo Deny
+        continue-on-error: true
         uses: actions-rs/cargo@v1
         with:
           command: make
-          args: --makefile Makefile.toml check-all 
-
-      # Setup Python and run Python example
-      - name: Setup python
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install poetry
-        uses: snok/install-poetry@v1
-      - name: Run Python Example
-        run: |
-          cd ./examples/pyo3-opentelemetry-lib
-          cargo make --makefile Makefile.toml python-check-all 
+          args: --makefile Makefile.toml deny
 
