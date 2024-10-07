@@ -2,7 +2,7 @@
 name = "pyo3-opentelemetry-macros"
 version = "0.3.2"
 edition = "2021"
-categories = ["Python bindings", "OpenTelemetry", "Tracing", "Macros"]
+categories = ["python-bindings", "opentelemetry", "tracing", "macros"]
 keywords = ["python", "pyo3", "opentelemetry", "tracing"]
 license = "MIT OR Apache-2.0"
 readme = "../opentelemetry/README.md"
