@@ -157,7 +157,7 @@ impl crate::layers::Config for Config {
         let tracer = self.instrumentation_library.as_ref().map_or_else(
             || provider.tracer("pyo3_tracing_subscriber"),
             |instrumentation_library| {
-                provider.library_tracer(Arc::new(instrumentation_library.clone().into()))
+                provider.tracer_with_scope(instrumentation_library.clone().into())
             },
         );
         let env_filter = build_env_filter(self.filter.clone())?;

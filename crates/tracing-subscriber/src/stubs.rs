@@ -66,7 +66,7 @@
 //! In `build.rs` with the `example/` directory containing Python source code.
 //!
 //! ```rust
-//! use tracing_subscriber::stubs::write_stub_files;
+//! use pyo3_tracing_subscriber::stubs::write_stub_files;
 //!
 //! write_stub_files(
 //!     "example",
