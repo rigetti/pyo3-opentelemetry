@@ -1,6 +1,9 @@
 [tasks.python-install-dependencies]
   private = true
-  script = "poetry install"
+  script = '''
+  poetry lock
+  poetry install
+  '''
 
 [tasks.python-build]
   dependencies = ["python-install-dependencies"]
