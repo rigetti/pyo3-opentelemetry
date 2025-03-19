@@ -82,9 +82,7 @@ impl crate::layers::Config for PyConfig {
         Config::requires_runtime()
     }
     fn build(&self, batch: bool) -> LayerBuildResult<WithShutdown> {
-        Config::try_from(self.clone())
-            .map_err(BuildError::from)?
-            .build(batch)
+        Config::try_from(self.clone())?.build(batch)
     }
 }
 

@@ -267,11 +267,11 @@ mod test {
         for span in spans {
             assert_eq!(span.name, "example");
             assert!(
-                (span.end_time_unix_nano - span.start_time_unix_nano) as u128
+                u128::from(span.end_time_unix_nano - span.start_time_unix_nano)
                     >= SPAN_DURATION.as_nanos()
             );
             assert!(
-                (span.end_time_unix_nano - span.start_time_unix_nano) as u128
+                u128::from(span.end_time_unix_nano - span.start_time_unix_nano)
                     <= (SPAN_DURATION.as_nanos() + span_grace.as_nanos())
             );
         }
@@ -346,11 +346,11 @@ mod test {
         for span in spans {
             assert_eq!(span.name, "example");
             assert!(
-                (span.end_time_unix_nano - span.start_time_unix_nano) as u128
+                u128::from(span.end_time_unix_nano - span.start_time_unix_nano)
                     >= SPAN_DURATION.as_nanos()
             );
             assert!(
-                (span.end_time_unix_nano - span.start_time_unix_nano) as u128
+                u128::from(span.end_time_unix_nano - span.start_time_unix_nano)
                     <= (SPAN_DURATION.as_nanos() + span_grace.as_nanos())
             );
         }
