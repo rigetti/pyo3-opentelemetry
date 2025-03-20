@@ -1,3 +1,9 @@
+## 0.4.0 (2025-03-20)
+
+### Breaking Changes
+
+#### Update opentelemetry to v0.27.1 (#26)
+
 ## 0.3.4 (2024-10-07)
 
 ### Fixes
