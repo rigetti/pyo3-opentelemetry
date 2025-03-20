@@ -196,7 +196,7 @@
 
 [tasks.nextest]
     dependencies = ["install-cargo-hack", "install-cargo-nextest"]
-    script = "cargo hack nextest run $CARGO_HACK_COMMON_FLAGS"
+    script = "cargo hack nextest run $CARGO_HACK_COMMON_FLAGS --no-tests pass"
 
 [tasks.examples]
     dependencies = ["example-lib-python"]

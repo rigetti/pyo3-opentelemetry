@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
 
-use opentelemetry::InstrumentationLibrary;
+use opentelemetry::InstrumentationScope;
 /// This module contains a number of `rigetti-pyo3` ports which were
 /// backed out due to build issues involving the `pyo3/extension-module`
 /// feature. This should be replaced upon resolution of
@@ -138,7 +138,7 @@ impl PyInstrumentationLibrary {
     }
 }
 
-impl From<PyInstrumentationLibrary> for InstrumentationLibrary {
+impl From<PyInstrumentationLibrary> for InstrumentationScope {
     fn from(py_instrumentation_library: PyInstrumentationLibrary) -> Self {
         let mut builder = Self::builder(Cow::from(py_instrumentation_library.name));
         if let Some(version) = py_instrumentation_library.version {

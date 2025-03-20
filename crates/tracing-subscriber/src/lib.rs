@@ -82,7 +82,6 @@
 //! # Examples
 //!
 //! ```
-//! use pyo3_tracing_subscriber::pypropagate;
 //! use pyo3::prelude::*;
 //! use tracing::instrument;
 //!
@@ -90,7 +89,7 @@
 //! const TRACING_SUBSCRIBER_SUBMODULE_NAME: &str = "tracing_subscriber";
 //!
 //! #[pymodule]
-//! fn example(_py: Python, m: &PyModule) -> PyResult<()> {
+//! fn example(py: Python, m: &PyModule) -> PyResult<()> {
 //!     // add your functions, modules, and classes
 //!     pyo3_tracing_subscriber::add_submodule(
 //!         MY_PACKAGE_NAME,

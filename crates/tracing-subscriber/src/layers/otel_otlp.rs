@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::{collections::HashMap, sync::Arc, time::Duration};
+use std::{collections::HashMap, time::Duration};
 
-use opentelemetry::{trace::TracerProvider, InstrumentationLibrary};
-use opentelemetry_otlp::{TonicExporterBuilder, WithExportConfig};
+use opentelemetry::{trace::TracerProvider, InstrumentationScope};
+use opentelemetry_otlp::{WithExportConfig, WithTonicConfig};
 use opentelemetry_sdk::{
     trace::{Sampler, SpanLimits},
     Resource,
@@ -24,7 +24,7 @@ use pyo3::prelude::*;
 use tracing_subscriber::Layer;
 
 use crate::create_init_submodule;
-use opentelemetry_sdk::trace;
+// use opentelemetry_sdk::trace;
 use tonic::metadata::{
     errors::{InvalidMetadataKey, InvalidMetadataValue},
     MetadataKey,
@@ -57,22 +57,23 @@ pub(crate) struct Config {
     /// The filter to use for the [`tracing_subscriber::filter::EnvFilter`] layer.
     filter: Option<String>,
     /// The instrumentation library to use for the [`opentelemetry::sdk::trace::TracerProvider`].
-    instrumentation_library: Option<InstrumentationLibrary>,
+    instrumentation_library: Option<InstrumentationScope>,
 }
 
 impl Config {
-    fn initialize_otlp_exporter(&self) -> TonicExporterBuilder {
-        let mut otlp_exporter = opentelemetry_otlp::new_exporter().tonic();
+    fn initialize_otlp_exporter(&self) -> LayerBuildResult<opentelemetry_otlp::SpanExporter> {
+        let mut builder = opentelemetry_otlp::SpanExporter::builder().with_tonic();
         if let Some(endpoint) = self.endpoint.clone() {
-            otlp_exporter = otlp_exporter.with_endpoint(endpoint);
+            builder = builder.with_endpoint(endpoint);
         }
         if let Some(timeout) = self.timeout {
-            otlp_exporter = otlp_exporter.with_timeout(timeout);
+            builder = builder.with_timeout(timeout);
         }
         if let Some(metadata_map) = self.metadata_map.clone() {
-            otlp_exporter = otlp_exporter.with_metadata(metadata_map);
+            builder = builder.with_metadata(metadata_map);
         }
-        otlp_exporter
+        let otlp_exporter = builder.build().map_err(BuildError::from)?;
+        Ok(otlp_exporter)
     }
 }
 
@@ -81,9 +82,7 @@ impl crate::layers::Config for PyConfig {
         Config::requires_runtime()
     }
     fn build(&self, batch: bool) -> LayerBuildResult<WithShutdown> {
-        Config::try_from(self.clone())
-            .map_err(BuildError::from)?
-            .build(batch)
+        Config::try_from(self.clone())?.build(batch)
     }
 }
 
@@ -93,29 +92,23 @@ impl Config {
     }
 
     fn build(&self, batch: bool) -> LayerBuildResult<WithShutdown> {
-        let pipeline = opentelemetry_otlp::new_pipeline()
-            .tracing()
-            .with_exporter(self.initialize_otlp_exporter())
-            .with_trace_config(
-                trace::Config::default()
-                    .with_sampler(self.sampler.clone())
-                    .with_span_limits(self.span_limits)
-                    .with_resource(self.resource.clone()),
-            );
+        let provider = opentelemetry_sdk::trace::TracerProvider::builder()
+            .with_sampler(self.sampler.clone())
+            .with_span_limits(self.span_limits)
+            .with_resource(self.resource.clone());
 
+        let exporter = self.initialize_otlp_exporter()?;
         let provider = if batch {
-            pipeline.install_batch(opentelemetry_sdk::runtime::Tokio {})
+            provider.with_batch_exporter(exporter, opentelemetry_sdk::runtime::Tokio {})
         } else {
-            pipeline.install_simple()
+            provider.with_simple_exporter(exporter)
         }
-        .map_err(BuildError::from)?;
+        .build();
         let env_filter = build_env_filter(self.filter.clone())?;
 
         let tracer = self.instrumentation_library.as_ref().map_or_else(
             || provider.tracer("pyo3_tracing_subscriber"),
-            |instrumentation_library| {
-                provider.library_tracer(Arc::new(instrumentation_library.clone()))
-            },
+            |instrumentation_library| provider.tracer_with_scope(instrumentation_library.clone()),
         );
 
         let layer = tracing_opentelemetry::layer()
