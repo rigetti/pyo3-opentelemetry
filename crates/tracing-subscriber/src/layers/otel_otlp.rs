@@ -259,8 +259,8 @@ impl PyConfig {
     fn new(
         span_limits: Option<PySpanLimits>,
         resource: Option<PyResource>,
-        metadata_map: Option<&PyAny>,
-        sampler: Option<&PyAny>,
+        metadata_map: Option<&Bound<'_, PyAny>>,
+        sampler: Option<&Bound<'_, PyAny>>,
         endpoint: Option<&str>,
         timeout_millis: Option<u64>,
         pre_shutdown_timeout_millis: u64,
@@ -270,8 +270,8 @@ impl PyConfig {
         Ok(Self {
             span_limits: span_limits.unwrap_or_default(),
             resource: resource.unwrap_or_default(),
-            metadata_map: metadata_map.map(PyAny::extract).transpose()?,
-            sampler: sampler.map(PyAny::extract).transpose()?.unwrap_or_default(),
+            metadata_map: metadata_map.map(pyo3::types::PyAnyMethods::extract).transpose()?,
+            sampler: sampler.map(pyo3::types::PyAnyMethods::extract).transpose()?.unwrap_or_default(),
             endpoint: endpoint.map(String::from),
             timeout_millis,
             pre_shutdown_timeout_millis,

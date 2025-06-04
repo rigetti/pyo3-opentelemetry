@@ -85,7 +85,7 @@
 //! }
 //!
 //! #[pymodule]
-//! fn my_module(_py: Python, m: &PyModule) -> PyResult<()> {
+//! fn my_module(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
 //!    m.add_function(wrap_pyfunction!(my_function, m)?)?;
 //!    Ok(())
 //! }
@@ -183,8 +183,8 @@ pub fn attach_otel_context_from_python(py: Python<'_>) -> PyResult<opentelemetry
 
     let current_context = get_current_context.call0()?;
     let data = pyo3::types::PyDict::new(py);
-    let kwargs = [("context", current_context), ("carrier", data)].into_py_dict(py);
-    inject.call((), Some(kwargs))?;
+    let kwargs = [("context", &current_context), ("carrier", data.as_any())].into_py_dict(py)?;
+    inject.call((), Some(&kwargs))?;
 
     let data: HashMap<String, String> = data.extract()?;
     let carrier: Carrier = data.into();

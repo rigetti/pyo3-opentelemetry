@@ -129,23 +129,23 @@ impl Tracing {
         Ok(())
     }
 
-    fn __aenter__<'a>(&'a mut self, py: Python<'a>) -> PyResult<&'a PyAny> {
+    fn __aenter__<'a>(&'a mut self, py: Python<'a>) -> PyResult<Bound<'a, PyAny>> {
         self.__enter__()?;
-        pyo3_asyncio::tokio::future_into_py(py, async { Ok(()) })
+        pyo3_async_runtimes::tokio::future_into_py(py, async { Ok(()) })
     }
 
     fn __exit__(
         &mut self,
-        _exc_type: Option<&PyAny>,
-        _exc_value: Option<&PyAny>,
-        _traceback: Option<&PyAny>,
+        _exc_type: Option<&Bound<'_, PyAny>>,
+        _exc_value: Option<&Bound<'_, PyAny>>,
+        _traceback: Option<&Bound<'_, PyAny>>,
     ) -> PyResult<()> {
         let state = std::mem::replace(&mut self.state, ContextManagerState::Exited);
         if let ContextManagerState::Entered(export_process) = state {
-            let py_rt = pyo3_asyncio::tokio::get_runtime();
+            let py_rt = pyo3_async_runtimes::tokio::get_runtime();
             // Why block and not run this in a future within aexit? The `shutdown`
             // method returns a Tokio runtime, which cannot be dropped within another
-            // runtime. Additionally, `pyo3_asyncio::tokio::future_into_py` futures
+            // runtime. Additionally, `pyo3_async_runtimes::tokio::future_into_py` futures
             // must resolve to something that implements `IntoPy`.
             let export_runtime = py_rt.block_on(async move {
                 export_process
@@ -173,12 +173,12 @@ impl Tracing {
     fn __aexit__<'a>(
         &'a mut self,
         py: Python<'a>,
-        exc_type: Option<&PyAny>,
-        exc_value: Option<&PyAny>,
-        traceback: Option<&PyAny>,
-    ) -> PyResult<&'a PyAny> {
+        exc_type: Option<&Bound<'_, PyAny>>,
+        exc_value: Option<&Bound<'_, PyAny>>,
+        traceback: Option<&Bound<'_, PyAny>>,
+    ) -> PyResult<Bound<'a, PyAny>> {
         self.__exit__(exc_type, exc_value, traceback)?;
-        pyo3_asyncio::tokio::future_into_py(py, async { Ok(()) })
+        pyo3_async_runtimes::tokio::future_into_py(py, async { Ok(()) })
     }
 }
 

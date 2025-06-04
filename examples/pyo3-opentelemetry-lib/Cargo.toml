@@ -21,7 +21,7 @@ crate-type =  ["cdylib", "rlib"]
 opentelemetry = { workspace = true }
 opentelemetry_sdk = { workspace = true }
 pyo3 = { workspace = true }
-pyo3-asyncio = { workspace = true, features = ["tokio", "tokio-runtime"] }
+pyo3-async-runtimes = { workspace = true, features = ["tokio", "tokio-runtime"] }
 pyo3-opentelemetry = { path = "../../crates/opentelemetry" }
 pyo3-tracing-subscriber = { path = "../../crates/tracing-subscriber", features = ["layer-otel-otlp-file", "layer-otel-otlp"] }
 tokio = { version = "1.27.0", features = ["sync", "parking_lot", "macros"] }

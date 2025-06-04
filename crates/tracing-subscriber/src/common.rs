@@ -19,7 +19,7 @@ macro_rules! create_init_submodule {
         $(funcs: [ $($func: path),+ ],)?
         $(submodules: [ $($mod_name: literal: $init_submod: path),+ ],)?
     ) => {
-        pub(crate) fn init_submodule(_name: &str, _py: pyo3::Python, m: &pyo3::types::PyModule) -> pyo3::PyResult<()> {
+        pub(crate) fn init_submodule(_name: &str, _py: pyo3::Python, m: &pyo3::Bound<'_, pyo3::types::PyModule>) -> pyo3::PyResult<()> {
             $($(
             m.add_class::<$class>()?;
             )+)?
@@ -37,9 +37,9 @@ macro_rules! create_init_submodule {
                 $(
                 let qualified_name = format!("{}.{}", _name, $mod_name);
                 let submod = pyo3::types::PyModule::new(_py, &qualified_name)?;
-                $init_submod(&qualified_name, _py, submod)?;
-                m.add($mod_name, submod)?;
-                modules.set_item(&qualified_name, submod)?;
+                $init_submod(&qualified_name, _py, &submod)?;
+                m.add($mod_name, &submod)?;
+                modules.set_item(&qualified_name, &submod)?;
                 )+
             )?
             Ok(())

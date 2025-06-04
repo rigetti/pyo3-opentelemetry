@@ -74,7 +74,7 @@ class CurrentThreadTracingConfig:
     manager may be initialized multiple times for the same process with this configuration (although
     they should not be nested).
 
-    Note, this configuration is currently incompatible with async methods defined with `pyo3_asyncio`.
+    Note, this configuration is currently incompatible with async methods defined with `pyo3_async_runtimes`.
     """
 
     def __new__(cls, *, export_process: "ExportConfig") -> "CurrentThreadTracingConfig": ...
