@@ -182,31 +182,35 @@ impl Config for PyConfig {
 
 /// Adds `layers` submodule to the root level submodule.
 #[allow(dead_code)]
-pub(crate) fn init_submodule(name: &str, py: Python, m: &PyModule) -> PyResult<()> {
+pub(crate) fn init_submodule<'py>(
+    name: &str,
+    py: Python<'py>,
+    m: &Bound<'py, PyModule>,
+) -> PyResult<()> {
     let modules = py.import("sys")?.getattr("modules")?;
 
     #[cfg(feature = "layer-otel-otlp-file")]
     {
         let submod = pyo3::types::PyModule::new(py, "otel_otlp_file")?;
         let qualified_name = format!("{name}.otel_otlp_file");
-        otel_otlp_file::init_submodule(qualified_name.as_str(), py, submod)?;
+        otel_otlp_file::init_submodule(qualified_name.as_str(), py, &submod)?;
+        m.add_submodule(&submod)?;
         modules.set_item(qualified_name, submod)?;
-        m.add_submodule(submod)?;
     }
     #[cfg(feature = "layer-otel-otlp")]
     {
         let submod = pyo3::types::PyModule::new(py, "otel_otlp")?;
         let qualified_name = format!("{name}.otel_otlp");
-        otel_otlp::init_submodule(qualified_name.as_str(), py, submod)?;
+        otel_otlp::init_submodule(qualified_name.as_str(), py, &submod)?;
+        m.add_submodule(&submod)?;
         modules.set_item(qualified_name, submod)?;
-        m.add_submodule(submod)?;
     }
 
     let submod = pyo3::types::PyModule::new(py, "file")?;
     let qualified_name = format!("{name}.file");
-    fmt_file::init_submodule(qualified_name.as_str(), py, submod)?;
+    fmt_file::init_submodule(qualified_name.as_str(), py, &submod)?;
+    m.add_submodule(&submod)?;
     modules.set_item(qualified_name, submod)?;
-    m.add_submodule(submod)?;
 
     Ok(())
 }

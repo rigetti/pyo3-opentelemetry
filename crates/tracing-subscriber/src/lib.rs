@@ -123,7 +123,7 @@
 //!
 //! * `pyo3-opentelemetry` - propagates `OpenTelemetry` contexts from Python into Rust.
 #[cfg(feature = "pyo3")]
-use pyo3::{types::PyModule, PyResult, Python};
+use pyo3::{prelude::*, types::PyModule, PyResult, Python};
 
 #[cfg(feature = "pyo3")]
 use self::{
@@ -219,17 +219,17 @@ create_init_submodule! {
 ///
 /// For detailed Python usage documentation, see the stub files written by
 /// [`pyo3_tracing_subscriber::stubs::write_stub_files`].
-pub fn add_submodule(
+pub fn add_submodule<'py>(
     fully_qualified_namespace: &str,
     name: &str,
-    py: Python,
-    parent_module: &PyModule,
+    py: Python<'py>,
+    parent_module: &Bound<'py, PyModule>,
 ) -> PyResult<()> {
     let tracing_subscriber = PyModule::new(py, name)?;
     let fully_qualified_name = format!("{fully_qualified_namespace}.{name}");
-    init_submodule(&fully_qualified_name, py, tracing_subscriber)?;
+    init_submodule(&fully_qualified_name, py, &tracing_subscriber)?;
+    parent_module.add_submodule(&tracing_subscriber)?;
     let modules = py.import("sys")?.getattr("modules")?;
     modules.set_item(fully_qualified_name, tracing_subscriber)?;
-    parent_module.add_submodule(tracing_subscriber)?;
     Ok(())
 }

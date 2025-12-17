@@ -129,24 +129,24 @@ impl Tracing {
         Ok(())
     }
 
-    fn __aenter__<'a>(&'a mut self, py: Python<'a>) -> PyResult<&'a PyAny> {
+    fn __aenter__<'py>(&mut self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         self.__enter__()?;
-        pyo3_asyncio::tokio::future_into_py(py, async { Ok(()) })
+        pyo3_async_runtimes::tokio::future_into_py(py, async { Ok(()) })
     }
 
-    fn __exit__(
+    fn __exit__<'py>(
         &mut self,
-        _exc_type: Option<&PyAny>,
-        _exc_value: Option<&PyAny>,
-        _traceback: Option<&PyAny>,
+        _exc_type: Option<Bound<'py, PyAny>>,
+        _exc_value: Option<Bound<'py, PyAny>>,
+        _traceback: Option<Bound<'py, PyAny>>,
     ) -> PyResult<()> {
         let state = std::mem::replace(&mut self.state, ContextManagerState::Exited);
         if let ContextManagerState::Entered(export_process) = state {
-            let py_rt = pyo3_asyncio::tokio::get_runtime();
+            let py_rt = pyo3_async_runtimes::tokio::get_runtime();
             // Why block and not run this in a future within aexit? The `shutdown`
             // method returns a Tokio runtime, which cannot be dropped within another
-            // runtime. Additionally, `pyo3_asyncio::tokio::future_into_py` futures
-            // must resolve to something that implements `IntoPy`.
+            // runtime. Additionally, `pyo3_async_runtimes::tokio::future_into_py` futures
+            // must resolve to something that implements `IntoPyObject`.
             let export_runtime = py_rt.block_on(async move {
                 export_process
                     .shutdown()
@@ -170,15 +170,15 @@ impl Tracing {
         Ok(())
     }
 
-    fn __aexit__<'a>(
-        &'a mut self,
-        py: Python<'a>,
-        exc_type: Option<&PyAny>,
-        exc_value: Option<&PyAny>,
-        traceback: Option<&PyAny>,
-    ) -> PyResult<&'a PyAny> {
+    fn __aexit__<'py>(
+        &mut self,
+        py: Python<'py>,
+        exc_type: Option<Bound<'py, PyAny>>,
+        exc_value: Option<Bound<'py, PyAny>>,
+        traceback: Option<Bound<'py, PyAny>>,
+    ) -> PyResult<Bound<'py, PyAny>> {
         self.__exit__(exc_type, exc_value, traceback)?;
-        pyo3_asyncio::tokio::future_into_py(py, async { Ok(()) })
+        pyo3_async_runtimes::tokio::future_into_py(py, async { Ok(()) })
     }
 }
 

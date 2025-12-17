@@ -61,6 +61,10 @@ pub(crate) struct Config {
 }
 
 impl Config {
+    #[expect(
+        clippy::significant_drop_tightening,
+        reason = "We're using the `builder` this entire method."
+    )]
     fn initialize_otlp_exporter(&self) -> LayerBuildResult<opentelemetry_otlp::SpanExporter> {
         let mut builder = opentelemetry_otlp::SpanExporter::builder().with_tonic();
         if let Some(endpoint) = self.endpoint.clone() {
@@ -119,12 +123,6 @@ impl Config {
             shutdown: force_flush_provider_as_shutdown(provider, Some(self.pre_shutdown_timeout)),
         })
     }
-}
-
-#[derive(thiserror::Error, Debug)]
-pub(super) enum Error {
-    #[error("error in the configuration: {0}")]
-    Config(#[from] ConfigError),
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -256,11 +254,11 @@ impl PyConfig {
         instrumentation_library = None
     ))]
     #[allow(clippy::too_many_arguments)]
-    fn new(
+    fn new<'py>(
         span_limits: Option<PySpanLimits>,
         resource: Option<PyResource>,
-        metadata_map: Option<&PyAny>,
-        sampler: Option<&PyAny>,
+        metadata_map: Option<&Bound<'py, PyAny>>,
+        sampler: Option<&Bound<'py, PyAny>>,
         endpoint: Option<&str>,
         timeout_millis: Option<u64>,
         pre_shutdown_timeout_millis: u64,
@@ -270,8 +268,13 @@ impl PyConfig {
         Ok(Self {
             span_limits: span_limits.unwrap_or_default(),
             resource: resource.unwrap_or_default(),
-            metadata_map: metadata_map.map(PyAny::extract).transpose()?,
-            sampler: sampler.map(PyAny::extract).transpose()?.unwrap_or_default(),
+            metadata_map: metadata_map
+                .map(pyo3::types::PyAnyMethods::extract)
+                .transpose()?,
+            sampler: sampler
+                .map(pyo3::types::PyAnyMethods::extract)
+                .transpose()?
+                .unwrap_or_default(),
             endpoint: endpoint.map(String::from),
             timeout_millis,
             pre_shutdown_timeout_millis,

@@ -182,9 +182,9 @@ pub fn attach_otel_context_from_python(py: Python<'_>) -> PyResult<opentelemetry
     let inject = py.import("opentelemetry.propagate")?.getattr("inject")?;
 
     let current_context = get_current_context.call0()?;
-    let data = pyo3::types::PyDict::new(py);
-    let kwargs = [("context", current_context), ("carrier", data)].into_py_dict(py);
-    inject.call((), Some(kwargs))?;
+    let data = pyo3::types::PyDict::new(py).into_any();
+    let kwargs = [("context", current_context), ("carrier", data.clone())].into_py_dict(py)?;
+    inject.call((), Some(&kwargs))?;
 
     let data: HashMap<String, String> = data.extract()?;
     let carrier: Carrier = data.into();
