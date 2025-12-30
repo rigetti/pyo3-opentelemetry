@@ -1,6 +1,6 @@
 [package]
 name = "pyo3-tracing-subscriber"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 categories = ["development-tools::ffi", "development-tools::profiling"]
 keywords = ["python", "pyo3", "opentelemetry", "tracing"]
@@ -35,8 +35,7 @@ layer-otel-otlp = ["layer-otel-otlp-file", "dep:tonic"]
 layer-otel-otlp-file = ["dep:opentelemetry-otlp", "dep:opentelemetry-proto"]
 stubs = ["dep:handlebars"]
 pyo3 = ["dep:pyo3", "dep:pyo3-async-runtimes"]
-extension-module = ["pyo3", "pyo3/extension-module"]
-default = ["extension-module"]
+default = ["pyo3"]
 
 [dev-dependencies]
 rstest = { workspace = true }

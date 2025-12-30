@@ -35,8 +35,8 @@ macro_rules! create_init_submodule {
             $(
                 let modules = _py.import("sys")?.getattr("modules")?;
                 $(
+                let submod = pyo3::types::PyModule::new(_py, $mod_name)?;
                 let qualified_name = format!("{}.{}", _name, $mod_name);
-                let submod = pyo3::types::PyModule::new(_py, &qualified_name)?;
                 $init_submod(&qualified_name, _py, &submod)?;
                 m.add_submodule(&submod)?;
                 modules.set_item(&qualified_name, submod)?;

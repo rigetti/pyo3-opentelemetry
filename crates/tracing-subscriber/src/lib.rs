@@ -62,7 +62,6 @@
 //! # Features
 //!
 //! * `pyo3` - enables the Python bindings for the tracing subscriber. This feature is enabled by default.
-//! * `extension-module` - enables the Python extension module for the tracing subscriber. This feature is enabled by default.
 //! * `layer-otel-otlp-file` - exports trace data with `opentelemetry-stdout`. See `crate::layers::otel_otlp_file`.
 //! * `layer-otel-otlp` - exports trace data with `opentelemetry-otlp`. See `crate::layers::otel_otlp`.
 //! * `stubs` - supports writing stub files in your Python source code from your Rust build scripts. See `crates::stubs`. This should only be used in build scripts with default features disabled.
@@ -89,7 +88,7 @@
 //! const TRACING_SUBSCRIBER_SUBMODULE_NAME: &str = "tracing_subscriber";
 //!
 //! #[pymodule]
-//! fn example(py: Python, m: &PyModule) -> PyResult<()> {
+//! fn example(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
 //!     // add your functions, modules, and classes
 //!     pyo3_tracing_subscriber::add_submodule(
 //!         MY_PACKAGE_NAME,
