@@ -9,7 +9,7 @@
 ### What this is not
 
 * Any initialized tracing subscriber imported from your upstream package will _not_ collect traces from any other `pyo3` extension module. In other words, any `pyo3` extension module will need to separately export tracing configuration and context managers, which in turn must be separately initialized in order to capture Rust traces from respective `pyo3` extension modules.
-* Currently, only three tracing subcriber layers are supported:
+* Currently, only three tracing subscriber layers are supported:
     * `tracing_subscriber::fmt` which writes traces to file (or stdout) in a human readable format.
     * `opentelemetry-stdout` which writes traces to file (or stdout) in OTLP format. Available only with the `layer-otel-otlp-file` feature.
     * `opentelemetry-otlp` which sends traces to an OpenTelemetry OTLP endpoint. Available only with the `layer-otel-otlp` feature.
