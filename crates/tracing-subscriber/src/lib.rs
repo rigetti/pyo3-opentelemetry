@@ -109,7 +109,7 @@
 //!
 //! async main():
 //!     async with Tracing():
-//!      
+//!
 //!      # do stuff
 //!         pass
 //!
@@ -123,6 +123,8 @@
 //! * `pyo3-opentelemetry` - propagates `OpenTelemetry` contexts from Python into Rust.
 #[cfg(feature = "pyo3")]
 use pyo3::{prelude::*, types::PyModule, PyResult, Python};
+#[cfg(feature = "pyo3")]
+use rigetti_pyo3::create_init_submodule;
 
 #[cfg(feature = "pyo3")]
 use self::{
@@ -217,7 +219,7 @@ create_init_submodule! {
 /// * `TracingShutdownError` - raised if the tracing layer or subscriber fails to shutdown properly on context manager exit.
 ///
 /// For detailed Python usage documentation, see the stub files written by
-/// [`pyo3_tracing_subscriber::stubs::write_stub_files`].
+/// [`crate::stubs::write_stub_files`].
 pub fn add_submodule<'py>(
     fully_qualified_namespace: &str,
     name: &str,

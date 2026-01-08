@@ -12,12 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 use pyo3::prelude::*;
+use rigetti_pyo3::exception;
 
-use crate::{common::ToPythonError, py_wrap_error, wrap_error};
-
-use super::export_process::{
-    ExportProcess, ExportProcessConfig, RustTracingShutdownError, RustTracingStartError,
-};
+use super::export_process::{ExportProcess, ExportProcessConfig};
 
 #[pyclass]
 #[derive(Clone, Debug, Default)]
@@ -92,12 +89,12 @@ enum ContextManagerError {
     ExitWithoutExportProcess,
 }
 
-wrap_error!(RustContextManagerError(ContextManagerError));
-py_wrap_error!(
-    contextmanager,
-    RustContextManagerError,
+exception!(
+    ContextManagerError,
+    "contextmanager",
     TracingContextManagerError,
-    pyo3::exceptions::PyRuntimeError
+    pyo3::exceptions::PyRuntimeError,
+    "Errors generated through use of the tracing context manager."
 );
 
 #[pymethods]
@@ -115,16 +112,9 @@ impl Tracing {
     fn __enter__(&mut self) -> PyResult<()> {
         let state = std::mem::replace(&mut self.state, ContextManagerState::Starting);
         if let ContextManagerState::Initialized(config) = state {
-            self.state = ContextManagerState::Entered(
-                ExportProcess::start(config)
-                    .map_err(RustTracingStartError::from)
-                    .map_err(ToPythonError::to_py_err)?,
-            );
+            self.state = ContextManagerState::Entered(ExportProcess::start(config)?);
         } else {
-            return Err(RustContextManagerError::from(
-                ContextManagerError::EnterWithoutConfiguration,
-            )
-            .to_py_err())?;
+            Err(ContextManagerError::EnterWithoutConfiguration)?;
         }
         Ok(())
     }
@@ -147,13 +137,7 @@ impl Tracing {
             // method returns a Tokio runtime, which cannot be dropped within another
             // runtime. Additionally, `pyo3_async_runtimes::tokio::future_into_py` futures
             // must resolve to something that implements `IntoPyObject`.
-            let export_runtime = py_rt.block_on(async move {
-                export_process
-                    .shutdown()
-                    .await
-                    .map_err(RustTracingShutdownError::from)
-                    .map_err(ToPythonError::to_py_err)
-            })?;
+            let export_runtime = py_rt.block_on(async move { export_process.shutdown().await })?;
             if let Some(export_runtime) = export_runtime {
                 // This immediately shuts the runtime down. The expectation here is that the
                 // process shutdown is responsible for cleaning up all background tasks and
@@ -161,10 +145,7 @@ impl Tracing {
                 export_runtime.shutdown_background();
             }
         } else {
-            return Err(RustContextManagerError::from(
-                ContextManagerError::ExitWithoutExportProcess,
-            )
-            .to_py_err())?;
+            Err(ContextManagerError::ExitWithoutExportProcess)?;
         }
 
         Ok(())
