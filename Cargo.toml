@@ -17,7 +17,7 @@ pyo3-async-runtimes = { version = "0.27", features = ["tokio-runtime"] }
 pyo3-build-config = "0.27.2"
 rstest = "0.17.0"
 # TODO: Update this once the PR is merged.
-rigetti-pyo3 = { git = "https://github.com/rigetti/rigetti-pyo3.git", rev = "refs/pull/62/head" }
+rigetti-pyo3 = { git = "https://github.com/rigetti/rigetti-pyo3.git", rev = "refs/pull/62/head", version = "^0.4.4" }
 tokio = { version = "1.36.0", features = [] }
 tracing = { version = "0.1.41", features = ["log"] }
 # Despite how close the version numbers are, this package's release numbers *do
