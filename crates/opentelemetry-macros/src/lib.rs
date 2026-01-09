@@ -259,7 +259,7 @@ fn get_python_parameter_name(signature: &Signature) -> syn::Result<proc_macro2::
             signature.inputs.iter().nth(1).ok_or_else(|| {
                 syn::Error::new(signature.__span(), ERROR_SIGNATURE_MUST_INCLUDE_PY)
             })?;
-    };
+    }
 
     match first_arg {
         syn::FnArg::Typed(arg) => Ok(arg.pat.to_token_stream()),
@@ -318,6 +318,8 @@ fn get_item_impl_method_names(item_impl: &syn::ItemImpl) -> HashSet<String> {
     valid_exclusions
 }
 
+/// Ensure the wrapped function or method executes from Python in the current OpenTelemetry context.
+///
 /// This macro prepends `pyo3_opentelemetry::attach_otel_context_from_python` to the function or method body,
 /// effectively ensuring that the wrapped function or method is executed in the current `OpenTelemetry` context
 /// from the Python side.
@@ -394,7 +396,7 @@ pub fn pypropagate(attr: TokenStream, item: TokenStream) -> TokenStream {
         } else {
             let config_parser = syn::meta::parser(|meta| config.add_nested_meta_item_fn(&meta));
             parse_macro_input!(attr with config_parser);
-        };
+        }
     }
 
     pypropagate_impl(item, &config).map_or_else(
