@@ -23,7 +23,6 @@ class Config:
 
     def __new__(
         cls,
-        *,
         file_path: Optional[str] = None,
         filter: Optional[str] = None,
         instrumentation_library: Optional[InstrumentationLibrary] = None,

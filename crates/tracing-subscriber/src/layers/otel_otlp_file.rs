@@ -12,13 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::{fs::File, io::{BufWriter, Write}, sync::{Arc, Mutex}};
+use std::{
+    fs::File,
+    io::{BufWriter, Write},
+    sync::{Arc, Mutex},
+};
 
 use crate::create_init_submodule;
 use opentelemetry_proto::transform::{
     common::tonic::ResourceAttributesWithSchema, trace::tonic::group_spans_by_resource_and_scope,
 };
-use opentelemetry_sdk::{error::{OTelSdkError, OTelSdkResult}, trace::{SpanData, SpanExporter}};
+use opentelemetry_sdk::{
+    error::{OTelSdkError, OTelSdkResult},
+    trace::{SpanData, SpanExporter},
+};
 use pyo3::prelude::*;
 
 use super::{build_env_filter, force_flush_provider_as_shutdown, LayerBuildResult, WithShutdown};
@@ -114,19 +121,22 @@ impl OtelOtlpFile {
     fn flush_with_sync(&mut self, sync: bool) -> OTelSdkResult {
         match &self.writer {
             Some(writer) => {
-                let mut writer = writer.lock()
+                let mut writer = writer
+                    .lock()
                     .map_err(|e| OTelSdkError::InternalFailure(e.to_string()))?;
-                writer.flush()
+                writer
+                    .flush()
                     .map_err(|e| OTelSdkError::InternalFailure(e.to_string()))?;
 
                 if sync {
-                    writer.get_ref()
+                    writer
+                        .get_ref()
                         .sync_all()
                         .map_err(|e| OTelSdkError::InternalFailure(e.to_string()))?;
                 }
 
                 Ok(())
-            },
+            }
             None => std::io::stdout()
                 .flush()
                 .map_err(|e| OTelSdkError::InternalFailure(e.to_string())),

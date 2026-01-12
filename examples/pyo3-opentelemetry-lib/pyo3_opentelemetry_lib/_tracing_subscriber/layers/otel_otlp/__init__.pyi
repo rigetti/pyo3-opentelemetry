@@ -20,7 +20,6 @@ from pyo3_opentelemetry_lib._tracing_subscriber.common import InstrumentationLib
 class SpanLimits:
     def __new__(
         cls,
-        *,
         max_events_per_span: Optional[int] = None,
         max_attributes_per_span: Optional[int] = None,
         max_links_per_span: Optional[int] = None,
@@ -45,7 +44,6 @@ class Resource:
 
     def __new__(
         cls,
-        *,
         attrs: Optional[Dict[str, "ResourceValue"]] = None,
         schema_url: Optional[str] = None,
     ) -> "Resource": ...
@@ -62,7 +60,6 @@ class Config:
 
     def __new__(
         cls,
-        *,
         span_limits: Optional[SpanLimits] = None,
         resource: Optional[Resource] = None,
         metadata_map: Optional[Dict[str, str]] = None,
