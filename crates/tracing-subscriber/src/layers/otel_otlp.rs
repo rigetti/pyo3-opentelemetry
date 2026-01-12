@@ -24,7 +24,6 @@ use pyo3::prelude::*;
 use tracing_subscriber::Layer;
 
 use crate::create_init_submodule;
-// use opentelemetry_sdk::trace;
 use tonic::metadata::{
     errors::{InvalidMetadataKey, InvalidMetadataValue},
     MetadataKey,
@@ -34,7 +33,7 @@ use tracing_subscriber::filter::{FromEnvError, ParseError};
 use super::{build_env_filter, force_flush_provider_as_shutdown, LayerBuildResult, WithShutdown};
 use crate::common::PyInstrumentationLibrary;
 
-/// Configures the [`opentelemetry-otlp`] crate layer.
+/// Configures the [`opentelemetry_otlp`] crate layer.
 #[derive(Clone, Debug)]
 pub(crate) struct Config {
     /// Configuration to limit the amount of trace data collected.
@@ -43,7 +42,7 @@ pub(crate) struct Config {
     resource: Resource,
     /// The metadata map to use for requests to the remote collector.
     metadata_map: Option<tonic::metadata::MetadataMap>,
-    /// The sampler to use for the [`opentelemetry::sdk::trace::TracerProvider`].
+    /// The sampler to use for the [`opentelemetry_sdk::trace::SdkTracerProvider`].
     sampler: Sampler,
     /// The endpoint to which the exporter will send trace data. If not set, this must be set by
     /// OTLP environment variables.
@@ -51,12 +50,12 @@ pub(crate) struct Config {
     /// Timeout applied the [`tonic::transport::Channel`] used to send trace data to the remote collector.
     timeout: Option<Duration>,
     /// A timeout applied to the shutdown of the [`crate::contextmanager::Tracing`] context
-    /// manager upon exiting, before the underlying [`opentelemetry::sdk::trace::TracerProvider`]
+    /// manager upon exiting, before the underlying [`opentelemetry_sdk::trace::SdkTracerProvider`]
     /// is shutdown. Ensures that spans are flushed before the program exits.
     pre_shutdown_timeout: Duration,
     /// The filter to use for the [`tracing_subscriber::filter::EnvFilter`] layer.
     filter: Option<String>,
-    /// The instrumentation library to use for the [`opentelemetry::sdk::trace::TracerProvider`].
+    /// The instrumentation library to use for the [`opentelemetry_sdk::trace::SdkTracerProvider`].
     instrumentation_library: Option<InstrumentationScope>,
 }
 

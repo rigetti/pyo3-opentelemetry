@@ -25,8 +25,11 @@ use super::{build_env_filter, force_flush_provider_as_shutdown, LayerBuildResult
 use crate::common::PyInstrumentationLibrary;
 use tracing_subscriber::Layer;
 
-/// Configures the [`opentelemetry-stdout`] crate layer. If [`file_path`] is None, the layer
-/// will write to stdout.
+/// Configures the [`opentelemetry_stdout`][] crate layer.
+///
+/// If `file_path` is None, the layer will write to stdout.
+///
+/// [`opentelemetry_stdout`]: https://docs.rs/opentelemetry-stdout
 #[pyclass]
 #[derive(Clone, Debug, Default)]
 pub(crate) struct Config {
