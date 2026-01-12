@@ -6,8 +6,7 @@ pyo3_opentelemetry_lib.test.conftest.ResourceSpans
 pyo3_opentelemetry_lib.test.conftest.ResourceSpans.__init__
 pyo3_opentelemetry_lib.test.conftest.ResourceSpans.resource
 pyo3_opentelemetry_lib.test.conftest.ResourceSpans.scope_spans
-pyo3_opentelemetry_lib.test.tracing_test.Any
-pyo3_opentelemetry_lib.test.tracing_test.Any.__new__
+pyo3_opentelemetry_lib.test.tracing_test.Any.*
 pyo3_opentelemetry_lib.test.tracing_test.MutableMapping
 pyo3_opentelemetry_lib.test.tracing_test.ResourceSpans
 pyo3_opentelemetry_lib.test.tracing_test.ResourceSpans.__init__
