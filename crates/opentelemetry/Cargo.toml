@@ -8,7 +8,7 @@ license = "Apache-2.0"
 readme = "./README.md"
 description = "Macro and utilities for passing OpenTelemetry context from Python to Rust"
 repository = "https://github.com/rigetti/pyo3-opentelemetry"
-rust-version = "1.70.0"
+rust-version = "1.91.0"
 
 [dependencies]
 opentelemetry = { workspace = true }

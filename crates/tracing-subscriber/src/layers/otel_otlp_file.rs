@@ -12,14 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::{io::Write, sync::Arc};
+use std::{future::Future, io::Write, sync::Arc};
 
 use crate::create_init_submodule;
-use futures_core::future::BoxFuture;
-use opentelemetry::trace::TraceError;
 use opentelemetry_proto::transform::{
     common::tonic::ResourceAttributesWithSchema, trace::tonic::group_spans_by_resource_and_scope,
 };
+use opentelemetry_sdk::error::{OTelSdkError, OTelSdkResult};
 use pyo3::prelude::*;
 
 use super::{build_env_filter, force_flush_provider_as_shutdown, LayerBuildResult, WithShutdown};
@@ -55,73 +54,69 @@ impl Config {
 
 #[derive(Debug)]
 struct OtelOtlpFile {
-    writer: Option<Arc<tokio::sync::Mutex<std::fs::File>>>,
+    writer: Option<Arc<std::sync::Mutex<std::fs::File>>>,
     resource: ResourceAttributesWithSchema,
 }
 
 impl OtelOtlpFile {
     fn new(writer: Option<std::fs::File>) -> Self {
         Self {
-            writer: writer.map(|writer| Arc::new(tokio::sync::Mutex::new(writer))),
+            writer: writer.map(|writer| Arc::new(std::sync::Mutex::new(writer))),
             resource: ResourceAttributesWithSchema::default(),
         }
     }
 }
 
-impl opentelemetry_sdk::export::trace::SpanExporter for OtelOtlpFile {
+impl opentelemetry_sdk::trace::SpanExporter for OtelOtlpFile {
     fn export(
-        &mut self,
-        batch: Vec<opentelemetry_sdk::export::trace::SpanData>,
-    ) -> BoxFuture<'static, opentelemetry_sdk::export::trace::ExportResult> {
+        &self,
+        batch: Vec<opentelemetry_sdk::trace::SpanData>,
+    ) -> impl Future<Output = OTelSdkResult> + Send {
         let writer = self.writer.clone();
         let resource_spans = group_spans_by_resource_and_scope(batch, &self.resource);
 
-        Box::pin(async move {
+        async move {
             let traces_data = opentelemetry_proto::tonic::trace::v1::TracesData { resource_spans };
-            let serialized =
-                serde_json::to_vec(&traces_data).map_err(|e| TraceError::Other(Box::new(e)))?;
-            if let Some(writer) = writer {
-                let mut writer = writer.lock().await;
-                writer
-                    .write(serialized.as_slice())
-                    .map(|_| ())
-                    .map_err(|e| TraceError::Other(Box::new(e)))?;
-                writer
-                    .write(b"\n")
-                    .map(|_| ())
-                    .map_err(|e| TraceError::Other(Box::new(e)))
-            } else {
-                let mut stdout = std::io::stdout().lock();
-                stdout
-                    .write(serialized.as_slice())
-                    .map(|_| ())
-                    .map_err(|e| TraceError::Other(Box::new(e)))?;
-                stdout
-                    .write(b"\n")
-                    .map(|_| ())
-                    .map_err(|e| TraceError::Other(Box::new(e)))
-            }
-        })
+            let serialized = serde_json::to_vec(&traces_data)
+                .map(|mut v| {
+                    v.push(b'\n');
+                    v
+                })
+                .map_err(|e| OTelSdkError::InternalFailure(e.to_string()))?;
+
+            // Push file I/O to a separate thread.
+            tokio::task::spawn_blocking(move || -> OTelSdkResult {
+                if let Some(writer) = writer {
+                    writer
+                        .lock()
+                        .map_err(|e| OTelSdkError::InternalFailure(e.to_string()))?
+                        .write(serialized.as_slice())
+                        .map(|_| ())
+                        .map_err(|e| OTelSdkError::InternalFailure(e.to_string()))
+                } else {
+                    std::io::stdout()
+                        .lock()
+                        .write(serialized.as_slice())
+                        .map(|_| ())
+                        .map_err(|e| OTelSdkError::InternalFailure(e.to_string()))
+                }
+            })
+            .await
+            .map_err(|e| OTelSdkError::InternalFailure(e.to_string()))?
+        }
     }
 
-    fn shutdown(&mut self) {}
-
-    fn force_flush(
-        &mut self,
-    ) -> BoxFuture<'static, opentelemetry_sdk::export::trace::ExportResult> {
-        let writer = self.writer.clone();
-        Box::pin(async move {
-            match writer {
-                Some(writer) => writer
-                    .lock()
-                    .await
-                    .flush()
-                    .map_err(|e| TraceError::Other(Box::new(e))),
-                None => std::io::stdout()
-                    .flush()
-                    .map_err(|e| TraceError::Other(Box::new(e))),
-            }
-        })
+    fn force_flush(&mut self) -> OTelSdkResult {
+        match &self.writer {
+            Some(writer) => writer
+                .lock()
+                .map_err(|e| OTelSdkError::InternalFailure(e.to_string()))?
+                .flush()
+                .map_err(|e| OTelSdkError::InternalFailure(e.to_string())),
+            None => std::io::stdout()
+                .flush()
+                .map_err(|e| OTelSdkError::InternalFailure(e.to_string())),
+        }
     }
 
     /// Set the resource for the exporter.
@@ -145,11 +140,11 @@ impl crate::layers::Config for Config {
 
         let exporter = OtelOtlpFile::new(file);
         let provider = if batch {
-            opentelemetry_sdk::trace::TracerProvider::builder()
-                .with_batch_exporter(exporter, opentelemetry_sdk::runtime::Tokio {})
+            opentelemetry_sdk::trace::SdkTracerProvider::builder()
+                .with_batch_exporter(exporter)
                 .build()
         } else {
-            opentelemetry_sdk::trace::TracerProvider::builder()
+            opentelemetry_sdk::trace::SdkTracerProvider::builder()
                 .with_simple_exporter(exporter)
                 .build()
         };

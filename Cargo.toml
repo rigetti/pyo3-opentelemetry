@@ -10,17 +10,18 @@ serde = { version = "1.0.145", features = ["derive"] }
 # When updating the OTEL version, be sure to update these optional dependencies in `tracing-subscriber` as well:
 # * opentelemetry-otlp
 # * opentelemetry-proto
-opentelemetry = "0.27.1"
-opentelemetry_sdk = "0.27.1"
+opentelemetry = "0.31.0"
+opentelemetry_sdk = "0.31.0"
 pyo3 = { version = "0.27.2", features = ["macros"] }
 pyo3-async-runtimes = { version = "0.27", features = ["tokio-runtime"] }
 pyo3-build-config = "0.27.2"
 rstest = "0.17.0"
 # TODO: Update this once the PR is merged.
-rigetti-pyo3 = { git = "https://github.com/rigetti/rigetti-pyo3.git", rev = "refs/pull/62/head", version = "^0.4.4" }
+# rigetti-pyo3 = { git = "https://github.com/rigetti/rigetti-pyo3.git", rev = "refs/pull/62/head", version = "0.4.4" }
+rigetti-pyo3 = { path = "../rigetti-pyo3/rigetti-pyo3", version = "0.4.4" }
 tokio = { version = "1.36.0", features = [] }
 tracing = { version = "0.1.41", features = ["log"] }
 # Despite how close the version numbers are, this package's release numbers *do
 # not* match the OTEL SDK version that it requires.
-tracing-opentelemetry = "0.28.0"
+tracing-opentelemetry = "0.32.0"
 tracing-subscriber = "0.3.19"

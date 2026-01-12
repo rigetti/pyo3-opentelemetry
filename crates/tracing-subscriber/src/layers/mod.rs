@@ -76,6 +76,8 @@ pub(crate) enum BuildError {
 pub(crate) enum ShutdownError {
     // This will eventually accept a `CustomError` that can be set by upstream libraries.
     // See https://github.com/rigetti/pyo3-opentelemetry/issues/4
+    #[error("subscriber shutdown failed: {0}")]
+    OTel(#[from] opentelemetry_sdk::error::OTelSdkError),
 }
 
 pub(crate) type ShutdownResult<T> = Result<T, ShutdownError>;
@@ -110,16 +112,18 @@ impl Clone for Box<dyn Config> {
 
 #[cfg(any(feature = "layer-otel-otlp", feature = "layer-otel-otlp-file"))]
 pub(super) fn force_flush_provider_as_shutdown(
-    provider: opentelemetry_sdk::trace::TracerProvider,
+    provider: opentelemetry_sdk::trace::SdkTracerProvider,
     timeout: Option<std::time::Duration>,
 ) -> Shutdown {
     Box::new(
         move || -> std::pin::Pin<Box<dyn std::future::Future<Output = ShutdownResult<()>> + Send + Sync>> {
             Box::pin(async move {
+                // TODO: Should this be forwarded to the provider instead? How is this a timeout?
                 if let Some(timeout) = timeout {
                     tokio::time::sleep(timeout).await;
                 }
-                provider.force_flush();
+                provider.force_flush()?;
+                provider.shutdown()?;
                 Ok(())
             })
         },

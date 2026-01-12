@@ -200,7 +200,6 @@ impl SubscriberManagerGuard {
         match self {
             Self::Global(shutdown) => {
                 shutdown().await?;
-                opentelemetry::global::shutdown_tracer_provider();
             }
             Self::CurrentThread((shutdown, guard)) => {
                 shutdown().await?;

@@ -96,14 +96,14 @@ impl Config {
     }
 
     fn build(&self, batch: bool) -> LayerBuildResult<WithShutdown> {
-        let provider = opentelemetry_sdk::trace::TracerProvider::builder()
+        let provider = opentelemetry_sdk::trace::SdkTracerProvider::builder()
             .with_sampler(self.sampler.clone())
             .with_span_limits(self.span_limits)
             .with_resource(self.resource.clone());
 
         let exporter = self.initialize_otlp_exporter()?;
         let provider = if batch {
-            provider.with_batch_exporter(exporter, opentelemetry_sdk::runtime::Tokio {})
+            provider.with_batch_exporter(exporter)
         } else {
             provider.with_simple_exporter(exporter)
         }
@@ -128,7 +128,7 @@ impl Config {
 #[derive(thiserror::Error, Debug)]
 pub(crate) enum BuildError {
     #[error("failed to build opentelemetry-otlp pipeline: {0}")]
-    TraceInstall(#[from] opentelemetry::trace::TraceError),
+    TraceInstall(#[from] opentelemetry_otlp::ExporterBuildError),
     #[error("error in the configuration: {0}")]
     Config(#[from] ConfigError),
     #[error("failed to parse specified trace filter: {0}")]
@@ -308,12 +308,14 @@ impl From<PyResource> for Resource {
         let kvs = resource
             .attrs
             .into_iter()
-            .map(|(k, v)| opentelemetry::KeyValue::new(k, v))
-            .collect::<Vec<opentelemetry::KeyValue>>();
-        match resource.schema_url {
-            Some(schema_url) => Self::from_schema_url(kvs, schema_url),
-            None => Self::new(kvs),
+            .map(|(k, v)| opentelemetry::KeyValue::new(k, v));
+
+        if let Some(schema_url) = resource.schema_url {
+            Resource::builder().with_schema_url(kvs, schema_url)
+        } else {
+            Resource::builder().with_attributes(kvs)
         }
+        .build()
     }
 }
 
