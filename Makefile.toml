@@ -15,34 +15,34 @@
     install_crate = { rustup_component_name = "llvm-tools-preview" }
 
 [tasks.install-cargo-hack]
-    install_crate = { crate_name = "cargo-hack", version = "0.5.26" }
+    install_crate = { crate_name = "cargo-hack", version = "0.6.41" }
 
 [tasks.install-cargo-deny]
-    install_crate = { crate_name = "cargo-deny", version = "0.14.2" }
+    install_crate = { crate_name = "cargo-deny", version = "0.19.0" }
 
 [tasks.install-cargo-deadlinks]
     install_crate = { crate_name = "cargo-deadlinks", version = "0.8.1" }
 
 [tasks.install-cargo-geiger]
-    install_crate = { crate_name = "cargo-geiger", version = "0.11.6" }
+    install_crate = { crate_name = "cargo-geiger", version = "0.13.0" }
 
 [tasks.install-cargo-license]
-    install_crate = { crate_name = "cargo-license", version= "0.5.1" }
+    install_crate = { crate_name = "cargo-license", version= "0.7.0" }
 
 [tasks.install-cargo-msrv]
-    install_crate = { crate_name = "cargo-msrv", version = "0.15.1" }
+    install_crate = { crate_name = "cargo-msrv", version = "0.18.4" }
 
 [tasks.install-cargo-outdated]
-    install_crate = { crate_name = "cargo-outdated", version = "0.13.1" }
+    install_crate = { crate_name = "cargo-outdated", version = "0.17.0" }
 
 [tasks.install-grcov]
-    install_crate = { crate_name = "grcov", version = "v0.8.19" }
+    install_crate = { crate_name = "grcov", version = "v0.10.5" }
 
 [tasks.install-gitlab-clippy]
     install_crate = { crate_name = "gitlab_clippy", version = "1.0.3" }
 
 [tasks.install-cargo-nextest]
-    install_crate = { crate_name = "cargo-nextest", version = "0.9.57" }
+    install_crate = { crate_name = "cargo-nextest", version = "0.9.120" }
 
 [tasks.check]
     clear = true
@@ -126,7 +126,10 @@
     command = "cargo"
     # we removed "--check-intra-doc-links" due to flaky and opaque failures such
     # as https://github.com/rigetti/pyo3-opentelemetry/actions/runs/6723277856/job/18273013287?pr=7.
-    args = ["deadlinks", "--check-http", "--ignore-fragments"]
+    args = ["deadlinks", "--check-http", "--ignore-fragments", "--", "--all-features"]
+    # `deadlinks` fails for _other_ crate's broken links :shrug:
+    # See https://github.com/deadlinks/cargo-deadlinks/issues/133
+    ignore_errors = true
 
 [tasks.deny]
     workspace = false
@@ -148,7 +151,7 @@
 
 [tasks.deny-bans]
     workspace = false
-    dependencies = ["install-cargo-deny"] 
+    dependencies = ["install-cargo-deny"]
     command = "cargo"
     args = ["deny", "check", "-c", "${CARGO_MAKE_WORKSPACE_WORKING_DIRECTORY}/deny.toml", "bans"]
 
