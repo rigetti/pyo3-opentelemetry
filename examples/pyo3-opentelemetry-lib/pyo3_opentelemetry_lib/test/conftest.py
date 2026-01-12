@@ -53,10 +53,8 @@ def pytest_addoption(parser: Parser):
 def pytest_configure(config: Config):
     config.addinivalue_line(
         "markers",
-        (
-            "global_tracing_configuration: mark test as using global tracing configuration (which can only be"
-            " initialized once per process)."
-        ),
+        "global_tracing_configuration: mark test as using global tracing configuration (which can only be"
+        " initialized once per process).",
     )
 
 
