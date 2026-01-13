@@ -62,17 +62,15 @@
   args = [
     "run",
     "stubtest",
-    "--allowlist",
-    ".stubtest-allowlist",
-    "--allowlist",
-    "./pyo3_opentelemetry_lib/_tracing_subscriber/.stubtest-allowlist",
-    "--mypy-config-file",
-    "./mypy.ini",
+    "--allowlist", ".stubtest-allowlist",
+    "--allowlist", "./pyo3_opentelemetry_lib/_tracing_subscriber/.stubtest-allowlist",
+    "--ignore-unused-allowlist",  # Different items are required depending on the Python version.
+    "--mypy-config-file", "./mypy.ini",
     "pyo3_opentelemetry_lib",
   ]
 
 ###############################################################################
-# Testing 
+# Testing
 ###############################################################################
 [tasks.python-test]
   dependencies = ["python-build"]
