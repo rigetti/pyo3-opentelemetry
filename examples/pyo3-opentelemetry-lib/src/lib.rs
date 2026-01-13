@@ -63,8 +63,9 @@ use std::collections::HashMap;
 
 use opentelemetry::propagation::TextMapPropagator;
 use opentelemetry::trace::FutureExt;
-use pyo3::prelude::*;
+use pyo3::{prelude::*, types::PyDict};
 use pyo3_opentelemetry::pypropagate;
+use rigetti_pyo3::sync::Awaitable;
 use tracing::instrument;
 
 #[instrument]
@@ -122,11 +123,11 @@ impl ExampleStruct {
 
     /// An example async struct method that will call a function containing and span and returns a
     /// HashMap with the propagated OTel context.
-    pub fn example_method_async<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+    pub fn example_method_async<'py>(&self, py: Python<'py>) -> PyResult<Awaitable<'py, PyDict>> {
         pyo3_async_runtimes::tokio::future_into_py(
             py,
             example_function_impl_async().with_current_context(),
-        )
+        ).map(Into::into)
     }
 }
 

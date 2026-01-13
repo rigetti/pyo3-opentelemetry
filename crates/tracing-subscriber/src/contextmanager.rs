@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-use pyo3::prelude::*;
-use rigetti_pyo3::exception;
+use pyo3::{prelude::*, types::PyTuple};
+use rigetti_pyo3::{exception, sync::Awaitable};
 
 use super::export_process::{ExportProcess, ExportProcessConfig};
 
@@ -119,9 +119,9 @@ impl Tracing {
         Ok(())
     }
 
-    fn __aenter__<'py>(&mut self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+    fn __aenter__<'py>(&mut self, py: Python<'py>) -> PyResult<Awaitable<'py, PyTuple>> {
         self.__enter__()?;
-        pyo3_async_runtimes::tokio::future_into_py(py, async { Ok(()) })
+        pyo3_async_runtimes::tokio::future_into_py(py, async { Ok(()) }).map(Into::into)
     }
 
     fn __exit__<'py>(
@@ -157,9 +157,9 @@ impl Tracing {
         exc_type: Option<Bound<'py, PyAny>>,
         exc_value: Option<Bound<'py, PyAny>>,
         traceback: Option<Bound<'py, PyAny>>,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    ) -> PyResult<Awaitable<'py, PyTuple>> {
         self.__exit__(exc_type, exc_value, traceback)?;
-        pyo3_async_runtimes::tokio::future_into_py(py, async { Ok(()) })
+        pyo3_async_runtimes::tokio::future_into_py(py, async { Ok(()) }).map(Into::into)
     }
 }
 

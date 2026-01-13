@@ -24,6 +24,7 @@ pyo3 = { workspace = true }
 pyo3-async-runtimes = { workspace = true, features = ["tokio", "tokio-runtime"] }
 pyo3-opentelemetry = { path = "../../crates/opentelemetry" }
 pyo3-tracing-subscriber = { path = "../../crates/tracing-subscriber", features = ["layer-otel-otlp-file", "layer-otel-otlp"] }
+rigetti-pyo3 = { workspace = true, features = [ "async-tokio" ] }
 tokio = { workspace = true, features = ["sync", "parking_lot", "macros"] }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true, features = ["env-filter"], optional = true }
