@@ -127,7 +127,8 @@ impl ExampleStruct {
         pyo3_async_runtimes::tokio::future_into_py(
             py,
             example_function_impl_async().with_current_context(),
-        ).map(Into::into)
+        )
+        .map(Into::into)
     }
 }
 
