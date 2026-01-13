@@ -1,33 +1,79 @@
+[tasks.python-check-all]
+  dependencies = ["python-check", "python-test"]
+
+###############################################################################
+# Installation and Building
+###############################################################################
+[tasks.python-build]
+  dependencies = ["python-install", "python-format"]
+
 [tasks.python-install-dependencies]
   private = true
-  script = '''
-  poetry lock
-  poetry install
-  '''
+  command = "poetry"
+  args = ["install", "--with", "dev", "--no-root"]
 
-[tasks.python-build]
+[tasks.python-install]
   dependencies = ["python-install-dependencies"]
-  script = '''
-  poetry run maturin develop
-  cargo make python-format 
-  '''
-    
+  command = "poetry"
+  args = ["run", "maturin", "develop"]
+
+###############################################################################
+# Formatting and Linting
+###############################################################################
 [tasks.python-format]
-  dependencies = []
-  script = '''
-  poetry run black .
-  poetry run ruff . --fix
-  '''
+  dependencies = ["python-format-black", "python-format-ruff"]
 
 [tasks.python-check]
-  dependencies = ["python-build"]
-  script = '''
-  poetry run black . --check
-  poetry run ruff .
-  poetry run pyright .
-  poetry run stubtest --allowlist .stubtest-allowlist --allowlist pyo3_opentelemetry_lib/_tracing_subscriber/.stubtest-allowlist --mypy-config-file ./mypy.ini pyo3_opentelemetry_lib
-  '''
+  dependencies = [
+    "python-check-black",
+    "python-check-ruff",
+    "python-check-pyright",
+    "python-check-stubtest",
+  ]
 
+[tasks.python-format-black]
+  dependencies = ["python-install"]
+  command = "poetry"
+  args = ["run", "black", "."]
+
+[tasks.python-format-ruff]
+  dependencies = ["python-install"]
+  command = "poetry"
+  args = ["run", "ruff", "check", "--fix"]
+
+[tasks.python-check-black]
+  dependencies = ["python-build"]
+  command = "poetry"
+  args = ["run", "black", ".", "--check"]
+
+[tasks.python-check-ruff]
+  dependencies = ["python-build"]
+  command = "poetry"
+  args = ["run", "ruff", "check"]
+
+[tasks.python-check-pyright]
+  dependencies = ["python-build"]
+  command = "poetry"
+  args = ["run", "pyright", "."]
+
+[tasks.python-check-stubtest]
+  dependencies = ["python-build"]
+  command = "poetry"
+  args = [
+    "run",
+    "stubtest",
+    "--allowlist",
+    ".stubtest-allowlist",
+    "--allowlist",
+    "./pyo3_opentelemetry_lib/_tracing_subscriber/.stubtest-allowlist",
+    "--mypy-config-file",
+    "./mypy.ini",
+    "pyo3_opentelemetry_lib",
+  ]
+
+###############################################################################
+# Testing 
+###############################################################################
 [tasks.python-test]
   dependencies = ["python-build"]
   script = '''
@@ -47,7 +93,4 @@
   poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_otlp_export_asynchronous[00]' --with-global-tracing-configuration
   poetry run pytest 'pyo3_opentelemetry_lib/test/tracing_test.py::test_otlp_export_asynchronous[01]' --with-global-tracing-configuration
   '''
-
-[tasks.python-check-all]
-  dependencies = ["python-check", "python-test"]
 
