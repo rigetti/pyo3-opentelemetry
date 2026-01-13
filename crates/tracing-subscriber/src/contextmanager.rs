@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-use pyo3::{prelude::*, types::PyTuple};
+use pyo3::{prelude::*, types::PyNone};
 use rigetti_pyo3::{exception, sync::Awaitable};
 
 use super::export_process::{ExportProcess, ExportProcessConfig};
@@ -119,7 +119,7 @@ impl Tracing {
         Ok(())
     }
 
-    fn __aenter__<'py>(&mut self, py: Python<'py>) -> PyResult<Awaitable<'py, PyTuple>> {
+    fn __aenter__<'py>(&mut self, py: Python<'py>) -> PyResult<Awaitable<'py, PyNone>> {
         self.__enter__()?;
         pyo3_async_runtimes::tokio::future_into_py(py, async { Ok(()) }).map(Into::into)
     }
@@ -137,8 +137,7 @@ impl Tracing {
             // method returns a Tokio runtime, which cannot be dropped within another
             // runtime. Additionally, `pyo3_async_runtimes::tokio::future_into_py` futures
             // must resolve to something that implements `IntoPyObject`.
-            let export_runtime = py_rt.block_on(async move { export_process.shutdown().await })?;
-            if let Some(export_runtime) = export_runtime {
+            if let Some(export_runtime) = py_rt.block_on(export_process.shutdown())? {
                 // This immediately shuts the runtime down. The expectation here is that the
                 // process shutdown is responsible for cleaning up all background tasks and
                 // shutting down gracefully.
@@ -157,7 +156,7 @@ impl Tracing {
         exc_type: Option<Bound<'py, PyAny>>,
         exc_value: Option<Bound<'py, PyAny>>,
         traceback: Option<Bound<'py, PyAny>>,
-    ) -> PyResult<Awaitable<'py, PyTuple>> {
+    ) -> PyResult<Awaitable<'py, PyNone>> {
         self.__exit__(exc_type, exc_value, traceback)?;
         pyo3_async_runtimes::tokio::future_into_py(py, async { Ok(()) }).map(Into::into)
     }
