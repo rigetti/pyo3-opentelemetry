@@ -26,6 +26,4 @@ tracing-opentelemetry = { workspace = true }
 tracing-subscriber = { workspace = true }
 
 [features]
-extension-module = ["pyo3/extension-module"]
-default = ["extension-module"]
-
+extension-module = []  # Deprecated: let maturin handle this for you.

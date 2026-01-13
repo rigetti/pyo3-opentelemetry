@@ -16,9 +16,7 @@ db-path = "~/.cargo/advisory-db"
 db-urls = ["https://github.com/rustsec/advisory-db"]
 # The lint level for crates that have been yanked from their source registry
 yanked = "deny"
-ignore = [
-    { id = "RUSTSEC-2025-0134", reason = "rustls-pemfile is unmaintained, used by our version of opentelemetry-otlp" },
-]
+ignore = []
 
 # This section is considered when running `cargo deny check licenses`
 # More documentation for the licenses section can be found here:
@@ -62,6 +60,12 @@ wildcards = "deny"
 allow-wildcard-paths = true
 highlight = "all"
 skip-tree = []
+
+[[bans.features]]
+  crate = "pyo3"
+  deny = ["extension-module"]
+  reason = "this feature is deprecated; let maturin handle it for you"
+
 # This section is considered when running `cargo deny check sources`.
 # More documentation about the 'sources' section can be found here:
 # https://embarkstudios.github.io/cargo-deny/checks/sources/cfg.html

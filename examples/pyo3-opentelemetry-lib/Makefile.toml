@@ -1,3 +1,13 @@
+[tasks.check]
+  clear = true
+  dependencies = ["rust-check", "python-check-all"]
+
+[tasks.rust-check]
+  install_crate = false
+  toolchain = "${CARGO_MAKE_RUST_DEFAULT_TOOLCHAIN}"
+  command = "cargo"
+  args = ["check"]
+
 [tasks.python-check-all]
   dependencies = ["python-check", "python-test"]
 
