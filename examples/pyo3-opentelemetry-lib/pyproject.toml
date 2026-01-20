@@ -10,8 +10,8 @@ classifiers = [
 description = "Propagation of OpenTelemetry context from Python to Rust"
 readme = "README.md"
 authors = [
-	{ name = "Rigetti Computing", email = "softapps@rigetti.com" },
-	{ name = "Eric Hulburd", email = "ehulburd@rigetti.com" },
+    { name = "Rigetti Computing", email = "softapps@rigetti.com" },
+    { name = "Eric Hulburd", email = "ehulburd@rigetti.com" },
 ]
 
 dependencies = [
@@ -25,7 +25,7 @@ dependencies = [
 optional = true
 [tool.poetry.group.test.dependencies]
 grpcio = "^1.59.0"
-pytest = "^9.0.0" 
+pytest = "^9.0.0"
 pytest-asyncio = "^1.3.0"
 pytest-forked = "^1.6.0"
 pytest-timeout = "^2.4.0"
@@ -73,7 +73,7 @@ extend-exclude = '''
 module = [
     "grpc",
     "grpc.aio",
-] 
+]
 ignore_missing_imports = true
 
 [tool.pyright]
