@@ -60,10 +60,6 @@ pub(crate) struct Config {
 }
 
 impl Config {
-    #[expect(
-        clippy::significant_drop_tightening,
-        reason = "We're using the `builder` this entire method."
-    )]
     fn initialize_otlp_exporter(&self) -> LayerBuildResult<opentelemetry_otlp::SpanExporter> {
         let mut builder = opentelemetry_otlp::SpanExporter::builder().with_tonic();
         if let Some(endpoint) = self.endpoint.clone() {
@@ -310,9 +306,9 @@ impl From<PyResource> for Resource {
             .map(|(k, v)| opentelemetry::KeyValue::new(k, v));
 
         if let Some(schema_url) = resource.schema_url {
-            Resource::builder().with_schema_url(kvs, schema_url)
+            Self::builder().with_schema_url(kvs, schema_url)
         } else {
-            Resource::builder().with_attributes(kvs)
+            Self::builder().with_attributes(kvs)
         }
         .build()
     }

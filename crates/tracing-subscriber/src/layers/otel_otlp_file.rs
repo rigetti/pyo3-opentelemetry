@@ -117,8 +117,9 @@ impl SpanExporter for OtelOtlpFile {
 }
 
 impl OtelOtlpFile {
+    #[expect(clippy::significant_drop_tightening)]
     /// Flush the writer and, optionally, sync it to disk without releasing the lock.
-    fn flush_with_sync(&mut self, sync: bool) -> OTelSdkResult {
+    fn flush_with_sync(&self, sync: bool) -> OTelSdkResult {
         match &self.writer {
             Some(writer) => {
                 let mut writer = writer
