@@ -1,3 +1,9 @@
+doc-valid-idents = [
+  "OTel",
+  "PyO3",
+  ".."
+]
+
 allowed-duplicate-crates = [
   "base64",
   "bitflags",
