@@ -83,7 +83,7 @@ async fn example_function_impl_async() -> PyResult<HashMap<String, String>> {
 }
 
 /// An example function that will call a function containing and span and returns a
-/// HashMap with the propagated OTel context.
+/// [`HashMap`] with the propagated OTel context.
 #[pypropagate]
 #[pyfunction]
 pub fn example_function(py: Python<'_>) -> HashMap<String, String> {
@@ -91,7 +91,7 @@ pub fn example_function(py: Python<'_>) -> HashMap<String, String> {
 }
 
 /// An example async function that will call a function containing and span and returns a
-/// HashMap with the propagated OTel context.
+/// [`HashMap`] with the propagated OTel context.
 #[pypropagate]
 #[pyfunction]
 pub fn example_function_async<'py>(py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
@@ -116,13 +116,13 @@ impl ExampleStruct {
     }
 
     /// An example struct method that will call a function containing and span and returns a
-    /// HashMap with the propagated OTel context.
+    /// [`HashMap`] with the propagated OTel context.
     pub fn example_method(&self, py: Python<'_>) -> HashMap<String, String> {
         example_function_impl()
     }
 
     /// An example async struct method that will call a function containing and span and returns a
-    /// HashMap with the propagated OTel context.
+    /// [`HashMap`] with the propagated OTel context.
     pub fn example_method_async<'py>(&self, py: Python<'py>) -> PyResult<Awaitable<'py, PyDict>> {
         pyo3_async_runtimes::tokio::future_into_py(
             py,
