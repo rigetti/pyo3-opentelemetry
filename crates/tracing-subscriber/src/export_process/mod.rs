@@ -99,7 +99,7 @@ pub(crate) enum ShutdownError {
 
 exception!(
     StartError,
-    "export_process",
+    export_process,
     TracingStartError,
     pyo3::exceptions::PyRuntimeError,
     "Errors encounter if starting tracing fails."
@@ -107,7 +107,7 @@ exception!(
 
 exception!(
     ShutdownError,
-    "export_process",
+    export_process,
     TracingShutdownError,
     pyo3::exceptions::PyRuntimeError,
     "Errors encounter if shutting down tracing fails."
