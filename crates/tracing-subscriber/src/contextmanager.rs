@@ -91,7 +91,7 @@ enum ContextManagerError {
 
 exception!(
     ContextManagerError,
-    "contextmanager",
+    contextmanager,
     TracingContextManagerError,
     pyo3::exceptions::PyRuntimeError,
     "Errors generated through use of the tracing context manager."
