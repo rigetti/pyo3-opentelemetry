@@ -612,7 +612,7 @@ dependencies = [
  "libc",
  "percent-encoding",
  "pin-project-lite",
- "socket2",
+ "socket2 0.6.1",
  "tokio",
  "tower-service",
  "tracing",
@@ -936,20 +936,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "opentelemetry"
-version = "0.31.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b84bcd6ae87133e903af7ef497404dda70c60d0ea14895fc8a5e6722754fc2a0"
-dependencies = [
- "futures-core",
- "futures-sink",
- "js-sys",
- "pin-project-lite",
- "thiserror",
- "tracing",
-]
-
-[[package]]
 name = "opentelemetry-http"
 version = "0.30.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -958,7 +944,7 @@ dependencies = [
  "async-trait",
  "bytes",
  "http",
- "opentelemetry 0.30.0",
+ "opentelemetry",
  "reqwest",
 ]
 
@@ -969,7 +955,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dbee664a43e07615731afc539ca60c6d9f1a9425e25ca09c57bc36c87c55852b"
 dependencies = [
  "http",
- "opentelemetry 0.30.0",
+ "opentelemetry",
  "opentelemetry-http",
  "opentelemetry-proto",
  "opentelemetry_sdk",
@@ -977,7 +963,7 @@ dependencies = [
  "reqwest",
  "thiserror",
  "tokio",
- "tonic 0.13.1",
+ "tonic",
  "tracing",
 ]
 
@@ -989,11 +975,11 @@ checksum = "2e046fd7660710fe5a05e8748e70d9058dc15c94ba914e7c4faa7c728f0e8ddc"
 dependencies = [
  "base64",
  "hex",
- "opentelemetry 0.30.0",
+ "opentelemetry",
  "opentelemetry_sdk",
  "prost",
  "serde",
- "tonic 0.13.1",
+ "tonic",
 ]
 
 [[package]]
@@ -1005,7 +991,7 @@ dependencies = [
  "futures-channel",
  "futures-executor",
  "futures-util",
- "opentelemetry 0.30.0",
+ "opentelemetry",
  "percent-encoding",
  "rand",
  "serde_json",
@@ -1255,7 +1241,7 @@ version = "0.4.0"
 dependencies = [
  "futures-util",
  "once_cell",
- "opentelemetry 0.30.0",
+ "opentelemetry",
  "opentelemetry_sdk",
  "pyo3",
  "pyo3-opentelemetry-macros",
@@ -1269,7 +1255,7 @@ dependencies = [
 name = "pyo3-opentelemetry-lib"
 version = "0.1.0"
 dependencies = [
- "opentelemetry 0.30.0",
+ "opentelemetry",
  "opentelemetry_sdk",
  "pyo3",
  "pyo3-async-runtimes",
@@ -1298,7 +1284,7 @@ version = "0.2.0"
 dependencies = [
  "futures-core",
  "handlebars",
- "opentelemetry 0.30.0",
+ "opentelemetry",
  "opentelemetry-otlp",
  "opentelemetry-proto",
  "opentelemetry_sdk",
@@ -1310,7 +1296,7 @@ dependencies = [
  "serde_json",
  "thiserror",
  "tokio",
- "tonic 0.14.2",
+ "tonic",
  "tracing",
  "tracing-opentelemetry",
  "tracing-subscriber",
@@ -1423,9 +1409,8 @@ dependencies = [
 [[package]]
 name = "rigetti-pyo3"
 version = "0.4.4"
-source = "git+https://github.com/rigetti/rigetti-pyo3.git?rev=refs%2Fpull%2F62%2Fhead#176605fb8893b109b54dcc3f1a57f2f2ca2a9f79"
 dependencies = [
- "opentelemetry 0.31.0",
+ "opentelemetry",
  "pyo3",
  "pyo3-async-runtimes",
  "tokio",
@@ -1680,6 +1665,16 @@ checksum = "67b1b7a3b5fe4f1376887184045fcf45c69e92af734b7aaddc05fb777b6fbd03"
 
 [[package]]
 name = "socket2"
+version = "0.5.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e22376abed350d73dd1cd119b57ffccad95b4e585a7cda43e286245ce23c0678"
+dependencies = [
+ "libc",
+ "windows-sys 0.52.0",
+]
+
+[[package]]
+name = "socket2"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "17129e116933cf371d018bb80ae557e889637989d8638274fb25622827b03881"
@@ -1804,7 +1799,7 @@ dependencies = [
  "mio",
  "parking_lot",
  "pin-project-lite",
- "socket2",
+ "socket2 0.6.1",
  "tokio-macros",
  "windows-sys 0.61.2",
 ]
@@ -1861,34 +1856,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7e581ba15a835f4d9ea06c55ab1bd4dce26fc53752c69a04aac00703bfb49ba9"
 dependencies = [
  "async-trait",
- "base64",
- "bytes",
- "http",
- "http-body",
- "http-body-util",
- "hyper",
- "hyper-timeout",
- "hyper-util",
- "percent-encoding",
- "pin-project",
- "prost",
- "rustls-native-certs",
- "tokio",
- "tokio-rustls",
- "tokio-stream",
- "tower",
- "tower-layer",
- "tower-service",
- "tracing",
-]
-
-[[package]]
-name = "tonic"
-version = "0.14.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eb7613188ce9f7df5bfe185db26c5814347d110db17920415cf2fbcad85e7203"
-dependencies = [
- "async-trait",
  "axum",
  "base64",
  "bytes",
@@ -1901,9 +1868,9 @@ dependencies = [
  "hyper-util",
  "percent-encoding",
  "pin-project",
+ "prost",
  "rustls-native-certs",
- "socket2",
- "sync_wrapper",
+ "socket2 0.5.10",
  "tokio",
  "tokio-rustls",
  "tokio-stream",
@@ -2014,7 +1981,7 @@ checksum = "ddcf5959f39507d0d04d6413119c04f33b623f4f951ebcbdddddfad2d0623a9c"
 dependencies = [
  "js-sys",
  "once_cell",
- "opentelemetry 0.30.0",
+ "opentelemetry",
  "opentelemetry_sdk",
  "smallvec",
  "tracing",

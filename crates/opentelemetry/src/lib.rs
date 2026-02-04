@@ -85,7 +85,7 @@
 //! }
 //!
 //! #[pymodule]
-//! fn my_module(_py: Python, m: &PyModule) -> PyResult<()> {
+//! fn my_module(m: &Bound<'_, PyModule>) -> PyResult<()> {
 //!    m.add_function(wrap_pyfunction!(my_function, m)?)?;
 //!    Ok(())
 //! }
