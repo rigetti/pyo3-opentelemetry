@@ -4,6 +4,12 @@
     CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true
     CARGO_MAKE_WORKSPACE_SKIP_MEMBERS = "examples/*"
 
+    # This tells `cargo-make` to use `--locked` if installing a crate.
+    # Confusingly, the `version` field is ignored for `install_crate`
+    # _unless you define the full install command_; what you actually want is `min_version`.
+    # See: https://github.com/sagiegurari/cargo-make/issues/1321
+    CARGO_MAKE_CRATE_INSTALLATION_LOCKED = true
+
 [tasks.clean]
     clear = true
     script = """
@@ -15,34 +21,34 @@
     install_crate = { rustup_component_name = "llvm-tools-preview" }
 
 [tasks.install-cargo-hack]
-    install_crate = { crate_name = "cargo-hack", version = "0.6.41" }
+    install_crate = { crate_name = "cargo-hack", min_version = "0.6.41" }
 
 [tasks.install-cargo-deny]
-    install_crate = { crate_name = "cargo-deny", version = "0.19.0" }
+    install_crate = { crate_name = "cargo-deny", min_version = "0.19.0" }
 
 [tasks.install-cargo-deadlinks]
-    install_crate = { crate_name = "cargo-deadlinks", version = "0.8.1" }
+    install_crate = { crate_name = "cargo-deadlinks", min_version = "0.8.1" }
 
 [tasks.install-cargo-geiger]
-    install_crate = { crate_name = "cargo-geiger", version = "0.13.0" }
+    install_crate = { crate_name = "cargo-geiger", min_version = "0.13.0" }
 
 [tasks.install-cargo-license]
-    install_crate = { crate_name = "cargo-license", version= "0.7.0" }
+    install_crate = { crate_name = "cargo-license", min_version= "0.7.0" }
 
 [tasks.install-cargo-msrv]
-    install_crate = { crate_name = "cargo-msrv", version = "0.18.4" }
+    install_crate = { crate_name = "cargo-msrv", min_version = "0.18.4" }
 
 [tasks.install-cargo-outdated]
-    install_crate = { crate_name = "cargo-outdated", version = "0.17.0" }
+    install_crate = { crate_name = "cargo-outdated", min_version = "0.17.0" }
 
 [tasks.install-grcov]
-    install_crate = { crate_name = "grcov", version = "v0.10.5" }
+    install_crate = { crate_name = "grcov", min_version = "v0.10.5" }
 
 [tasks.install-gitlab-clippy]
-    install_crate = { crate_name = "gitlab_clippy", version = "1.0.3" }
+    install_crate = { crate_name = "gitlab_clippy", min_version = "1.0.3" }
 
 [tasks.install-cargo-nextest]
-    install_crate = { crate_name = "cargo-nextest", version = "0.9.120" }
+    install_crate = { crate_name = "cargo-nextest", min_version = "0.9.120" }
 
 [tasks.check]
     clear = true
