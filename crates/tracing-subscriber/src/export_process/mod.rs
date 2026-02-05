@@ -14,8 +14,9 @@
 
 use std::fmt::Debug;
 
-use crate::{py_wrap_error, subscriber::PyConfig, wrap_error};
-use pyo3::{exceptions::PyRuntimeError, prelude::*};
+use crate::subscriber::PyConfig;
+use pyo3::prelude::*;
+use rigetti_pyo3::exception;
 use tokio::runtime::Runtime;
 
 use super::{
@@ -90,30 +91,29 @@ pub(crate) enum StartError {
     SetSubscriber(#[from] SetSubscriberError),
 }
 
-wrap_error!(RustTracingStartError(StartError));
-py_wrap_error!(
-    export_process,
-    RustTracingStartError,
-    TracingStartError,
-    PyRuntimeError
-);
-
-type StartResult<T> = Result<T, StartError>;
-
 #[derive(thiserror::Error, Debug)]
 pub(crate) enum ShutdownError {
     #[error("the subscriber failed to shutdown: {0}")]
     Subscriber(#[from] crate::subscriber::ShutdownError),
 }
 
-wrap_error!(RustTracingShutdownError(ShutdownError));
-py_wrap_error!(
+exception!(
+    StartError,
     export_process,
-    RustTracingShutdownError,
-    TracingShutdownError,
-    PyRuntimeError
+    TracingStartError,
+    pyo3::exceptions::PyRuntimeError,
+    "Errors encounter if starting tracing fails."
 );
 
+exception!(
+    ShutdownError,
+    export_process,
+    TracingShutdownError,
+    pyo3::exceptions::PyRuntimeError,
+    "Errors encounter if shutting down tracing fails."
+);
+
+type StartResult<T> = Result<T, StartError>;
 type ShutdownResult<T> = Result<T, ShutdownError>;
 
 /// A representation of a running export process, either a background task or a process just

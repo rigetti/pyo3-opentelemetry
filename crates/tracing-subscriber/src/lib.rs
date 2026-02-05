@@ -62,7 +62,6 @@
 //! # Features
 //!
 //! * `pyo3` - enables the Python bindings for the tracing subscriber. This feature is enabled by default.
-//! * `extension-module` - enables the Python extension module for the tracing subscriber. This feature is enabled by default.
 //! * `layer-otel-otlp-file` - exports trace data with `opentelemetry-stdout`. See `crate::layers::otel_otlp_file`.
 //! * `layer-otel-otlp` - exports trace data with `opentelemetry-otlp`. See `crate::layers::otel_otlp`.
 //! * `stubs` - supports writing stub files in your Python source code from your Rust build scripts. See `crates::stubs`. This should only be used in build scripts with default features disabled.
@@ -89,7 +88,7 @@
 //! const TRACING_SUBSCRIBER_SUBMODULE_NAME: &str = "tracing_subscriber";
 //!
 //! #[pymodule]
-//! fn example(py: Python, m: &PyModule) -> PyResult<()> {
+//! fn example(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
 //!     // add your functions, modules, and classes
 //!     pyo3_tracing_subscriber::add_submodule(
 //!         MY_PACKAGE_NAME,
@@ -110,7 +109,7 @@
 //!
 //! async main():
 //!     async with Tracing():
-//!      
+//!
 //!      # do stuff
 //!         pass
 //!
@@ -123,7 +122,9 @@
 //!
 //! * `pyo3-opentelemetry` - propagates `OpenTelemetry` contexts from Python into Rust.
 #[cfg(feature = "pyo3")]
-use pyo3::{types::PyModule, PyResult, Python};
+use pyo3::{prelude::*, types::PyModule, PyResult, Python};
+#[cfg(feature = "pyo3")]
+use rigetti_pyo3::create_init_submodule;
 
 #[cfg(feature = "pyo3")]
 use self::{
@@ -218,18 +219,18 @@ create_init_submodule! {
 /// * `TracingShutdownError` - raised if the tracing layer or subscriber fails to shutdown properly on context manager exit.
 ///
 /// For detailed Python usage documentation, see the stub files written by
-/// [`pyo3_tracing_subscriber::stubs::write_stub_files`].
-pub fn add_submodule(
+/// [`crate::stubs::write_stub_files`].
+pub fn add_submodule<'py>(
     fully_qualified_namespace: &str,
     name: &str,
-    py: Python,
-    parent_module: &PyModule,
+    py: Python<'py>,
+    parent_module: &Bound<'py, PyModule>,
 ) -> PyResult<()> {
     let tracing_subscriber = PyModule::new(py, name)?;
     let fully_qualified_name = format!("{fully_qualified_namespace}.{name}");
-    init_submodule(&fully_qualified_name, py, tracing_subscriber)?;
+    init_submodule(&fully_qualified_name, py, &tracing_subscriber)?;
+    parent_module.add_submodule(&tracing_subscriber)?;
     let modules = py.import("sys")?.getattr("modules")?;
     modules.set_item(fully_qualified_name, tracing_subscriber)?;
-    parent_module.add_submodule(tracing_subscriber)?;
     Ok(())
 }

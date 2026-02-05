@@ -1,11 +1,9 @@
-# Based on https://github.com/actions-rs/meta/blob/master/recipes/msrv.md
-
-on: 
+on:
   push:
     branches: [main]
   pull_request: {}
 
-name: Checks 
+name: Checks
 
 jobs:
   checks:
@@ -13,44 +11,31 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ '3.9', '3.10', '3.11', '3.12' ]
-        rust:
-          - stable
-          # the scripts seem to inevitably involve building something that requires a newer version
-          # of rust, so we just run against stable for now.
-          # - 1.60.0
+        python-version: [ '3.10', '3.11', '3.12', '3.13' ]
     steps:
       # Checkout, setup Rust tools, etc.
-      - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: ${{ matrix.rust }}
-          override: true
+      - uses: actions/checkout@v5
       - uses: Swatinem/rust-cache@v2
-      - run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-      - name: Install cargo-make
-        uses: actions-rs/cargo@v1
-        with:
-          command: install
-          args: --debug cargo-make
-      # For ci-flow, see the following:
-      # https://github.com/sagiegurari/cargo-make/tree/master#predefined-flows
-      # https://github.com/sagiegurari/cargo-make/blob/master/docs/cargo_make_task_list.md#ci
+      - uses: taiki-e/install-action@cargo-make
+
       - name: Run Rust CI
-        uses: actions-rs/cargo@v1
-        with:
-          command: make
-          args: --makefile Makefile.toml check-all 
+        run: cargo make check-all
 
       # Setup Python and run Python example
       - name: Setup python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+
       - name: Install poetry
-        uses: snok/install-poetry@v1
+        uses: abatilo/actions-poetry@v4
+
+      - name: Configure Python Cache
+        uses: actions/cache@v4
+        with:
+          path: ".venv"
+          key: ${{ runner.os }}-${{ matrix.python-version }}-venv-${{ hashFiles('**/poetry.lock') }}
+
       - name: Run Python Example
-        run: |
-          cd ./examples/pyo3-opentelemetry-lib
-          cargo make --makefile Makefile.toml python-check-all 
+        run: cargo make --cwd examples/pyo3-opentelemetry-lib python-check-all
 

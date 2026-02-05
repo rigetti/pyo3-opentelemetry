@@ -13,7 +13,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from . import file as file 
+from . import file as file
 {{#if layer_otel_otlp_file }}from . import otel_otlp_file as otel_otlp_file{{/if}}
 {{#if layer_otel_otlp}}from . import otel_otlp as otel_otlp{{/if}}
 
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
   {{#if any_additional_layer}}Config = Union[
     file.Config,
-    {{#if layer_otel_otlp_file }}otel_otlp_file.Config,{{/if}} 
+    {{#if layer_otel_otlp_file }}otel_otlp_file.Config,{{/if}}
     {{#if layer_otel_otlp }}otel_otlp.Config,{{/if}}
       ]{{else}}Config = file.Config{{/if}}
   """

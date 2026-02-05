@@ -6,42 +6,13 @@ on:
 name: Build example wheels 
 
 jobs:
-  # macos:
-  #   runs-on: macos-12
-  #   env:
-  #     CXXFLAGS: "-std=c++11 -stdlib=libc++"
-  #   strategy:
-  #     matrix:
-  #       python-version: ['3.8', '3.12']
-  #   steps:
-  #     - uses: actions/checkout@v2
-  #     - uses: actions/setup-python@v4
-  #       with:
-  #         python-version: ${{ matrix.python-version }}
-  #     - name: Install Rust
-  #       uses: actions-rs/toolchain@v1
-  #       with:
-  #         toolchain: stable
-  #         target: aarch64-apple-darwin
-  #         profile: minimal
-  #         default: true
-  #     - name: Build wheels - universal2
-  #       # universal2 supports both x86_64 and aarch64
-  #       uses: messense/maturin-action@v1
-  #       with:
-  #         maturin-version: 1.4.0
-  #         args: -i python --release --target universal2-apple-darwin --manifest-path examples/pyo3-opentelemetry-lib/Cargo.toml --out dist
-  #     - name: Install wheel
-  #       run: |
-  #         pip install pyo3-opentelemetry-lib --find-links dist --force-reinstall
-
   linux:
     runs-on: ubuntu-latest
     env:
       CXXFLAGS: "-std=c++11"
     strategy:
       matrix:
-        python-version: ['3.8', '3.12']
+        python-version: ['3.10', '3.12']
         target: [x86_64, aarch64]
     steps:
     - uses: actions/checkout@v2
@@ -57,7 +28,7 @@ jobs:
     - name: Build wheels
       uses: messense/maturin-action@v1
       with:
-        maturin-version: 1.4.0
+        maturin-version: 1.9.4
         target: ${{ matrix.target }}
         manylinux: '2_28'
         args: -i python${{ matrix.python-version }} --release --manifest-path examples/pyo3-opentelemetry-lib/Cargo.toml --out dist
@@ -66,7 +37,7 @@ jobs:
     runs-on: windows-latest 
     strategy: 
       matrix: 
-        python-version: ['3.8', '3.12']
+        python-version: ['3.10', '3.12']
         target: [x64] 
     steps: 
       - uses: actions/checkout@v2 
@@ -86,7 +57,7 @@ jobs:
       - name: Build wheels 
         uses: messense/maturin-action@v1 
         with:
-          maturin-version: 1.4.0
+          maturin-version: 1.9.4
           target: ${{ matrix.target }} 
           args: -i ${{ matrix.python-version }} --release --manifest-path examples/pyo3-opentelemetry-lib/Cargo.toml --out dist 
       - name: Install built wheel 
@@ -111,7 +82,7 @@ jobs:
     - name: Build sdist
       uses: messense/maturin-action@v1
       with:
-        maturin-version: 1.4.0
+        maturin-version: 1.9.4
         command: sdist
         args: --manifest-path examples/pyo3-opentelemetry-lib/Cargo.toml --out dist
 

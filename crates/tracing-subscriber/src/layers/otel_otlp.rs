@@ -24,7 +24,6 @@ use pyo3::prelude::*;
 use tracing_subscriber::Layer;
 
 use crate::create_init_submodule;
-// use opentelemetry_sdk::trace;
 use tonic::metadata::{
     errors::{InvalidMetadataKey, InvalidMetadataValue},
     MetadataKey,
@@ -34,7 +33,7 @@ use tracing_subscriber::filter::{FromEnvError, ParseError};
 use super::{build_env_filter, force_flush_provider_as_shutdown, LayerBuildResult, WithShutdown};
 use crate::common::PyInstrumentationLibrary;
 
-/// Configures the [`opentelemetry-otlp`] crate layer.
+/// Configures the [`opentelemetry_otlp`] crate layer.
 #[derive(Clone, Debug)]
 pub(crate) struct Config {
     /// Configuration to limit the amount of trace data collected.
@@ -43,7 +42,7 @@ pub(crate) struct Config {
     resource: Resource,
     /// The metadata map to use for requests to the remote collector.
     metadata_map: Option<tonic::metadata::MetadataMap>,
-    /// The sampler to use for the [`opentelemetry::sdk::trace::TracerProvider`].
+    /// The sampler to use for the [`opentelemetry_sdk::trace::SdkTracerProvider`].
     sampler: Sampler,
     /// The endpoint to which the exporter will send trace data. If not set, this must be set by
     /// OTLP environment variables.
@@ -51,12 +50,12 @@ pub(crate) struct Config {
     /// Timeout applied the [`tonic::transport::Channel`] used to send trace data to the remote collector.
     timeout: Option<Duration>,
     /// A timeout applied to the shutdown of the [`crate::contextmanager::Tracing`] context
-    /// manager upon exiting, before the underlying [`opentelemetry::sdk::trace::TracerProvider`]
+    /// manager upon exiting, before the underlying [`opentelemetry_sdk::trace::SdkTracerProvider`]
     /// is shutdown. Ensures that spans are flushed before the program exits.
     pre_shutdown_timeout: Duration,
     /// The filter to use for the [`tracing_subscriber::filter::EnvFilter`] layer.
     filter: Option<String>,
-    /// The instrumentation library to use for the [`opentelemetry::sdk::trace::TracerProvider`].
+    /// The instrumentation library to use for the [`opentelemetry_sdk::trace::SdkTracerProvider`].
     instrumentation_library: Option<InstrumentationScope>,
 }
 
@@ -92,14 +91,14 @@ impl Config {
     }
 
     fn build(&self, batch: bool) -> LayerBuildResult<WithShutdown> {
-        let provider = opentelemetry_sdk::trace::TracerProvider::builder()
+        let provider = opentelemetry_sdk::trace::SdkTracerProvider::builder()
             .with_sampler(self.sampler.clone())
             .with_span_limits(self.span_limits)
             .with_resource(self.resource.clone());
 
         let exporter = self.initialize_otlp_exporter()?;
         let provider = if batch {
-            provider.with_batch_exporter(exporter, opentelemetry_sdk::runtime::Tokio {})
+            provider.with_batch_exporter(exporter)
         } else {
             provider.with_simple_exporter(exporter)
         }
@@ -122,15 +121,9 @@ impl Config {
 }
 
 #[derive(thiserror::Error, Debug)]
-pub(super) enum Error {
-    #[error("error in the configuration: {0}")]
-    Config(#[from] ConfigError),
-}
-
-#[derive(thiserror::Error, Debug)]
 pub(crate) enum BuildError {
     #[error("failed to build opentelemetry-otlp pipeline: {0}")]
-    TraceInstall(#[from] opentelemetry::trace::TraceError),
+    TraceInstall(#[from] opentelemetry_otlp::ExporterBuildError),
     #[error("error in the configuration: {0}")]
     Config(#[from] ConfigError),
     #[error("failed to parse specified trace filter: {0}")]
@@ -256,11 +249,11 @@ impl PyConfig {
         instrumentation_library = None
     ))]
     #[allow(clippy::too_many_arguments)]
-    fn new(
+    fn new<'py>(
         span_limits: Option<PySpanLimits>,
         resource: Option<PyResource>,
-        metadata_map: Option<&PyAny>,
-        sampler: Option<&PyAny>,
+        metadata_map: Option<&Bound<'py, PyAny>>,
+        sampler: Option<&Bound<'py, PyAny>>,
         endpoint: Option<&str>,
         timeout_millis: Option<u64>,
         pre_shutdown_timeout_millis: u64,
@@ -270,8 +263,13 @@ impl PyConfig {
         Ok(Self {
             span_limits: span_limits.unwrap_or_default(),
             resource: resource.unwrap_or_default(),
-            metadata_map: metadata_map.map(PyAny::extract).transpose()?,
-            sampler: sampler.map(PyAny::extract).transpose()?.unwrap_or_default(),
+            metadata_map: metadata_map
+                .map(pyo3::types::PyAnyMethods::extract)
+                .transpose()?,
+            sampler: sampler
+                .map(pyo3::types::PyAnyMethods::extract)
+                .transpose()?
+                .unwrap_or_default(),
             endpoint: endpoint.map(String::from),
             timeout_millis,
             pre_shutdown_timeout_millis,
@@ -305,12 +303,14 @@ impl From<PyResource> for Resource {
         let kvs = resource
             .attrs
             .into_iter()
-            .map(|(k, v)| opentelemetry::KeyValue::new(k, v))
-            .collect::<Vec<opentelemetry::KeyValue>>();
-        match resource.schema_url {
-            Some(schema_url) => Self::from_schema_url(kvs, schema_url),
-            None => Self::new(kvs),
+            .map(|(k, v)| opentelemetry::KeyValue::new(k, v));
+
+        if let Some(schema_url) = resource.schema_url {
+            Self::builder().with_schema_url(kvs, schema_url)
+        } else {
+            Self::builder().with_attributes(kvs)
         }
+        .build()
     }
 }
 

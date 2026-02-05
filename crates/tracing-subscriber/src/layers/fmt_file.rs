@@ -17,8 +17,10 @@ use tracing_subscriber::Layer;
 
 use super::{build_env_filter, LayerBuildResult, ShutdownResult, WithShutdown};
 
-/// Configures the [`tracing_subscriber::fmt`] layer. If [`file_path`] is None, the layer
-/// will write to stdout. This outputs data in a non-OpenTelemetry format.
+/// Configures the [`mod@tracing_subscriber::fmt`] layer.
+///
+/// If `file_path` is None, the layer will write to stdout.
+/// This outputs data in a non-OpenTelemetry format.
 #[pyclass]
 #[derive(Clone, Debug)]
 pub(crate) struct Config {

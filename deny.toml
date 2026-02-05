@@ -16,11 +16,7 @@ db-path = "~/.cargo/advisory-db"
 db-urls = ["https://github.com/rustsec/advisory-db"]
 # The lint level for crates that have been yanked from their source registry
 yanked = "deny"
-# A list of advisory IDs to ignore. Note that ignored advisories will still
-# output a note when they are encountered.
-#ignore = [
-#    "RUSTSEC-2020-0071",  # Via chrono via azure crates for testing only
-#]
+ignore = []
 
 # This section is considered when running `cargo deny check licenses`
 # More documentation for the licenses section can be found here:
@@ -28,14 +24,15 @@ yanked = "deny"
 [licenses]
 unused-allowed-license = "allow"
 allow = [
+    "Apache-2.0 WITH LLVM-exception",
     "Apache-2.0",
+    "BSD-3-Clause",
+    "BSL-1.0",
     "ISC",
     "MIT",
     "OpenSSL",
-    "BSD-3-Clause",
-    "BSL-1.0",
+    "Unicode-3.0",
     "Unicode-DFS-2016",
-    "Apache-2.0 WITH LLVM-exception",
 ]
 # Lint level for licenses considered copyleft
 confidence-threshold = 0.8
@@ -63,6 +60,12 @@ wildcards = "deny"
 allow-wildcard-paths = true
 highlight = "all"
 skip-tree = []
+
+[[bans.features]]
+  crate = "pyo3"
+  deny = ["extension-module"]
+  reason = "this feature is deprecated; let maturin handle it for you"
+
 # This section is considered when running `cargo deny check sources`.
 # More documentation about the 'sources' section can be found here:
 # https://embarkstudios.github.io/cargo-deny/checks/sources/cfg.html
@@ -78,5 +81,7 @@ unknown-git = "deny"
 allow-registry = ["https://github.com/rust-lang/crates.io-index"]
 
 [sources.allow-org]
-github = []
+github = [
+    "rigetti",
+]
 

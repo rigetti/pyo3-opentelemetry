@@ -8,7 +8,7 @@ license = "MIT OR Apache-2.0"
 readme = "../opentelemetry/README.md"
 description = "Macro for passing OpenTelemetry context from Python to Rust"
 repository = "https://github.com/rigetti/pyo3-opentelemetry"
-rust-version = "1.65.0"
+rust-version = "1.83.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

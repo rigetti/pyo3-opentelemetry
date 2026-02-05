@@ -63,8 +63,9 @@ use std::collections::HashMap;
 
 use opentelemetry::propagation::TextMapPropagator;
 use opentelemetry::trace::FutureExt;
-use pyo3::prelude::*;
+use pyo3::{prelude::*, types::PyDict};
 use pyo3_opentelemetry::pypropagate;
+use rigetti_pyo3::sync::Awaitable;
 use tracing::instrument;
 
 #[instrument]
@@ -82,7 +83,7 @@ async fn example_function_impl_async() -> PyResult<HashMap<String, String>> {
 }
 
 /// An example function that will call a function containing and span and returns a
-/// HashMap with the propagated OTel context.
+/// [`HashMap`] with the propagated OTel context.
 #[pypropagate]
 #[pyfunction]
 pub fn example_function(py: Python<'_>) -> HashMap<String, String> {
@@ -90,11 +91,14 @@ pub fn example_function(py: Python<'_>) -> HashMap<String, String> {
 }
 
 /// An example async function that will call a function containing and span and returns a
-/// HashMap with the propagated OTel context.
+/// [`HashMap`] with the propagated OTel context.
 #[pypropagate]
 #[pyfunction]
-pub fn example_function_async<'a>(py: Python<'a>) -> PyResult<&'a PyAny> {
-    pyo3_asyncio::tokio::future_into_py(py, example_function_impl_async().with_current_context())
+pub fn example_function_async<'py>(py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+    pyo3_async_runtimes::tokio::future_into_py(
+        py,
+        example_function_impl_async().with_current_context(),
+    )
 }
 
 /// An example pyclass sturct that will have methods that propagate their OTel contexts from
@@ -112,23 +116,24 @@ impl ExampleStruct {
     }
 
     /// An example struct method that will call a function containing and span and returns a
-    /// HashMap with the propagated OTel context.
+    /// [`HashMap`] with the propagated OTel context.
     pub fn example_method(&self, py: Python<'_>) -> HashMap<String, String> {
         example_function_impl()
     }
 
     /// An example async struct method that will call a function containing and span and returns a
-    /// HashMap with the propagated OTel context.
-    pub fn example_method_async<'a>(&self, py: Python<'a>) -> PyResult<&'a PyAny> {
-        pyo3_asyncio::tokio::future_into_py(
+    /// [`HashMap`] with the propagated OTel context.
+    pub fn example_method_async<'py>(&self, py: Python<'py>) -> PyResult<Awaitable<'py, PyDict>> {
+        pyo3_async_runtimes::tokio::future_into_py(
             py,
             example_function_impl_async().with_current_context(),
         )
+        .map(Into::into)
     }
 }
 
 #[pymodule]
-fn pyo3_opentelemetry_lib(py: Python, m: &PyModule) -> PyResult<()> {
+fn pyo3_opentelemetry_lib<'py>(py: Python<'py>, m: &Bound<'py, PyModule>) -> PyResult<()> {
     m.add_class::<ExampleStruct>()?;
     m.add_function(wrap_pyfunction!(example_function, m)?)?;
     m.add_function(wrap_pyfunction!(example_function_async, m)?)?;

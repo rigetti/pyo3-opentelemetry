@@ -53,6 +53,8 @@
     variant_size_differences,
     while_true
 )]
+//! Type stub generator for module for `pyo3_tracing_subscriber` Python modules.
+//!
 //! This module provides a function to evaluate Python stub file templates for the Python module
 //! added by `pyo3_tracing_subscriber::add_submodule`. Upstream build scripts may use this to write
 //! the Python stub files in their build scripts.

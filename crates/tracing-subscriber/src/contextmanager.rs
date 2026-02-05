@@ -11,13 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-use pyo3::prelude::*;
+use pyo3::{prelude::*, types::PyNone};
+use rigetti_pyo3::{exception, sync::Awaitable};
 
-use crate::{common::ToPythonError, py_wrap_error, wrap_error};
-
-use super::export_process::{
-    ExportProcess, ExportProcessConfig, RustTracingShutdownError, RustTracingStartError,
-};
+use super::export_process::{ExportProcess, ExportProcessConfig};
 
 #[pyclass]
 #[derive(Clone, Debug, Default)]
@@ -92,12 +89,12 @@ enum ContextManagerError {
     ExitWithoutExportProcess,
 }
 
-wrap_error!(RustContextManagerError(ContextManagerError));
-py_wrap_error!(
+exception!(
+    ContextManagerError,
     contextmanager,
-    RustContextManagerError,
     TracingContextManagerError,
-    pyo3::exceptions::PyRuntimeError
+    pyo3::exceptions::PyRuntimeError,
+    "Errors generated through use of the tracing context manager."
 );
 
 #[pymethods]
@@ -115,70 +112,53 @@ impl Tracing {
     fn __enter__(&mut self) -> PyResult<()> {
         let state = std::mem::replace(&mut self.state, ContextManagerState::Starting);
         if let ContextManagerState::Initialized(config) = state {
-            self.state = ContextManagerState::Entered(
-                ExportProcess::start(config)
-                    .map_err(RustTracingStartError::from)
-                    .map_err(ToPythonError::to_py_err)?,
-            );
+            self.state = ContextManagerState::Entered(ExportProcess::start(config)?);
         } else {
-            return Err(RustContextManagerError::from(
-                ContextManagerError::EnterWithoutConfiguration,
-            )
-            .to_py_err())?;
+            Err(ContextManagerError::EnterWithoutConfiguration)?;
         }
         Ok(())
     }
 
-    fn __aenter__<'a>(&'a mut self, py: Python<'a>) -> PyResult<&'a PyAny> {
+    fn __aenter__<'py>(&mut self, py: Python<'py>) -> PyResult<Awaitable<'py, PyNone>> {
         self.__enter__()?;
-        pyo3_asyncio::tokio::future_into_py(py, async { Ok(()) })
+        pyo3_async_runtimes::tokio::future_into_py(py, async { Ok(()) }).map(Into::into)
     }
 
-    fn __exit__(
+    fn __exit__<'py>(
         &mut self,
-        _exc_type: Option<&PyAny>,
-        _exc_value: Option<&PyAny>,
-        _traceback: Option<&PyAny>,
+        _exc_type: Option<Bound<'py, PyAny>>,
+        _exc_value: Option<Bound<'py, PyAny>>,
+        _traceback: Option<Bound<'py, PyAny>>,
     ) -> PyResult<()> {
         let state = std::mem::replace(&mut self.state, ContextManagerState::Exited);
         if let ContextManagerState::Entered(export_process) = state {
-            let py_rt = pyo3_asyncio::tokio::get_runtime();
+            let py_rt = pyo3_async_runtimes::tokio::get_runtime();
             // Why block and not run this in a future within aexit? The `shutdown`
             // method returns a Tokio runtime, which cannot be dropped within another
-            // runtime. Additionally, `pyo3_asyncio::tokio::future_into_py` futures
-            // must resolve to something that implements `IntoPy`.
-            let export_runtime = py_rt.block_on(async move {
-                export_process
-                    .shutdown()
-                    .await
-                    .map_err(RustTracingShutdownError::from)
-                    .map_err(ToPythonError::to_py_err)
-            })?;
-            if let Some(export_runtime) = export_runtime {
+            // runtime. Additionally, `pyo3_async_runtimes::tokio::future_into_py` futures
+            // must resolve to something that implements `IntoPyObject`.
+            if let Some(export_runtime) = py_rt.block_on(export_process.shutdown())? {
                 // This immediately shuts the runtime down. The expectation here is that the
                 // process shutdown is responsible for cleaning up all background tasks and
                 // shutting down gracefully.
                 export_runtime.shutdown_background();
             }
         } else {
-            return Err(RustContextManagerError::from(
-                ContextManagerError::ExitWithoutExportProcess,
-            )
-            .to_py_err())?;
+            Err(ContextManagerError::ExitWithoutExportProcess)?;
         }
 
         Ok(())
     }
 
-    fn __aexit__<'a>(
-        &'a mut self,
-        py: Python<'a>,
-        exc_type: Option<&PyAny>,
-        exc_value: Option<&PyAny>,
-        traceback: Option<&PyAny>,
-    ) -> PyResult<&'a PyAny> {
+    fn __aexit__<'py>(
+        &mut self,
+        py: Python<'py>,
+        exc_type: Option<Bound<'py, PyAny>>,
+        exc_value: Option<Bound<'py, PyAny>>,
+        traceback: Option<Bound<'py, PyAny>>,
+    ) -> PyResult<Awaitable<'py, PyNone>> {
         self.__exit__(exc_type, exc_value, traceback)?;
-        pyo3_asyncio::tokio::future_into_py(py, async { Ok(()) })
+        pyo3_async_runtimes::tokio::future_into_py(py, async { Ok(()) }).map(Into::into)
     }
 }
 

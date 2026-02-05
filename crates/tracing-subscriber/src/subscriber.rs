@@ -30,15 +30,6 @@ pub(crate) enum BuildError {
     LayerBuild(#[from] crate::layers::BuildError),
 }
 
-#[allow(dead_code)]
-#[derive(thiserror::Error, Debug)]
-#[error("{message}")]
-pub(crate) struct CustomError {
-    message: String,
-    #[source]
-    source: Option<Box<dyn std::error::Error + Send + Sync>>,
-}
-
 /// A shutdown function that can be used to shutdown the configured tracing subscriber.
 pub(crate) type Shutdown = Box<
     dyn (FnOnce() -> std::pin::Pin<
@@ -209,7 +200,6 @@ impl SubscriberManagerGuard {
         match self {
             Self::Global(shutdown) => {
                 shutdown().await?;
-                opentelemetry::global::shutdown_tracer_provider();
             }
             Self::CurrentThread((shutdown, guard)) => {
                 shutdown().await?;
