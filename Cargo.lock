@@ -1408,8 +1408,9 @@ dependencies = [
 
 [[package]]
 name = "rigetti-pyo3"
-version = "0.4.4"
-source = "git+https://github.com/rigetti/rigetti-pyo3.git?rev=refs%2Fpull%2F62%2Fhead#165c37d90961392b2e669b7e4721b8c013351575"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0a440c858291b41a07ad12f55f5e067fe804f899a9e5d08ab2ef379228305740"
 dependencies = [
  "opentelemetry",
  "pyo3",
