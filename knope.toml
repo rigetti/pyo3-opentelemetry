@@ -7,7 +7,7 @@ scopes = ["lib", "opentelemetry", "pyo3-opentelemetry"]
 versioned_files = [
     "Cargo.lock",
     "crates/opentelemetry-macros/Cargo.toml",
-    { path = "crates/opentelemetry/Cargo.toml", dependency = "opentelemetry-macros" },
+    { path = "crates/opentelemetry/Cargo.toml", dependency = "pyo3-opentelemetry-macros" },
 ]
 changelog = "crates/opentelemetry-macros/CHANGELOG.md"
 scopes = ["macros", "opentelemetry-macros", "pyo3-opentelemetry-macros"]
