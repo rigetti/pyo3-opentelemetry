@@ -23,24 +23,16 @@ name = "release"
 [[workflows.steps]]
 type = "PrepareRelease"
 
-# Do not commit the changelog if the version is a release candidate.
 [[workflows.steps]]
 type = "Command"
-command = 'case "$version" in *"-dev."*) git restore --staged --worktree CHANGELOG.md ;; esac || true'
-shell = true
+command = 'git commit -m "chore: prepare release [skip ci]"'
 
 [[workflows.steps]]
 type = "Command"
-# git diff --cached --quiet exits with 0 if there are *no* staged changes.
-# So if it exits with any other code, commit the staged changes
-command = "(git diff --cached --quiet || git commit -m \"chore: prepare new release(s)\")"
+command = "git push"
 
 [[workflows.steps]]
 type = "Release"
-
-[[workflows.steps]]
-type = "Command"
-command = "./scripts/ci/release.sh"
 
 [github]
 owner = "rigetti"

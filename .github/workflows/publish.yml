@@ -1,23 +1,33 @@
 name: Publish
 
 on:
-  push:
-    tags:
-      - '**'
-    
+  release:
+    types: [published]
+  workflow_dispatch:
+    # "Manually publish release"
+    inputs:
+      opentelemetry:
+        description: "Publish pyo3-opentelemetry"
+        type: boolean
+        default: false
+      opentelemetry_macros:
+        description: "Publish pyo3-opentelemetry-macros"
+        type: boolean
+        default: false
+      tracing_subscriber:
+        description: "Publish pyo3-tracing-subscriber"
+        type: boolean
+        default: false
+
 jobs:
   opentelemetry:
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/opentelemetry/v')
+    if: |
+      (github.event_name == "release" && startsWith(github.event.release.tag_name, 'opentelemetry/v'))
+      || (github.event_name == 'workflow_dispatch' && inputs.opentelemetry)
     steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.PAT }}
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
+      - uses: actions/checkout@v5
+      - uses: Swatinem/rust-cache@v2
       - run: |
           sudo apt update -y && sudo apt install curl -y
           sudo curl -fsSL https://github.com/mikefarah/yq/releases/download/v4.35.1/yq_linux_amd64 -o /usr/bin/yq
@@ -26,31 +36,25 @@ jobs:
       # Below we give some time to make sure that the macros crate is published before the lib crate
       # in the case that the new lib crate depends on the new, yet to be published macros crate.
       - run: timeout 15m bash -c 'until ./scripts/ci/assert-macros-crate-published.sh; do sleep 10; done'
-      - run: cargo publish -p pyo3-opentelemetry --token ${{ secrets.CRATES_IO_TOKEN }}
+      - run: cargo publish -p pyo3-opentelemetry --locked --token ${{ secrets.CRATES_IO_TOKEN }}
+
   opentelemetry-macros:
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/opentelemetry-macros/v')
+    if: |
+      (github.event_name == "release" && startsWith(github.event.release.tag_name, 'opentelemetry-macros/v'))
+      || (github.event_name == 'workflow_dispatch' && inputs.opentelemetry_macros)
     steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.PAT }}
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-      - run: cargo publish -p pyo3-opentelemetry-macros --token ${{ secrets.CRATES_IO_TOKEN }}
+      - uses: actions/checkout@v5
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo publish -p pyo3-opentelemetry-macros --locked --token ${{ secrets.CRATES_IO_TOKEN }}
+
   tracing-subscriber:
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/tracing-subscriber')
+    if: |
+      (github.event_name == "release" && startsWith(github.event.release.tag_name, 'tracing-subscriber/v'))
+      || (github.event_name == 'workflow_dispatch' && inputs.tracing_subscriber)
     steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.PAT }}
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-      - run: cargo publish -p pyo3-tracing-subscriber --token ${{ secrets.CRATES_IO_TOKEN }}
+      - uses: actions/checkout@v5
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo publish -p pyo3-tracing-subscriber --locked --token ${{ secrets.CRATES_IO_TOKEN }}
 
