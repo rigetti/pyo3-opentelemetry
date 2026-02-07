@@ -12,7 +12,7 @@ cd ${DIR}/../../crates/opentelemetry-macros
 CRATE_ID=pyo3-opentelemetry-macros
 VERSION=$(yq -r -oj .package.version Cargo.toml)
 
-VERSION_DATA=$(curl -sSL https://crates.io/api/v1/crates/${CRATE_ID}/${VERSION} | yq -p json .version)
+VERSION_DATA=$(curl -vsSL https://crates.io/api/v1/crates/${CRATE_ID}/${VERSION} | yq -p json .version)
 
 if [ "${VERSION_DATA}" == "null" ]; then
   echo "Version ${VERSION} not yet published"
