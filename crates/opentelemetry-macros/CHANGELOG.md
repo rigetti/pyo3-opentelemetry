@@ -1,3 +1,13 @@
+## 0.6.0-rc.1 (2026-02-07)
+
+### Breaking Changes
+
+- add Cargo.lock as knope versioned file
+
+### Fixes
+
+- versioned_file name pyo3-opentelemetry-macros
+
 ## 0.6.0-rc.0 (2026-02-07)
 
 ### Breaking Changes
