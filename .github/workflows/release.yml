@@ -38,7 +38,7 @@ jobs:
 
     - name: Dry-run Release
       run: knope release --verbose --dry-run
-      if: github.event_name == 'pull_request' || ( github.event_name == 'workflow_dispatch' && github.event.inputs.type == 'dry-run' )
+      if: ${{ github.event_name == 'pull_request' || ( github.event_name == 'workflow_dispatch' && github.event.inputs.type == 'dry-run' ) }}
 
     - name: Prepare Pre-release
       run: knope release --verbose --prerelease-label=rc
