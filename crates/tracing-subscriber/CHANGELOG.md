@@ -1,3 +1,9 @@
+## 0.4.0-rc.0 (2026-02-07)
+
+### Breaking Changes
+
+- add Cargo.lock as knope versioned file
+
 ## 0.3.0 (2026-02-05)
 
 ### Breaking Changes
