@@ -1,15 +1,19 @@
 [packages.opentelemetry]
-versioned_files = ["crates/opentelemetry/Cargo.toml"]
+versioned_files = ["Cargo.lock", "crates/opentelemetry/Cargo.toml"]
 changelog = "crates/opentelemetry/CHANGELOG.md"
 scopes = ["lib", "opentelemetry", "pyo3-opentelemetry"]
 
 [packages.opentelemetry-macros]
-versioned_files = ["crates/opentelemetry-macros/Cargo.toml"]
+versioned_files = [
+    "Cargo.lock",
+    "crates/opentelemetry-macros/Cargo.toml",
+    { path = "crates/opentelemetry/Cargo.toml", dependency = "opentelemetry-macros" },
+]
 changelog = "crates/opentelemetry-macros/CHANGELOG.md"
 scopes = ["macros", "opentelemetry-macros", "pyo3-opentelemetry-macros"]
 
 [packages.tracing-subscriber]
-versioned_files = ["crates/tracing-subscriber/Cargo.toml"]
+versioned_files = ["Cargo.lock", "crates/tracing-subscriber/Cargo.toml"]
 changelog = "crates/tracing-subscriber/CHANGELOG.md"
 scopes = ["tracing-subscriber", "pyo3-tracing-subscriber"]
 
@@ -18,24 +22,6 @@ name = "release"
 
 [[workflows.steps]]
 type = "PrepareRelease"
-
-[[workflows.steps]]
-type = "Command"
-command = """
-MACROS_VERSION=$(cargo metadata --format-version 1 --no-deps | jq '.packages[] | select(.name=="pyo3-opentelemetry-macros") | .version' -r)
-# Specifying the @VERSION here is required for cargo upgrade to ignore the `path` field for the package.
-cargo upgrade --package pyo3-opentelemetry-macros@$MACROS_VERSION -i allow --recursive false 
-git add crates/opentelemetry/Cargo.toml
-"""
-
-[[workflows.steps]]
-type = "Command"
-# Fail the workflow if there are no staged changes added from the previous `cargo upgrade`
-command = "! git diff --cached --quiet"
-
-[[workflows.steps]]
-type = "Command"
-command = "cargo update -w"
 
 # Do not commit the changelog if the version is a release candidate.
 [[workflows.steps]]
@@ -55,3 +41,7 @@ type = "Release"
 [[workflows.steps]]
 type = "Command"
 command = "./scripts/ci/release.sh"
+
+[github]
+owner = "rigetti"
+repo = "pyo3-opentelemetry"
