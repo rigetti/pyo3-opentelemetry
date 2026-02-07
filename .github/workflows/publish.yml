@@ -23,7 +23,7 @@ jobs:
   opentelemetry:
     runs-on: ubuntu-latest
     if: |
-      ${{ (github.event_name == "release" && startsWith(github.event.release.tag_name, 'opentelemetry/v'))
+      ${{ (github.event_name == 'release' && startsWith(github.event.release.tag_name, 'opentelemetry/v'))
        || (github.event_name == 'workflow_dispatch' && inputs.opentelemetry) }}
     steps:
       - uses: actions/checkout@v5
@@ -41,7 +41,7 @@ jobs:
   opentelemetry-macros:
     runs-on: ubuntu-latest
     if: |
-      ${{ (github.event_name == "release" && startsWith(github.event.release.tag_name, 'opentelemetry-macros/v'))
+      ${{ (github.event_name == 'release' && startsWith(github.event.release.tag_name, 'opentelemetry-macros/v'))
        || (github.event_name == 'workflow_dispatch' && inputs.opentelemetry_macros) }}
     steps:
       - uses: actions/checkout@v5
@@ -51,7 +51,7 @@ jobs:
   tracing-subscriber:
     runs-on: ubuntu-latest
     if: |
-      ${{ (github.event_name == "release" && startsWith(github.event.release.tag_name, 'tracing-subscriber/v'))
+      ${{ (github.event_name == 'release' && startsWith(github.event.release.tag_name, 'tracing-subscriber/v'))
        || (github.event_name == 'workflow_dispatch' && inputs.tracing_subscriber) }}
     steps:
       - uses: actions/checkout@v5
