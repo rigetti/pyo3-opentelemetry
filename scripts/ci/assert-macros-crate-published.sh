@@ -6,17 +6,14 @@
 
 set -e
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-cd ${DIR}/../../crates/opentelemetry-macros
+CRATE="pyo3-opentelemetry-macros"
 
-CRATE_ID=pyo3-opentelemetry-macros
-VERSION=$(yq -r -oj .package.version Cargo.toml)
-
-VERSION_DATA=$(curl -vsSL https://crates.io/api/v1/crates/${CRATE_ID}/${VERSION} | yq -p json .version)
-
-if [ "${VERSION_DATA}" == "null" ]; then
-  echo "Version ${VERSION} not yet published"
+if cargo publish --dry-run -p "$CRATE" 2> >(tee /dev/stderr | \
+  grep -Eq "warning: crate ${CRATE}@.+ already exists"); then
+  echo "Current version of $CRATE is not yet published."
   exit 1
-else
-  exit 0
 fi
+
+echo "Current version of $CRATE is published."
+exit 0
+
