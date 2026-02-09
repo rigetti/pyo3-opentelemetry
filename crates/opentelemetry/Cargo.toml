@@ -1,6 +1,6 @@
 [package]
 name = "pyo3-opentelemetry"
-version = "0.5.0"
+version = "0.6.0-rc.1"
 edition = "2021"
 categories = ["development-tools::ffi", "development-tools::profiling"]
 keywords = ["python", "pyo3", "opentelemetry", "tracing"]
@@ -14,7 +14,7 @@ rust-version = "1.83.0"
 opentelemetry = { workspace = true }
 opentelemetry_sdk = { workspace = true }
 pyo3 = { workspace = true }
-pyo3-opentelemetry-macros = { path = "../opentelemetry-macros", version = "0.5.0" }
+pyo3-opentelemetry-macros = { path = "../opentelemetry-macros", version = "0.6.0-rc.1" }
 
 [dev-dependencies]
 futures-util = "0.3.31"

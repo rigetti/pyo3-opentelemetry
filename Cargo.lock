@@ -1237,7 +1237,7 @@ dependencies = [
 
 [[package]]
 name = "pyo3-opentelemetry"
-version = "0.4.0"
+version = "0.6.0-rc.1"
 dependencies = [
  "futures-util",
  "once_cell",
@@ -1270,7 +1270,7 @@ dependencies = [
 
 [[package]]
 name = "pyo3-opentelemetry-macros"
-version = "0.4.0"
+version = "0.6.0-rc.1"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1280,7 +1280,7 @@ dependencies = [
 
 [[package]]
 name = "pyo3-tracing-subscriber"
-version = "0.2.0"
+version = "0.4.0-rc.1"
 dependencies = [
  "futures-core",
  "handlebars",

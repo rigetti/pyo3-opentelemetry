@@ -4,19 +4,14 @@
 # It is used in the CI pipeline to ensure that the version of the macros crate is published
 # before publishing the version of the lib crate that depends on it.
 
-set -e
+CRATE="pyo3-opentelemetry-macros"
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-cd ${DIR}/../../crates/opentelemetry-macros
-
-CRATE_ID=pyo3-opentelemetry-macros
-VERSION=$(yq -r -oj .package.version Cargo.toml)
-
-VERSION_DATA=$(curl -sSL https://crates.io/api/v1/crates/${CRATE_ID}/${VERSION} | yq -p json .version)
-
-if [ "${VERSION_DATA}" == "null" ]; then
-  echo "Version ${VERSION} not yet published"
-  exit 1
-else
+if cargo publish --dry-run -p "$CRATE" 2>&1 | tee /dev/stderr \
+  | grep -Eq "warning: crate ${CRATE}@.+ already exists"; then
+  echo "Current version of $CRATE is published."
   exit 0
 fi
+
+echo "Current version of $CRATE is not yet published."
+exit 1
+

@@ -1,26 +1,50 @@
 name: Release
 
-on: workflow_dispatch 
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      type:
+        description: Bump versions and trigger a new release.
+        type: choice
+        required: true
+        default: prerelease
+        options:
+          - release
+          - prerelease
+          - dry-run
 
 jobs:
-  release:
-    if: ${{ github.ref == 'refs/heads/main' }}
+  prepare-release:
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.PAT }}
-      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v5
       with:
         fetch-depth: 0
-        token: ${{ secrets.PAT }}
-    - run: cargo install cargo-edit --version 0.12.2
-    - name: Install Knope
-      uses: knope-dev/action@v2.0.0
-      with:
-          version: 0.13.2 
-    - run: |
+
+    - name: Configure Git
+      run: |
         git config --global user.name "${{ github.triggering_actor }}"
         git config --global user.email "${{ github.triggering_actor}}@users.noreply.github.com"
+
+    - name: Install Knope
+      uses: knope-dev/action@v2.1.0
+      with:
+        version: 0.21.3
+
+    - name: Dry-run Release
+      run: knope release --verbose --dry-run
+      if: ${{ github.event_name == 'pull_request' || ( github.event_name == 'workflow_dispatch' && github.event.inputs.type == 'dry-run' ) }}
+
+    - name: Prepare Pre-release
+      run: knope release --verbose --prerelease-label=rc
+      if: github.event_name == 'workflow_dispatch' && inputs.type == 'prerelease'
+
     - name: Prepare Release
       run: knope release --verbose
+      if: github.event_name == 'workflow_dispatch' && inputs.type == 'release'
+
