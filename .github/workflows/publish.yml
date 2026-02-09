@@ -28,11 +28,6 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: Swatinem/rust-cache@v2
-      - run: |
-          sudo apt update -y && sudo apt install curl -y
-          sudo curl -fsSL https://github.com/mikefarah/yq/releases/download/v4.35.1/yq_linux_amd64 -o /usr/bin/yq
-          sudo chmod +x /usr/bin/yq
-        name: Install yq
       # Below we give some time to make sure that the macros crate is published before the lib crate
       # in the case that the new lib crate depends on the new, yet to be published macros crate.
       - run: timeout 15m bash -c 'until ./scripts/ci/assert-macros-crate-published.sh; do sleep 10; done'
