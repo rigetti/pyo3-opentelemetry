@@ -1,3 +1,9 @@
+## 0.4.0 (2026-02-09)
+
+### Breaking Changes
+
+- knope, release, and publish (#33)
+
 ## 0.3.0 (2026-02-05)
 
 ### Breaking Changes
