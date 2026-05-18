@@ -17,6 +17,7 @@ db-urls = ["https://github.com/rustsec/advisory-db"]
 # The lint level for crates that have been yanked from their source registry
 yanked = "deny"
 ignore = []
+unused-ignored-advisory = "deny"
 
 # This section is considered when running `cargo deny check licenses`
 # More documentation for the licenses section can be found here:
@@ -30,7 +31,6 @@ allow = [
     "BSL-1.0",
     "ISC",
     "MIT",
-    "OpenSSL",
     "Unicode-3.0",
     "Unicode-DFS-2016",
 ]
@@ -60,6 +60,32 @@ wildcards = "deny"
 allow-wildcard-paths = true
 highlight = "all"
 skip-tree = []
+deny = [
+    { crate = "qcs-dependencies-client",      deny-multiple-versions = true },
+    { crate = "http",                          deny-multiple-versions = true },
+    { crate = "opentelemetry",                 deny-multiple-versions = true },
+    { crate = "opentelemetry-http",            deny-multiple-versions = true },
+    { crate = "opentelemetry-otlp",            deny-multiple-versions = true },
+    { crate = "opentelemetry_sdk",             deny-multiple-versions = true },
+    { crate = "pbjson",                        deny-multiple-versions = true },
+    { crate = "pbjson-types",                  deny-multiple-versions = true },
+    { crate = "poem",                          deny-multiple-versions = true },
+    { crate = "poem-openapi",                  deny-multiple-versions = true },
+    { crate = "prost",                         deny-multiple-versions = true },
+    { crate = "prost-types",                   deny-multiple-versions = true },
+    { crate = "reqwest",                       deny-multiple-versions = true },
+    { crate = "reqwest-middleware",            deny-multiple-versions = true },
+    { crate = "reqwest-tracing",               deny-multiple-versions = true },
+    { crate = "sentry-tower",                  deny-multiple-versions = true },
+    { crate = "tonic",                         deny-multiple-versions = true },
+    { crate = "tonic-health",                  deny-multiple-versions = true },
+    { crate = "tonic-prost",                   deny-multiple-versions = true },
+    { crate = "tonic-web",                     deny-multiple-versions = true },
+    { crate = "tower",                         deny-multiple-versions = true },
+    { crate = "tower-http",                    deny-multiple-versions = true },
+    { crate = "tracing-core",                  deny-multiple-versions = true },
+    { crate = "tracing-opentelemetry",         deny-multiple-versions = true },
+]
 
 [[bans.features]]
   crate = "pyo3"

@@ -4,16 +4,15 @@ members = ["crates/*", "examples/*"]
 resolver = "2"
 
 [workspace.dependencies]
-# All OTEL packages must have the same version number.
+qcs-dependencies-client = { version = "0.3.1" }
+# opentelemetry, opentelemetry_sdk, tracing-opentelemetry: use qcs-dependencies-client
 # When updating the OTEL version, be sure to update these optional dependencies in `tracing-subscriber` as well:
 # * opentelemetry-otlp
 # * opentelemetry-proto
-opentelemetry = "0.30.0"
-opentelemetry_sdk = "0.30.0"
 pyo3 = { version = "0.27.2", features = ["macros"] }
 pyo3-async-runtimes = { version = "0.27", features = ["tokio-runtime"] }
 pyo3-build-config = "0.27.2"
-rigetti-pyo3 = "0.5.0"
+rigetti-pyo3 = { version = "0.5.5" }
 rstest = "0.17.0"
 serde = { version = "1.0.145", features = ["derive"] }
 thiserror = "2.0.17"
@@ -21,5 +20,18 @@ tokio = { version = "1.36.0", features = [] }
 tracing = { version = "0.1.41", features = ["log"] }
 # Despite how close the version numbers are, this package's release numbers *do
 # not* match the OTEL SDK version that it requires.
-tracing-opentelemetry = "0.31.0"
 tracing-subscriber = "0.3.19"
+futures-core = "0.3.30"
+futures-util = "0.3.31"
+handlebars = "6.4.0"
+once_cell = "1.17.1"
+opentelemetry-otlp = "0.31.0"
+opentelemetry-proto = "0.31.0"
+proc-macro2 = "1.0.58"
+pyo3-opentelemetry = { path = "crates/opentelemetry" }
+pyo3-opentelemetry-macros = { version = "0.6.0", path = "crates/opentelemetry-macros" }
+pyo3-tracing-subscriber = { path = "crates/tracing-subscriber", default-features = false }
+quote = "1.0.26"
+serde_json = "1.0.128"
+syn = "2.0.14"
+# tonic: use qcs-dependencies-client (grpc feature)

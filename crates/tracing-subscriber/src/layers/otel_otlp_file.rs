@@ -151,7 +151,7 @@ impl crate::layers::Config for Config {
     }
 
     fn build(&self, batch: bool) -> LayerBuildResult<WithShutdown> {
-        use opentelemetry::trace::TracerProvider as _;
+        use qcs_dependencies_client::opentelemetry::trace::TracerProvider as _;
         let file = self
             .file_path
             .as_ref()
@@ -176,7 +176,7 @@ impl crate::layers::Config for Config {
             },
         );
         let env_filter = build_env_filter(self.filter.clone())?;
-        let layer = tracing_opentelemetry::layer()
+        let layer = qcs_dependencies_client::tracing_opentelemetry::layer()
             .with_tracer(tracer)
             .with_filter(env_filter);
         Ok(WithShutdown {

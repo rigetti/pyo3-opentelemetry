@@ -1,8 +1,8 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
 
-use opentelemetry::InstrumentationScope;
 use pyo3::prelude::*;
+use qcs_dependencies_client::opentelemetry::InstrumentationScope;
 use rigetti_pyo3::create_init_submodule;
 
 #[pyclass(name = "InstrumentationLibrary")]
@@ -45,9 +45,9 @@ impl From<PyInstrumentationLibrary> for InstrumentationScope {
         }
         let mut attributes = Vec::new();
         for (key, value) in py_instrumentation_library.attributes {
-            let kv = opentelemetry::KeyValue::new(
-                opentelemetry::Key::new(key),
-                opentelemetry::Value::from(value),
+            let kv = qcs_dependencies_client::opentelemetry::KeyValue::new(
+                qcs_dependencies_client::opentelemetry::Key::new(key),
+                qcs_dependencies_client::opentelemetry::Value::from(value),
             );
             attributes.push(kv);
         }

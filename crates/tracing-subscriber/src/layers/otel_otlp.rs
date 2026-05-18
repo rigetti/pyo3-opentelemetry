@@ -14,17 +14,17 @@
 
 use std::{collections::HashMap, time::Duration};
 
-use opentelemetry::{trace::TracerProvider, InstrumentationScope};
 use opentelemetry_otlp::{WithExportConfig, WithTonicConfig};
 use opentelemetry_sdk::{
     trace::{Sampler, SpanLimits},
     Resource,
 };
 use pyo3::prelude::*;
+use qcs_dependencies_client::opentelemetry::{trace::TracerProvider, InstrumentationScope};
 use tracing_subscriber::Layer;
 
 use crate::create_init_submodule;
-use tonic::metadata::{
+use qcs_dependencies_client::tonic::metadata::{
     errors::{InvalidMetadataKey, InvalidMetadataValue},
     MetadataKey,
 };
@@ -41,13 +41,13 @@ pub(crate) struct Config {
     /// OpenTelemetry resource attributes describing the entity that produced the telemetry.
     resource: Resource,
     /// The metadata map to use for requests to the remote collector.
-    metadata_map: Option<tonic::metadata::MetadataMap>,
+    metadata_map: Option<qcs_dependencies_client::tonic::metadata::MetadataMap>,
     /// The sampler to use for the [`opentelemetry_sdk::trace::SdkTracerProvider`].
     sampler: Sampler,
     /// The endpoint to which the exporter will send trace data. If not set, this must be set by
     /// OTLP environment variables.
     endpoint: Option<String>,
-    /// Timeout applied the [`tonic::transport::Channel`] used to send trace data to the remote collector.
+    /// Timeout applied the [`qcs_dependencies_client::tonic::transport::Channel`] used to send trace data to the remote collector.
     timeout: Option<Duration>,
     /// A timeout applied to the shutdown of the [`crate::contextmanager::Tracing`] context
     /// manager upon exiting, before the underlying [`opentelemetry_sdk::trace::SdkTracerProvider`]
@@ -110,7 +110,7 @@ impl Config {
             |instrumentation_library| provider.tracer_with_scope(instrumentation_library.clone()),
         );
 
-        let layer = tracing_opentelemetry::layer()
+        let layer = qcs_dependencies_client::tracing_opentelemetry::layer()
             .with_tracer(tracer)
             .with_filter(env_filter);
         Ok(WithShutdown {
@@ -303,7 +303,7 @@ impl From<PyResource> for Resource {
         let kvs = resource
             .attrs
             .into_iter()
-            .map(|(k, v)| opentelemetry::KeyValue::new(k, v));
+            .map(|(k, v)| qcs_dependencies_client::opentelemetry::KeyValue::new(k, v));
 
         if let Some(schema_url) = resource.schema_url {
             Self::builder().with_schema_url(kvs, schema_url)
@@ -340,7 +340,7 @@ pub(crate) enum PyResourceValueArray {
     String(Vec<String>),
 }
 
-impl From<PyResourceValueArray> for opentelemetry::Array {
+impl From<PyResourceValueArray> for qcs_dependencies_client::opentelemetry::Array {
     fn from(py_resource_value_array: PyResourceValueArray) -> Self {
         match py_resource_value_array {
             PyResourceValueArray::Bool(b) => Self::Bool(b),
@@ -353,7 +353,7 @@ impl From<PyResourceValueArray> for opentelemetry::Array {
     }
 }
 
-impl From<PyResourceValue> for opentelemetry::Value {
+impl From<PyResourceValue> for qcs_dependencies_client::opentelemetry::Value {
     fn from(py_resource_value: PyResourceValue) -> Self {
         match py_resource_value {
             PyResourceValue::Bool(b) => Self::Bool(b),
@@ -393,7 +393,8 @@ impl From<PySampler> for Sampler {
 const OTEL_EXPORTER_OTLP_HEADERS: &str = "OTEL_EXPORTER_OTLP_HEADERS";
 const OTEL_EXPORTER_OTLP_TRACES_HEADERS: &str = "OTEL_EXPORTER_OTLP_TRACES_HEADERS";
 
-fn get_metadata_from_environment() -> Result<tonic::metadata::MetadataMap, ConfigError> {
+fn get_metadata_from_environment(
+) -> Result<qcs_dependencies_client::tonic::metadata::MetadataMap, ConfigError> {
     [
         OTEL_EXPORTER_OTLP_HEADERS,
         OTEL_EXPORTER_OTLP_TRACES_HEADERS,
@@ -411,7 +412,7 @@ fn get_metadata_from_environment() -> Result<tonic::metadata::MetadataMap, Confi
             .collect::<Vec<(String, String)>>()
     })
     .try_fold(
-        tonic::metadata::MetadataMap::new(),
+        qcs_dependencies_client::tonic::metadata::MetadataMap::new(),
         |mut metadata, (k, v)| {
             let key = k.parse::<MetadataKey<_>>().map_err(ConfigError::from)?;
             metadata.insert(key, v.parse().map_err(ConfigError::from)?);
@@ -428,7 +429,7 @@ impl TryFrom<PyConfig> for Config {
         let metadata_map = match config.metadata_map {
             Some(m) => Some(m.into_iter().try_fold(
                 env_metadata_map,
-                |mut metadata_map: tonic::metadata::MetadataMap,
+                |mut metadata_map: qcs_dependencies_client::tonic::metadata::MetadataMap,
                  (k, v)|
                  -> Result<_, Self::Error> {
                     let key = k.parse::<MetadataKey<_>>().map_err(ConfigError::from)?;
