@@ -19,14 +19,19 @@ use std::{
 };
 
 use crate::create_init_submodule;
-use opentelemetry_proto::transform::{
-    common::tonic::ResourceAttributesWithSchema, trace::tonic::group_spans_by_resource_and_scope,
+use pyo3::prelude::*;
+use qcs_dependencies_client::opentelemetry_proto::{
+    self,
+    transform::{
+        common::tonic::ResourceAttributesWithSchema,
+        trace::tonic::group_spans_by_resource_and_scope,
+    },
 };
-use opentelemetry_sdk::{
+use qcs_dependencies_client::opentelemetry_sdk::{
+    self,
     error::{OTelSdkError, OTelSdkResult},
     trace::{SpanData, SpanExporter},
 };
-use pyo3::prelude::*;
 
 use super::{build_env_filter, force_flush_provider_as_shutdown, LayerBuildResult, WithShutdown};
 use crate::common::PyInstrumentationLibrary;

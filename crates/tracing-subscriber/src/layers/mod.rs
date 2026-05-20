@@ -27,6 +27,8 @@ pub(crate) mod otel_otlp;
 #[cfg(feature = "layer-otel-otlp-file")]
 pub(crate) mod otel_otlp_file;
 
+use qcs_dependencies_client::opentelemetry_sdk;
+
 use std::fmt::Debug;
 
 use pyo3::prelude::*;

@@ -14,20 +14,21 @@
 
 use std::{collections::HashMap, time::Duration};
 
-use opentelemetry_otlp::{WithExportConfig, WithTonicConfig};
-use opentelemetry_sdk::{
+use pyo3::prelude::*;
+use qcs_dependencies_client::opentelemetry::{trace::TracerProvider, InstrumentationScope};
+use qcs_dependencies_client::opentelemetry_otlp::{self, WithExportConfig, WithTonicConfig};
+use qcs_dependencies_client::opentelemetry_sdk::{
+    self,
     trace::{Sampler, SpanLimits},
     Resource,
 };
-use pyo3::prelude::*;
-use qcs_dependencies_client::opentelemetry::{trace::TracerProvider, InstrumentationScope};
-use tracing_subscriber::Layer;
-
-use crate::create_init_submodule;
 use qcs_dependencies_client::tonic::metadata::{
     errors::{InvalidMetadataKey, InvalidMetadataValue},
     MetadataKey,
 };
+use tracing_subscriber::Layer;
+
+use crate::create_init_submodule;
 use tracing_subscriber::filter::{FromEnvError, ParseError};
 
 use super::{build_env_filter, force_flush_provider_as_shutdown, LayerBuildResult, WithShutdown};

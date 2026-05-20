@@ -175,7 +175,7 @@ impl Configuration {
         if meta.path.is_ident("exclude") {
             Err(syn::Error::new(
                 meta.path.__span(),
-                format!("{ERROR_INVALID_EXCLUDE}: configured function",),
+                format!("{ERROR_INVALID_EXCLUDE}: configured function"),
             ))
         } else {
             self.add_nested_meta(meta)

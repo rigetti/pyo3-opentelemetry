@@ -12,15 +12,9 @@ rust-version = "1.83.0"
 
 [dependencies]
 handlebars = { workspace = true, optional = true }
-pyo3 = { workspace = true, optional = true }
-qcs-dependencies-client = { workspace = true }
-# These packages *MUST* be kept in sync with the OTEL package versions; but
-# since they are optional, they cannot be workspace dependencies.
-# opentelemetry-otlp: grpc-tonic and tls-roots features provided by qcs-dependencies-client
-opentelemetry-otlp = { workspace = true, features = ["trace"], optional = true }
-opentelemetry-proto = { workspace = true, features = ["tonic"], optional = true }
-opentelemetry_sdk = { version = "0.31.0", features = ["rt-tokio", "rt-tokio-current-thread"] }
-pyo3-async-runtimes = { workspace = true, features = ["tokio-runtime"], optional = true }
+pyo3 = { workspace = true }
+qcs-dependencies-client = { workspace = true, features = ["grpc", "tokio-current-thread"] }
+pyo3-async-runtimes = { workspace = true, features = ["tokio-runtime"] }
 rigetti-pyo3 = { workspace = true, features = [ "async-tokio", "opentelemetry" ] }
 serde = { workspace = true }
 thiserror = { workspace = true }
@@ -31,11 +25,9 @@ futures-core = { workspace = true }
 serde_json = { workspace = true }
 
 [features]
-layer-otel-otlp = ["layer-otel-otlp-file", "qcs-dependencies-client/grpc"]
-layer-otel-otlp-file = ["dep:opentelemetry-otlp", "dep:opentelemetry-proto"]
+layer-otel-otlp = []
+layer-otel-otlp-file = []
 stubs = ["dep:handlebars"]
-pyo3 = ["dep:pyo3", "dep:pyo3-async-runtimes"]
-default = ["pyo3"]
 
 [dev-dependencies]
 rstest = { workspace = true }
