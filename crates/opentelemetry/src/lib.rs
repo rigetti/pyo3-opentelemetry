@@ -97,7 +97,9 @@ use std::collections::HashMap;
 
 use pyo3::{prelude::*, types::IntoPyDict};
 
-use qcs_dependencies_client::opentelemetry::{propagation::Extractor, Context};
+use qcs_dependencies_client::{opentelemetry::{
+    Context, ContextGuard, propagation::{Extractor, TextMapPropagator}
+}, opentelemetry_sdk::propagation::TraceContextPropagator};
 
 pub use pyo3_opentelemetry_macros::pypropagate;
 
@@ -145,11 +147,8 @@ impl Carrier {
     /// When a `Propagator` is passed to a function or method, this method should be called
     /// at the beginning of the function or method to attach the context. This should not be used with
     /// async functions.
-    fn attach(&self) -> qcs_dependencies_client::opentelemetry::ContextGuard {
-        use qcs_dependencies_client::opentelemetry::propagation::TextMapPropagator;
-
-        let propagator =
-            qcs_dependencies_client::opentelemetry_sdk::propagation::TraceContextPropagator::new();
+    fn attach(&self) -> ContextGuard {
+        let propagator = TraceContextPropagator::new();
         Context::attach(propagator.extract(self))
     }
 }
@@ -183,7 +182,7 @@ impl Carrier {
 /// `opentelemetry.propagate`.
 pub fn attach_otel_context_from_python(
     py: Python<'_>,
-) -> PyResult<qcs_dependencies_client::opentelemetry::ContextGuard> {
+) -> PyResult<ContextGuard> {
     let get_current_context = py.import("opentelemetry.context")?.getattr("get_current")?;
     let inject = py.import("opentelemetry.propagate")?.getattr("inject")?;
 
