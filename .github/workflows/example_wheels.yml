@@ -31,6 +31,13 @@ jobs:
         maturin-version: 1.9.4
         target: ${{ matrix.target }}
         manylinux: '2_28'
+        before-script-linux: |
+          PYTHON_VERSION="${{ matrix.python-version }}"
+          MAJOR="${PYTHON_VERSION%%.*}"
+          MINOR="${PYTHON_VERSION##*.}"
+          PYTHON_BIN="/opt/python/cp${MAJOR}${MINOR}-cp${MAJOR}${MINOR}/bin/python${PYTHON_VERSION}"
+          PYTHON_LIBDIR=$("${PYTHON_BIN}" -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR'))")
+          export LIBRARY_PATH="${PYTHON_LIBDIR}${LIBRARY_PATH:+:${LIBRARY_PATH}}"
         args: -i python${{ matrix.python-version }} --release --manifest-path examples/pyo3-opentelemetry-lib/Cargo.toml --out dist
 
   windows: 

@@ -18,14 +18,17 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@cargo-make
 
-      - name: Run Rust CI
-        run: cargo make check-all
-
-      # Setup Python and run Python example
+      # Setup Python before Rust CI so libpython is available for the build script
       - name: Setup python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+
+      - name: Set Python library path
+        run: echo "LIBRARY_PATH=$(python -c 'import sysconfig; print(sysconfig.get_config_var("LIBDIR"))')" >> $GITHUB_ENV
+
+      - name: Run Rust CI
+        run: cargo make check-all
 
       - name: Install poetry
         uses: abatilo/actions-poetry@v4
