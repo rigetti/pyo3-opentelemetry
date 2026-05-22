@@ -1285,7 +1285,9 @@ dependencies = [
 
 [[package]]
 name = "qcs-dependencies-client"
-version = "0.3.2-dev.4"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a1a7391bf8f8b9f92aea059531f7071c8b6c487f47b8d0536e56fc968c6359dd"
 dependencies = [
  "opentelemetry",
  "opentelemetry-otlp",
@@ -1395,6 +1397,8 @@ checksum = "7a2d987857b319362043e95f5353c0535c1f58eec5336fdfcf626430af7def58"
 [[package]]
 name = "rigetti-pyo3"
 version = "0.5.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "af07bc1eb22f60196c1993dcf3b7d81761ca77eb631ad50d9ff357556dd6ccc7"
 dependencies = [
  "pastey",
  "pyo3",
