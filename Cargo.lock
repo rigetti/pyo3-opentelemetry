@@ -1247,6 +1247,7 @@ dependencies = [
  "pyo3-build-config",
  "pyo3-opentelemetry",
  "pyo3-tracing-subscriber",
+ "pyo3-tracing-subscriber-build",
  "qcs-dependencies-client",
  "rigetti-pyo3",
  "tokio",
@@ -1269,7 +1270,6 @@ name = "pyo3-tracing-subscriber"
 version = "0.4.0"
 dependencies = [
  "futures-core",
- "handlebars",
  "pyo3",
  "pyo3-async-runtimes",
  "qcs-dependencies-client",
@@ -1281,6 +1281,16 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "pyo3-tracing-subscriber-build"
+version = "0.1.0"
+dependencies = [
+ "handlebars",
+ "rstest",
+ "serde",
+ "thiserror",
 ]
 
 [[package]]

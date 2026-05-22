@@ -97,9 +97,13 @@ use std::collections::HashMap;
 
 use pyo3::{prelude::*, types::IntoPyDict};
 
-use qcs_dependencies_client::{opentelemetry::{
-    Context, ContextGuard, propagation::{Extractor, TextMapPropagator}
-}, opentelemetry_sdk::propagation::TraceContextPropagator};
+use qcs_dependencies_client::{
+    opentelemetry::{
+        propagation::{Extractor, TextMapPropagator},
+        Context, ContextGuard,
+    },
+    opentelemetry_sdk::propagation::TraceContextPropagator,
+};
 
 pub use pyo3_opentelemetry_macros::pypropagate;
 
@@ -180,9 +184,7 @@ impl Carrier {
 /// Any Python error that occurs while trying to get the current context from Python will
 /// be returned; this includes import errors when importing `opentelemetry.context` and
 /// `opentelemetry.propagate`.
-pub fn attach_otel_context_from_python(
-    py: Python<'_>,
-) -> PyResult<ContextGuard> {
+pub fn attach_otel_context_from_python(py: Python<'_>) -> PyResult<ContextGuard> {
     let get_current_context = py.import("opentelemetry.context")?.getattr("get_current")?;
     let inject = py.import("opentelemetry.propagate")?.getattr("inject")?;
 

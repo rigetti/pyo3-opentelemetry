@@ -69,26 +69,31 @@ if __name__ == '__main__':
 
 ### Building Python Stub Files
 
-This crate provides a convenient method for adding stub files to your Python source code with the `stubs` feature.
+Use the companion [`pyo3-tracing-subscriber-build`](https://crates.io/crates/pyo3-tracing-subscriber-build) crate to generate stub files from your build script. Add it as a **build dependency** (not a regular dependency) so that `pyo3` is not pulled into your build script binary.
 
-Given a `pyo3` extension module named "my_module" that uses the `pyo3-tracing-subscriber` crate to expose tracing subscriber configuration and context manager classes from "my_module._tracing_subscriber", in the upstream `build.rs` file:
+In `Cargo.toml`:
 
-```rust
-use pyo3_tracing_subscriber_stubs::write_stub_files;
+```toml
+[dependencies]
+pyo3-tracing-subscriber = { version = "...", features = ["layer-otel-otlp"] }
 
-fn main() {
-    let target_dir = std::path::Path::new("./my_module/_tracing_subscriber");
-    std::fs::remove_dir_all(target_dir).unwrap();
-    write_stub_files(
-        "my_module",
-        "_tracing_subscriber",
-        target_dir,
-        true, // layer_otel_otlp_file feature enabled
-        true, // layer_otel_otlp feature enabled
-    )
-    .unwrap();
-}
+[build-dependencies]
+pyo3-tracing-subscriber-build = { version = "...", features = ["layer-otel-otlp"] }
+pyo3-build-config = "0.27"
 ```
 
+The features on `pyo3-tracing-subscriber-build` must match those on `pyo3-tracing-subscriber`.
 
+In `build.rs`:
+
+```rust
+use pyo3_tracing_subscriber_build::write_stub_files;
+
+fn main() {
+    pyo3_build_config::add_extension_module_link_args();
+    let target_dir = std::path::Path::new("./my_module/_tracing_subscriber");
+    std::fs::remove_dir_all(target_dir).unwrap_or_default();
+    write_stub_files("my_module", "_tracing_subscriber", target_dir).unwrap();
+}
+```
 

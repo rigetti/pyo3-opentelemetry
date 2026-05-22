@@ -64,7 +64,6 @@
 //! * `pyo3` - enables the Python bindings for the tracing subscriber. This feature is enabled by default.
 //! * `layer-otel-otlp-file` - exports trace data with `opentelemetry-stdout`. See `crate::layers::otel_otlp_file`.
 //! * `layer-otel-otlp` - exports trace data with `opentelemetry-otlp`. See `crate::layers::otel_otlp`.
-//! * `stubs` - supports writing stub files in your Python source code from your Rust build scripts. See `crates::stubs`. This should only be used in build scripts with default features disabled.
 //!
 //! # Requirements and Limitations
 //!
@@ -134,8 +133,6 @@ pub(crate) mod common;
 mod contextmanager;
 mod export_process;
 pub(crate) mod layers;
-#[cfg(feature = "stubs")]
-pub mod stubs;
 pub(crate) mod subscriber;
 
 create_init_submodule! {

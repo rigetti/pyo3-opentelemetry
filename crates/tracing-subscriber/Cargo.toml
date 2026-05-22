@@ -11,7 +11,6 @@ repository = "https://github.com/rigetti/pyo3-opentelemetry"
 rust-version = "1.88.0"
 
 [dependencies]
-handlebars = { workspace = true, optional = true }
 pyo3 = { workspace = true }
 qcs-dependencies-client = { workspace = true, features = ["grpc", "tokio-current-thread"] }
 pyo3-async-runtimes = { workspace = true, features = ["tokio-runtime"] }
@@ -27,7 +26,6 @@ serde_json = { workspace = true }
 [features]
 layer-otel-otlp = []
 layer-otel-otlp-file = []
-stubs = ["dep:handlebars"]
 
 [dev-dependencies]
 rstest = { workspace = true }

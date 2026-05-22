@@ -31,22 +31,6 @@ jobs:
         maturin-version: 1.9.4
         target: ${{ matrix.target }}
         manylinux: '2_28'
-        before-script-linux: |
-          PYTHON_VERSION="${{ matrix.python-version }}"
-          MAJOR="${PYTHON_VERSION%%.*}"
-          MINOR="${PYTHON_VERSION##*.}"
-          CPYTHON_BIN="/opt/python/cp${MAJOR}${MINOR}-cp${MAJOR}${MINOR}/bin/python${PYTHON_VERSION}"
-          if "${CPYTHON_BIN}" -c "" 2>/dev/null; then
-            # Native build: manylinux Python is the host architecture
-            PYTHON_LIBDIR=$("${CPYTHON_BIN}" -c 'import sysconfig; print(sysconfig.get_config_var("LIBDIR"))')
-          else
-            # Cross-compilation: manylinux Python is target arch; use system Python for build script linking
-            PYTHON_LIBDIR=$(python3 -c 'import sysconfig; print(sysconfig.get_config_var("LIBDIR"))' 2>/dev/null || true)
-          fi
-          if [ -n "${PYTHON_LIBDIR}" ]; then
-            export LIBRARY_PATH="${PYTHON_LIBDIR}${LIBRARY_PATH:+:${LIBRARY_PATH}}"
-            export LD_LIBRARY_PATH="${PYTHON_LIBDIR}${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
-          fi
         args: -i python${{ matrix.python-version }} --release --manifest-path examples/pyo3-opentelemetry-lib/Cargo.toml --out dist
 
   windows: 

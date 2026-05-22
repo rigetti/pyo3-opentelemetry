@@ -23,6 +23,7 @@ proc-macro2 = "1.0.58"
 pyo3-opentelemetry = { path = "crates/opentelemetry" }
 pyo3-opentelemetry-macros = { version = "0.6.0", path = "crates/opentelemetry-macros" }
 pyo3-tracing-subscriber = { path = "crates/tracing-subscriber", default-features = false }
+pyo3-tracing-subscriber-build = { path = "crates/tracing-subscriber-build", default-features = false }
 quote = "1.0.26"
 serde_json = "1.0.128"
 syn = "2.0.14"

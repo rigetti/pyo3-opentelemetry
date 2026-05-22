@@ -31,6 +31,6 @@ tracing-subscriber = { workspace = true, features = ["env-filter"], optional = t
 [features]
 
 [build-dependencies]
-pyo3-tracing-subscriber = { workspace = true, features = ["layer-otel-otlp-file", "layer-otel-otlp", "stubs"] }
+pyo3-tracing-subscriber-build = { workspace = true, features = ["layer-otel-otlp-file", "layer-otel-otlp"] }
 pyo3-build-config.workspace = true
 
