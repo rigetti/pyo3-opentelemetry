@@ -1,13 +1,3 @@
-## 0.4.1-rc.0 (2026-05-24)
-
-### Features
-
-- use QCS core-deps; update OTEL version
-
-### Fixes
-
-- Claude explains stubs-gen is fundamentally incompatible with pyo3 dependency, so extract it to separate crate, like prost-build
-
 ## 0.4.0 (2026-02-09)
 
 ### Breaking Changes
