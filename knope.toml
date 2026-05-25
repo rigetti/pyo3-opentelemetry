@@ -13,7 +13,7 @@ changelog = "crates/opentelemetry-macros/CHANGELOG.md"
 scopes = ["macros", "opentelemetry-macros", "pyo3-opentelemetry-macros"]
 
 [packages.tracing-subscriber]
-versioned_files = ["Cargo.lock", "crates/tracing-subscriber/Cargo.toml"]
+versioned_files = ["Cargo.lock", "crates/tracing-subscriber/Cargo.toml", "crates/tracing-subscriber-build/Cargo.toml"]
 changelog = "crates/tracing-subscriber/CHANGELOG.md"
 scopes = ["tracing-subscriber", "pyo3-tracing-subscriber"]
 
