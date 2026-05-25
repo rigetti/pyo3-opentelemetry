@@ -32,9 +32,9 @@ jobs:
         git config --global user.email "${{ github.triggering_actor}}@users.noreply.github.com"
 
     - name: Install Knope
-      uses: knope-dev/action@v2.1.0
+      uses: knope-dev/action@v2.1.2
       with:
-        version: 0.21.3
+        version: 0.23.0
 
     - name: Dry-run Release
       run: knope release --verbose --dry-run
