@@ -4,20 +4,6 @@ on:
   release:
     types: [published]
   workflow_dispatch:
-    # "Manually publish release"
-    inputs:
-      opentelemetry:
-        description: "Publish pyo3-opentelemetry"
-        type: boolean
-        default: false
-      opentelemetry_macros:
-        description: "Publish pyo3-opentelemetry-macros"
-        type: boolean
-        default: false
-      tracing_subscriber:
-        description: "Publish pyo3-tracing-subscriber"
-        type: boolean
-        default: false
 
 jobs:
   cargo-publish:
