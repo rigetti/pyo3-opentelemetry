@@ -1,3 +1,16 @@
+## 0.5.0-rc.1 (2026-05-25)
+
+### Breaking Changes
+
+- use QCS core-deps; update OTEL version
+- Claude explains stubs-gen is fundamentally incompatible with pyo3 dependency, so extract it to separate crate, like prost-build
+
+### Fixes
+
+- Knope tagged wrong commit :grimace:
+- knope inter-package dependencies
+- no longer need to select package to publish
+
 ## 0.5.0-rc.0 (2026-05-25)
 
 ### Breaking Changes
