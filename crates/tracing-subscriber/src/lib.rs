@@ -61,7 +61,6 @@
 //!
 //! # Features
 //!
-//! * `pyo3` - enables the Python bindings for the tracing subscriber. This feature is enabled by default.
 //! * `layer-otel-otlp-file` - exports trace data with `opentelemetry-stdout`. See `crate::layers::otel_otlp_file`.
 //! * `layer-otel-otlp` - exports trace data with `opentelemetry-otlp`. See `crate::layers::otel_otlp`.
 //!
