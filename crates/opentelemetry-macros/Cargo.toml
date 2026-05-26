@@ -1,6 +1,6 @@
 [package]
 name = "pyo3-opentelemetry-macros"
-version = "0.6.0"
+version = "0.7.0-rc.2"
 edition = "2021"
 categories = ["development-tools::ffi", "development-tools::profiling"]
 keywords = ["python", "pyo3", "opentelemetry", "tracing"]
@@ -8,7 +8,7 @@ license = "MIT OR Apache-2.0"
 readme = "../opentelemetry/README.md"
 description = "Macro for passing OpenTelemetry context from Python to Rust"
 repository = "https://github.com/rigetti/pyo3-opentelemetry"
-rust-version = "1.83.0"
+rust-version = "1.88.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -16,9 +16,9 @@ rust-version = "1.83.0"
 proc-macro = true
 
 [dependencies]
-proc-macro2 = "1.0.58"
-quote = "1.0.26"
-syn = { version = "2.0.14", features = ["full", "derive"] }
+proc-macro2 = { workspace = true }
+quote = { workspace = true }
+syn = { workspace = true, features = ["full", "derive"] }
 
 [dev-dependencies]
 rstest = { workspace = true } 

@@ -61,16 +61,17 @@
 //! set and propagated across the Python to Rust boundary.
 use std::collections::HashMap;
 
-use opentelemetry::propagation::TextMapPropagator;
-use opentelemetry::trace::FutureExt;
 use pyo3::{prelude::*, types::PyDict};
 use pyo3_opentelemetry::pypropagate;
+use qcs_dependencies_client::opentelemetry::propagation::TextMapPropagator;
+use qcs_dependencies_client::opentelemetry::trace::FutureExt;
 use rigetti_pyo3::sync::Awaitable;
 use tracing::instrument;
 
 #[instrument]
 fn example_function_impl() -> HashMap<String, String> {
-    let propagator = opentelemetry_sdk::propagation::TraceContextPropagator::new();
+    let propagator =
+        qcs_dependencies_client::opentelemetry_sdk::propagation::TraceContextPropagator::new();
     let mut injector = HashMap::new();
     propagator.inject(&mut injector);
     injector

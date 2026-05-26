@@ -61,10 +61,8 @@
 //!
 //! # Features
 //!
-//! * `pyo3` - enables the Python bindings for the tracing subscriber. This feature is enabled by default.
 //! * `layer-otel-otlp-file` - exports trace data with `opentelemetry-stdout`. See `crate::layers::otel_otlp_file`.
 //! * `layer-otel-otlp` - exports trace data with `opentelemetry-otlp`. See `crate::layers::otel_otlp`.
-//! * `stubs` - supports writing stub files in your Python source code from your Rust build scripts. See `crates::stubs`. This should only be used in build scripts with default features disabled.
 //!
 //! # Requirements and Limitations
 //!
@@ -121,33 +119,21 @@
 //! # Related Crates
 //!
 //! * `pyo3-opentelemetry` - propagates `OpenTelemetry` contexts from Python into Rust.
-#[cfg(feature = "pyo3")]
 use pyo3::{prelude::*, types::PyModule, PyResult, Python};
-#[cfg(feature = "pyo3")]
 use rigetti_pyo3::create_init_submodule;
 
-#[cfg(feature = "pyo3")]
 use self::{
     contextmanager::{CurrentThreadTracingConfig, GlobalTracingConfig, TracingContextManagerError},
     export_process::{BatchConfig, SimpleConfig, TracingShutdownError, TracingStartError},
 };
-#[cfg(feature = "pyo3")]
 pub use contextmanager::Tracing;
 
-#[cfg(feature = "pyo3")]
 pub(crate) mod common;
-#[cfg(feature = "pyo3")]
 mod contextmanager;
-#[cfg(feature = "pyo3")]
 mod export_process;
-#[cfg(feature = "pyo3")]
 pub(crate) mod layers;
-#[cfg(feature = "stubs")]
-pub mod stubs;
-#[cfg(feature = "pyo3")]
 pub(crate) mod subscriber;
 
-#[cfg(feature = "pyo3")]
 create_init_submodule! {
     classes: [
         Tracing,
@@ -164,7 +150,6 @@ create_init_submodule! {
     ],
 }
 
-#[cfg(feature = "pyo3")]
 /// Add the tracing submodule to the given module. This will add the submodule to the `sys.modules`
 /// dictionary so that it can be imported from Python.
 ///

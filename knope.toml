@@ -1,19 +1,15 @@
 [packages.opentelemetry]
-versioned_files = ["Cargo.lock", "crates/opentelemetry/Cargo.toml"]
+versioned_files = ["crates/opentelemetry/Cargo.toml", { path = "Cargo.toml", dependency = "pyo3-opentelemetry" }, "Cargo.lock"]
 changelog = "crates/opentelemetry/CHANGELOG.md"
 scopes = ["lib", "opentelemetry", "pyo3-opentelemetry"]
 
 [packages.opentelemetry-macros]
-versioned_files = [
-    "Cargo.lock",
-    "crates/opentelemetry-macros/Cargo.toml",
-    { path = "crates/opentelemetry/Cargo.toml", dependency = "pyo3-opentelemetry-macros" },
-]
+versioned_files = ["crates/opentelemetry-macros/Cargo.toml", { path = "Cargo.toml", dependency = "pyo3-opentelemetry-macros" }, "Cargo.lock"]
 changelog = "crates/opentelemetry-macros/CHANGELOG.md"
 scopes = ["macros", "opentelemetry-macros", "pyo3-opentelemetry-macros"]
 
 [packages.tracing-subscriber]
-versioned_files = ["Cargo.lock", "crates/tracing-subscriber/Cargo.toml"]
+versioned_files = ["crates/tracing-subscriber/Cargo.toml", { path = "Cargo.toml", dependency = "pyo3-tracing-subscriber" }, "Cargo.lock"]
 changelog = "crates/tracing-subscriber/CHANGELOG.md"
 scopes = ["tracing-subscriber", "pyo3-tracing-subscriber"]
 

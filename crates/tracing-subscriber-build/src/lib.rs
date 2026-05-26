@@ -53,29 +53,31 @@
     variant_size_differences,
     while_true
 )]
-//! Type stub generator for module for `pyo3_tracing_subscriber` Python modules.
+//! Build script support for `pyo3-tracing-subscriber`.
 //!
-//! This module provides a function to evaluate Python stub file templates for the Python module
-//! added by `pyo3_tracing_subscriber::add_submodule`. Upstream build scripts may use this to write
-//! the Python stub files in their build scripts.
+//! This crate provides a function to generate Python stub files for the Python module added by
+//! `pyo3_tracing_subscriber::add_submodule`. Use this crate as a build dependency (not a regular
+//! dependency) so that pyo3 is not pulled into your build script binary.
 //!
-//! <div class="warning">This function will render stubs based on the enabled features. In most
-//! cases, this means you need to include any `pyo3_tracing_subscriber` features from your main
-//! dependencies in your build dependencies as well.</div>
+//! # Features
+//!
+//! * `layer-otel-otlp-file` - include stubs for the `otel_otlp_file` layer.
+//! * `layer-otel-otlp` - include stubs for the `otel_otlp` layer.
 //!
 //! # Example
 //!
-//! In `build.rs` with the `example/` directory containing Python source code.
+//! In `build.rs` with the `example/` directory containing Python source code:
 //!
-//! ```rust
-//! use pyo3_tracing_subscriber::stubs::write_stub_files;
+//! ```rust,no_run
+//! use pyo3_tracing_subscriber_build::write_stub_files;
 //!
 //! write_stub_files(
 //!     "example",
 //!     "tracing_subscriber",
 //!     std::path::Path::new("example/tracing_subscriber"),
 //! ).unwrap();
-//!
+//! ```
+
 use std::path::Path;
 
 use handlebars::{RenderError, TemplateError};
@@ -150,14 +152,13 @@ macro_rules! include_stub_and_init {
 /// # Arguments
 ///
 /// * `host_package` - The name of the host Python package.
-/// * `tracing_subscriber_module_name` - The name of the tracing subscriber module (ie the Python
+/// * `tracing_subscriber_module_name` - The name of the tracing subscriber module (i.e. the Python
 ///   module that will contain the stub files).
 /// * `directory` - The directory to write the stub files to.
-/// * `layer_otel_otlp_file` - Whether to include stub files for the `otel_otlp_file` layer.
-/// * `layer_otel_otlp` - Whether to include stub files for the `otel_otlp` layer.
 ///
-/// See module level documentation for the `pyo3-tracing-subscriber` crate for more information
-/// about the `layer_` arguments.
+/// Enable `layer-otel-otlp-file` and/or `layer-otel-otlp` features to include stubs for those
+/// layers. These must match the features enabled on `pyo3-tracing-subscriber` in your regular
+/// dependencies.
 ///
 /// # Errors
 ///

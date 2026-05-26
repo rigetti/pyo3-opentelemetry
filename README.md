@@ -1,6 +1,6 @@
 # PyO3 Tracing Crates
 
-This repository contains four crates to support the ability of upstream `pyo3` extension modules to support the ability of their dependents to gather tracing telemetry from the instrumented Rust source code:
+This repository contains crates to support the ability of upstream `pyo3` extension modules to support the ability of their dependents to gather tracing telemetry from the instrumented Rust source code:
 
 * [crates/opentelemetry](./crates/opentelemetry): propagates OpenTelemetry context from Python into Rust.
 * [crates/opentelemetry-macros](./crates/opentelemetry-macros): defines proc macros for `pyo3-opentelemetry`.

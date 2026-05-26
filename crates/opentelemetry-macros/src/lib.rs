@@ -175,7 +175,7 @@ impl Configuration {
         if meta.path.is_ident("exclude") {
             Err(syn::Error::new(
                 meta.path.__span(),
-                format!("{ERROR_INVALID_EXCLUDE}: configured function",),
+                format!("{ERROR_INVALID_EXCLUDE}: configured function"),
             ))
         } else {
             self.add_nested_meta(meta)
@@ -211,8 +211,8 @@ fn wrap_block_in_current_context(
     let error_handler: proc_macro2::TokenStream = match config.on_context_extraction_failure {
         RuntimeErrorHandler::Trace => syn::parse_quote! {
             if let Err(e) = #context_guard_name {
-                use opentelemetry::trace::TraceContextExt;
-                let ctx = opentelemetry::Context::current();
+                use ::pyo3_opentelemetry::__opentelemetry::trace::TraceContextExt;
+                let ctx = ::pyo3_opentelemetry::__opentelemetry::Context::current();
                 ctx.span().record_error(&e);
             }
         },

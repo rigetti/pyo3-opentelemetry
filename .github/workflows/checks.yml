@@ -21,7 +21,6 @@ jobs:
       - name: Run Rust CI
         run: cargo make check-all
 
-      # Setup Python and run Python example
       - name: Setup python
         uses: actions/setup-python@v5
         with:

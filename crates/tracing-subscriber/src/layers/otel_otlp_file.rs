@@ -19,14 +19,19 @@ use std::{
 };
 
 use crate::create_init_submodule;
-use opentelemetry_proto::transform::{
-    common::tonic::ResourceAttributesWithSchema, trace::tonic::group_spans_by_resource_and_scope,
+use pyo3::prelude::*;
+use qcs_dependencies_client::opentelemetry_proto::{
+    self,
+    transform::{
+        common::tonic::ResourceAttributesWithSchema,
+        trace::tonic::group_spans_by_resource_and_scope,
+    },
 };
-use opentelemetry_sdk::{
+use qcs_dependencies_client::opentelemetry_sdk::{
+    self,
     error::{OTelSdkError, OTelSdkResult},
     trace::{SpanData, SpanExporter},
 };
-use pyo3::prelude::*;
 
 use super::{build_env_filter, force_flush_provider_as_shutdown, LayerBuildResult, WithShutdown};
 use crate::common::PyInstrumentationLibrary;
@@ -151,7 +156,7 @@ impl crate::layers::Config for Config {
     }
 
     fn build(&self, batch: bool) -> LayerBuildResult<WithShutdown> {
-        use opentelemetry::trace::TracerProvider as _;
+        use qcs_dependencies_client::opentelemetry::trace::TracerProvider as _;
         let file = self
             .file_path
             .as_ref()
@@ -176,7 +181,7 @@ impl crate::layers::Config for Config {
             },
         );
         let env_filter = build_env_filter(self.filter.clone())?;
-        let layer = tracing_opentelemetry::layer()
+        let layer = qcs_dependencies_client::tracing_opentelemetry::layer()
             .with_tracer(tracer)
             .with_filter(env_filter);
         Ok(WithShutdown {

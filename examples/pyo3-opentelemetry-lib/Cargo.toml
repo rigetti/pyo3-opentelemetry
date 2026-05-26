@@ -8,7 +8,7 @@ license = "MIT OR Apache-2.0"
 readme = "README.md"
 description = "Integration test for `pyo3-opentelemetry`"
 repository = "https://github.com/rigetti/pyo3-opentelemetry"
-rust-version = "1.83.0"
+rust-version = "1.88.0"
 publish = false
 resolver = "2"
 
@@ -18,12 +18,11 @@ name = "pyo3_opentelemetry_lib"
 crate-type =  ["cdylib", "rlib"]
 
 [dependencies]
-opentelemetry = { workspace = true }
-opentelemetry_sdk = { workspace = true }
+qcs-dependencies-client = { workspace = true }
 pyo3 = { workspace = true }
 pyo3-async-runtimes = { workspace = true, features = ["tokio", "tokio-runtime"] }
-pyo3-opentelemetry = { path = "../../crates/opentelemetry" }
-pyo3-tracing-subscriber = { path = "../../crates/tracing-subscriber", features = ["layer-otel-otlp-file", "layer-otel-otlp"] }
+pyo3-opentelemetry = { workspace = true }
+pyo3-tracing-subscriber = { workspace = true, features = ["layer-otel-otlp-file", "layer-otel-otlp"] }
 rigetti-pyo3 = { workspace = true, features = [ "async-tokio" ] }
 tokio = { workspace = true, features = ["sync", "parking_lot", "macros"] }
 tracing = { workspace = true }
@@ -32,6 +31,6 @@ tracing-subscriber = { workspace = true, features = ["env-filter"], optional = t
 [features]
 
 [build-dependencies]
-pyo3-tracing-subscriber = { path = "../../crates/tracing-subscriber", features = ["layer-otel-otlp-file", "layer-otel-otlp", "stubs"], default-features = false }
+pyo3-tracing-subscriber-build = { workspace = true, features = ["layer-otel-otlp-file", "layer-otel-otlp"] }
 pyo3-build-config.workspace = true
 

@@ -180,7 +180,7 @@ mod test {
         export_process::{ExportProcess, ExportProcessConfig, SimpleConfig},
         subscriber::TracingSubscriberRegistryConfig,
     };
-    use opentelemetry_proto::tonic::trace::v1 as otlp;
+    use qcs_dependencies_client::opentelemetry_proto::tonic::trace::v1 as otlp;
 
     #[tracing::instrument]
     fn example() {
