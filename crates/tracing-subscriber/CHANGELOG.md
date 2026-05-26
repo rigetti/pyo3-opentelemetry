@@ -1,3 +1,9 @@
+## 0.5.0 (2026-05-26)
+
+### Breaking Changes
+
+- use QCS core-deps; update OTEL version (#35)
+
 ## 0.4.0 (2026-02-09)
 
 ### Breaking Changes
