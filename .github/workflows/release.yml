@@ -48,3 +48,9 @@ jobs:
       run: knope release --verbose
       if: github.event_name == 'workflow_dispatch' && inputs.type == 'release'
 
+    - name: Trigger Publish
+      run: gh workflow run publish.yml --ref main
+      if: github.event_name == 'workflow_dispatch' && inputs.type != 'dry-run'
+      env:
+        GH_TOKEN: ${{ secrets.PAT }}
+

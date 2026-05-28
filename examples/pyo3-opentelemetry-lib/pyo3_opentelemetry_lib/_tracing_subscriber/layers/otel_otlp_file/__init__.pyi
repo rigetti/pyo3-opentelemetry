@@ -11,6 +11,7 @@
 # *****************************************************************************
 
 from typing import Optional, final
+
 from pyo3_opentelemetry_lib._tracing_subscriber.common import InstrumentationLibrary
 
 @final

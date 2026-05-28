@@ -11,7 +11,9 @@
 # *****************************************************************************
 
 from __future__ import annotations
-from typing import Dict, Optional, TYPE_CHECKING, final
+
+from typing import TYPE_CHECKING, Dict, Optional, final
+
 from pyo3_opentelemetry_lib._tracing_subscriber.common import InstrumentationLibrary
 
 @final

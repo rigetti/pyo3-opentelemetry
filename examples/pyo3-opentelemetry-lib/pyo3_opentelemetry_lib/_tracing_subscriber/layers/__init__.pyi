@@ -11,11 +11,12 @@
 # *****************************************************************************
 
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from . import file as file
-from . import otel_otlp_file as otel_otlp_file
 from . import otel_otlp as otel_otlp
+from . import otel_otlp_file as otel_otlp_file
 
 if TYPE_CHECKING:
     from typing import Union
