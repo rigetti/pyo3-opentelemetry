@@ -1,3 +1,9 @@
+## 0.7.0 (2026-07-21)
+
+### Breaking Changes
+
+- upgrade to PyO3 0.29
+
 ## 0.6.0 (2026-07-21)
 
 ### Breaking Changes

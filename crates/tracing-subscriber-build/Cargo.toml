@@ -1,6 +1,6 @@
 [package]
 name = "pyo3-tracing-subscriber-build"
-version = "0.6.0"
+version = "0.7.0"
 edition = "2021"
 categories = ["development-tools::ffi", "development-tools::profiling"]
 keywords = ["python", "pyo3", "opentelemetry", "tracing", "build-script"]
