@@ -1,3 +1,9 @@
+## 0.8.0 (2026-07-21)
+
+### Breaking Changes
+
+- update to pyo3-0.28
+
 ## 0.7.0 (2026-05-26)
 
 ### Breaking Changes
