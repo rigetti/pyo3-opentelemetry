@@ -1,3 +1,9 @@
+## 0.9.1 (2026-07-24)
+
+### Fixes
+
+- update QCS core-dependencies (client) (#41)
+
 ## 0.9.0 (2026-07-21)
 
 ### Breaking Changes
