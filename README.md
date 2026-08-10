@@ -1,3 +1,9 @@
+# Moved
+
+This repo's crates have been combined with https://github.com/rigetti/rigetti-pyo3
+
+See https://github.com/rigetti/rigetti-pyo3/pull/92
+
 # PyO3 Tracing Crates
 
 This repository contains crates to support the ability of upstream `pyo3` extension modules to support the ability of their dependents to gather tracing telemetry from the instrumented Rust source code:
